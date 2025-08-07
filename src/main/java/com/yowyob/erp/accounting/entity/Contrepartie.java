@@ -1,5 +1,6 @@
 package com.yowyob.erp.accounting.entity;
 
+import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
@@ -16,7 +17,7 @@ import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITI
 
 @Table("contrepartie")
 @Data
-public class Contrepartie {
+public class Contrepartie implements Auditable {
 
     @PrimaryKey
     private ContrepartieKey key;
@@ -47,12 +48,29 @@ public class Contrepartie {
 
     private LocalDateTime updatedAt;
 
+    @Size(max = 255, message = "Créé par ne doit pas dépasser 255 caractères")
+    private String createdBy;
+
+    @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
+    private String updatedBy;
+
+    @Override
+    public String getTenantId() {
+        return key.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(String tenantId) {
+        if (key == null) {
+            key = new ContrepartieKey();
+        }
+        key.setTenantId(tenantId);
+    }
 }
 
 @PrimaryKeyClass
 @Data
 class ContrepartieKey {
-
     @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
     @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
     @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
