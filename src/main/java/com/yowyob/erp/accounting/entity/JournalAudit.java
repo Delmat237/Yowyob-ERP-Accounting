@@ -1,45 +1,62 @@
-// Journal d'audit
 package com.yowyob.erp.accounting.entity;
 
-import com.yowyob.erp.common.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
+import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Entity
-@Table(name = "journal_audit")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class JournalAudit extends BaseEntity {
+import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ecriture_comptable_id")
-    private EcritureComptable ecritureComptable;
+@Table("journal_audit")
+@Data
+public class JournalAudit {
 
-    @Column(name = "action", nullable = false)
-    private String action; // CREATION, VALIDATION, MODIFICATION
+    @PrimaryKey
+    private JournalAuditKey key;
 
-    @Column(name = "date_action", nullable = false)
+    @Size(max = 100, message = "L'identifiant de l'écriture comptable ne doit pas dépasser 100 caractères")
+    private String ecritureComptableId;
+
+    @NotBlank(message = "L'action ne peut pas être vide")
+    @Pattern(regexp = "CREATION|VALIDATION|MODIFICATION", message = "L'action doit être CREATION, VALIDATION ou MODIFICATION")
+    private String action;
+
+    @NotNull(message = "La date d'action ne peut pas être nulle")
     private LocalDateTime dateAction;
 
-    @Column(name = "utilisateur", nullable = false)
+    @NotBlank(message = "L'utilisateur ne peut pas être vide")
+    @Size(max = 255, message = "L'utilisateur ne doit pas dépasser 255 caractères")
     private String utilisateur;
 
-    @Column(name = "details", columnDefinition = "TEXT")
     private String details;
 
-    @Column(name = "adresse_ip")
+    @Size(max = 255, message = "L'adresse IP ne doit pas dépasser 255 caractères")
     private String adresseIP;
 
-    @Column(name = "donnees_avant", columnDefinition = "TEXT")
     private String donneesAvant;
 
-    @Column(name = "donnees_apres", columnDefinition = "TEXT")
     private String donneesApres;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+}
+
+@PrimaryKeyClass
+@Data
+class JournalAuditKey {
+    @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
+    @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
+    @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
+    private String tenantId;
+
+    @PrimaryKeyColumn(name = "id", ordinal = 1, type = CLUSTERED, ordering = CLUSTERING_ASC)
+    private UUID id;
 }
