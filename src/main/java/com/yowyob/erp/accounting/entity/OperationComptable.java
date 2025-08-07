@@ -1,54 +1,75 @@
-// Configuration des opérations comptables
 package com.yowyob.erp.accounting.entity;
 
-import com.yowyob.erp.common.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
+import org.springframework.data.cassandra.core.mapping.Table;
 
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Entity
-@Table(name = "operation_comptable")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class OperationComptable extends BaseEntity {
+import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 
-    @Column(name = "type_operation", nullable = false)
-    private String typeOperation; // SALE, PURCHASE, etc.
+@Table("operation_comptable")
+@Data
+public class OperationComptable {
 
-    @Column(name = "mode_reglement", nullable = false)
-    private String modeReglement; // CASH, CREDIT, etc.
+    @PrimaryKey
+    private OperationComptableKey key;
 
-    @Column(name = "compte_principal", nullable = false)
+    @NotBlank(message = "Le type d'opération ne peut pas être vide")
+    @Size(max = 50, message = "Le type d'opération ne doit pas dépasser 50 caractères")
+    private String typeOperation;
+
+    @NotBlank(message = "Le mode de règlement ne peut pas être vide")
+    @Size(max = 50, message = "Le mode de règlement ne doit pas dépasser 50 caractères")
+    private String modeReglement;
+
+    @NotBlank(message = "Le compte principal ne peut pas être vide")
+    @Size(max = 20, message = "Le compte principal ne doit pas dépasser 20 caractères")
     private String comptePrincipal;
 
-    @Column(name = "est_compte_statique", nullable = false)
+    @NotNull(message = "Le statut compte statique ne peut pas être nul")
     private Boolean estCompteStatique = false;
 
-    @Column(name = "sens_principal", nullable = false)
-    private String sensPrincipal; // DEBIT ou CREDIT
+    @NotBlank(message = "Le sens principal ne peut pas être vide")
+    @Pattern(regexp = "DEBIT|CREDIT", message = "Le sens principal doit être DEBIT ou CREDIT")
+    private String sensPrincipal;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "journal_comptable_id", nullable = false)
-    private JournalComptable journalComptable;
+    @NotBlank(message = "L'identifiant du journal comptable ne peut pas être vide")
+    @Size(max = 20, message = "L'identifiant du journal comptable ne doit pas dépasser 20 caractères")
+    private String journalComptableId;
 
-    @Column(name = "type_montant", nullable = false)
-    private String typeMontant; // HT, TTC, TVA, PAU
+    @NotBlank(message = "Le type de montant ne peut pas être vide")
+    @Pattern(regexp = "HT|TTC|TVA|PAU", message = "Le type de montant doit être HT, TTC, TVA ou PAU")
+    private String typeMontant;
 
-    @Column(name = "plafond_client")
+    @PositiveOrZero(message = "Le plafond client doit être positif ou zéro")
     private Double plafondClient;
 
-    @Column(name = "actif", nullable = false)
+    @NotNull(message = "Le statut actif ne peut pas être nul")
     private Boolean actif = true;
 
-    @Column(name = "notes")
+    @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
 
-    @OneToMany(mappedBy = "operationComptable", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Contrepartie> contreparties;
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+}
+
+@PrimaryKeyClass
+@Data
+class OperationComptableKey {
+    @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
+    @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
+    @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
+    private String tenantId;
+
+    @PrimaryKeyColumn(name = "id", ordinal = 1, type = CLUSTERED, ordering = CLUSTERING_ASC)
+    private UUID id;
 }
