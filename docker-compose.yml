@@ -1,30 +1,25 @@
 version: '3.8'
 
 services:
-  # Base de données PostgreSQL pour la persistance des données.
-  postgres:
-    image: postgres:15-alpine
-    container_name: postgres
-    # Expose le port 5432 du conteneur sur le port 5432 de la machine hôte.
+  # Base de données ScyllaDB pour la persistance des données (remplace PostgreSQL).
+  scylla:
+    image: scylladb/scylla:5.4
+    container_name: scylla
+    # Expose le port CQL (9042) pour les connexions clients.
     ports:
-      - "5432:5432"
-    environment:
-      # Définit le nom d'utilisateur de la base de données.
-      POSTGRES_USER: springuser
-      # Définit le mot de passe de la base de données.
-      POSTGRES_PASSWORD: azaleodel
-      # Définit le nom de la base de données par défaut.
-      POSTGRES_DB: yowyob_erp
+      - "9042:9042"
+    # Définit les options de performance et de configuration.
+    command: --smp 2 --memory 2G --overprovisioned 1
     volumes:
-      # Crée un volume persistant pour stocker les données de la base de données.
-      - postgres-data:/var/lib/postgresql/data
-      # Monte le script init.sql pour l'initialisation de la base de données.
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Crée un volume persistant pour stocker les données de ScyllaDB.
+      - scylla-data:/var/lib/scylla
+      # Monte un script CQL pour initialiser le keyspace et la table.
+      - ./init.cql:/init.cql
     networks:
       - my-network
-    # Vérifie si la base de données est prête à accepter des connexions.
+    # Vérifie si ScyllaDB est prêt à accepter des connexions CQL.
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U springuser -d yowyob_erp"]
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -113,7 +108,6 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'  
       # Permet la suppression de sujets.
       KAFKA_DELETE_TOPIC_ENABLE: 'true'   
-      
     networks:
       - my-network
     # Démarre Kafka uniquement après que Zookeeper soit sain.
@@ -170,7 +164,7 @@ services:
 
 # Définition des volumes nommés pour la persistance des données.
 volumes:
-  postgres-data:
+  scylla-data:
   es-data:
   redis-data:
 
