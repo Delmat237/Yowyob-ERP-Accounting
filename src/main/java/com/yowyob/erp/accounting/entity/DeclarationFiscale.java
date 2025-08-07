@@ -1,5 +1,6 @@
 package com.yowyob.erp.accounting.entity;
 
+import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
@@ -8,6 +9,7 @@ import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
@@ -16,7 +18,7 @@ import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITI
 
 @Table("declaration_fiscale")
 @Data
-public class DeclarationFiscale {
+public class DeclarationFiscale implements Auditable {
 
     @PrimaryKey
     private DeclarationFiscaleKey key;
@@ -50,9 +52,28 @@ public class DeclarationFiscale {
     @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
 
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
-    private LocalDate updatedAt;
+    private LocalDateTime updatedAt;
+
+    @Size(max = 255, message = "Créé par ne doit pas dépasser 255 caractères")
+    private String createdBy;
+
+    @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
+    private String updatedBy;
+
+    @Override
+    public String getTenantId() {
+        return key.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(String tenantId) {
+        if (key == null) {
+            key = new DeclarationFiscaleKey();
+        }
+        key.setTenantId(tenantId);
+    }
 }
 
 @PrimaryKeyClass
