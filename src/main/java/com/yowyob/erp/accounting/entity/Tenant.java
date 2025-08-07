@@ -1,5 +1,6 @@
 package com.yowyob.erp.entity;
 
+import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 @Table("tenants")
 @Data
-public class Tenant {
+public class Tenant implements Auditable {
 
     @PrimaryKey
     private UUID tenantId;
@@ -53,4 +54,34 @@ public class Tenant {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @Override
+    public String getTenantId() {
+        return tenantId.toString();
+    }
+
+    @Override
+    public void setTenantId(String tenantId) {
+        this.tenantId = UUID.fromString(tenantId);
+    }
+
+    @Override
+    public String getCreatedBy() {
+        return null; // Non applicable pour Tenant
+    }
+
+    @Override
+    public void setCreatedBy(String createdBy) {
+        // Non applicable pour Tenant
+    }
+
+    @Override
+    public String getUpdatedBy() {
+        return null; // Non applicable pour Tenant
+    }
+
+    @Override
+    public void setUpdatedBy(String updatedBy) {
+        // Non applicable pour Tenant
+    }
 }
