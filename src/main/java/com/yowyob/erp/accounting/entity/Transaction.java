@@ -1,5 +1,6 @@
 package com.yowyob.erp.accounting.entity;
 
+import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
@@ -16,7 +17,7 @@ import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITI
 
 @Table("transaction")
 @Data
-public class Transaction {
+public class Transaction implements Auditable {
 
     @PrimaryKey
     private TransactionKey key;
@@ -63,6 +64,25 @@ public class Transaction {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @Size(max = 255, message = "Créé par ne doit pas dépasser 255 caractères")
+    private String createdBy;
+
+    @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
+    private String updatedBy;
+
+    @Override
+    public String getTenantId() {
+        return key.getTenantId();
+    }
+
+    @Override
+    public void setTenantId(String tenantId) {
+        if (key == null) {
+            key = new TransactionKey();
+        }
+        key.setTenantId(tenantId);
+    }
 }
 
 @PrimaryKeyClass
