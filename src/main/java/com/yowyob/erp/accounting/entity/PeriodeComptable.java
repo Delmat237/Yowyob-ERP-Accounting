@@ -1,38 +1,57 @@
-// Période comptable
 package com.yowyob.erp.accounting.entity;
 
-import com.yowyob.erp.common.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
+import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
-@Entity
-@Table(name = "periode_comptable")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class PeriodeComptable extends BaseEntity {
+import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 
-    @Column(name = "code", nullable = false)
+@Table("periode_comptable")
+@Data
+public class PeriodeComptable {
+
+    @PrimaryKey
+    private PeriodeComptableKey key;
+
+    @NotBlank(message = "Le code ne peut pas être vide")
+    @Size(max = 50, message = "Le code ne doit pas dépasser 50 caractères")
     private String code;
 
-    @Column(name = "date_debut", nullable = false)
+    @NotNull(message = "La date de début ne peut pas être nulle")
     private LocalDate dateDebut;
 
-    @Column(name = "date_fin", nullable = false)
+    @NotNull(message = "La date de fin ne peut pas être nulle")
     private LocalDate dateFin;
 
-    @Column(name = "cloturee", nullable = false)
+    @NotNull(message = "Le statut clôturé ne peut pas être nul")
     private Boolean cloturee = false;
 
-    @Column(name = "date_cloture")
     private LocalDate dateCloture;
 
-    @Column(name = "notes")
+    @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
+
+    private LocalDate createdAt;
+
+    private LocalDate updatedAt;
+}
+
+@PrimaryKeyClass
+@Data
+class PeriodeComptableKey {
+    @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
+    @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
+    @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
+    private String tenantId;
+
+    @PrimaryKeyColumn(name = "id", ordinal = 1, type = CLUSTERED, ordering = CLUSTERING_ASC)
+    private UUID id;
 }
