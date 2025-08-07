@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.plan_comptable (
     actif boolean,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, no_compte)
 );
 
@@ -42,6 +44,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.journal_comptable (
     actif boolean,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, code_journal)
 );
 
@@ -61,6 +65,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.operation_comptable (
     notes text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, id)
 );
 
@@ -77,6 +83,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.contrepartie (
     notes text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, operation_comptable_id, id)
 );
 
@@ -95,6 +103,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.declaration_fiscale (
     notes text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, id)
 );
 
@@ -111,6 +121,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.detail_ecriture (
     notes text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, ecriture_comptable_id, id)
 );
 
@@ -131,6 +143,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.ecriture_comptable (
     notes text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, id)
 );
 
@@ -148,6 +162,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.journal_audit (
     donnees_apres text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, id)
 );
 
@@ -163,6 +179,8 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.periode_comptable (
     notes text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, id)
 );
 
@@ -185,24 +203,26 @@ CREATE TABLE IF NOT EXISTS yowyob_erp.transaction (
     notes text,
     created_at timestamp,
     updated_at timestamp,
+    created_by text,
+    updated_by text,
     PRIMARY KEY (tenant_id, id)
 );
 
 -- Insertion des données de base OHADA pour plan_comptable
-INSERT INTO yowyob_erp.plan_comptable (tenant_id, no_compte, id, libelle, notes, actif, created_at, updated_at) VALUES
-('default', '57000', uuid(), 'Caisse Centrale', 'Compte de caisse principal', true, toTimestamp(now()), toTimestamp(now())),
-('default', '41100', uuid(), 'Clients', 'Comptes clients', true, toTimestamp(now()), toTimestamp(now())),
-('default', '40100', uuid(), 'Fournisseurs', 'Comptes fournisseurs', true, toTimestamp(now()), toTimestamp(now())),
-('default', '70100', uuid(), 'Ventes de marchandises', 'Compte de ventes', true, toTimestamp(now()), toTimestamp(now())),
-('default', '60300', uuid(), 'Achats de marchandises', 'Compte d''achats', true, toTimestamp(now()), toTimestamp(now())),
-('default', '31000', uuid(), 'Stock de marchandises', 'Stock', true, toTimestamp(now()), toTimestamp(now())),
-('default', '44300', uuid(), 'TVA collectée', 'TVA sur les ventes', true, toTimestamp(now()), toTimestamp(now())),
-('default', '44500', uuid(), 'TVA déductible', 'TVA sur les achats', true, toTimestamp(now()), toTimestamp(now()));
+INSERT INTO yowyob_erp.plan_comptable (tenant_id, no_compte, id, libelle, notes, actif, created_at, updated_at, created_by, updated_by) VALUES
+('default', '57000', uuid(), 'Caisse Centrale', 'Compte de caisse principal', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', '41100', uuid(), 'Clients', 'Comptes clients', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', '40100', uuid(), 'Fournisseurs', 'Comptes fournisseurs', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', '70100', uuid(), 'Ventes de marchandises', 'Compte de ventes', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', '60300', uuid(), 'Achats de marchandises', 'Compte d''achats', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', '31000', uuid(), 'Stock de marchandises', 'Stock', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', '44300', uuid(), 'TVA collectée', 'TVA sur les ventes', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', '44500', uuid(), 'TVA déductible', 'TVA sur les achats', true, toTimestamp(now()), toTimestamp(now()), 'system', 'system');
 
 -- Insertion des données de base pour journal_comptable
-INSERT INTO yowyob_erp.journal_comptable (tenant_id, code_journal, id, libelle, type_journal, notes, actif, created_at, updated_at) VALUES
-('default', 'VTE', uuid(), 'Journal des Ventes', 'SALES', null, true, toTimestamp(now()), toTimestamp(now())),
-('default', 'ACH', uuid(), 'Journal des Achats', 'PURCHASES', null, true, toTimestamp(now()), toTimestamp(now())),
-('default', 'CAI', uuid(), 'Journal de Caisse', 'CASH', null, toTimestamp(now()), toTimestamp(now())),
-('default', 'BAN', uuid(), 'Journal de Banque', 'BANK', null, true, toTimestamp(now()), toTimestamp(now())),
-('default', 'OD', uuid(), 'Opérations Diverses', 'GENERAL', null, true, toTimestamp(now()), toTimestamp(now()));
+INSERT INTO yowyob_erp.journal_comptable (tenant_id, code_journal, id, libelle, type_journal, notes, actif, created_at, updated_at, created_by, updated_by) VALUES
+('default', 'VTE', uuid(), 'Journal des Ventes', 'SALES', null, true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', 'ACH', uuid(), 'Journal des Achats', 'PURCHASES', null, true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', 'CAI', uuid(), 'Journal de Caisse', 'CASH', null, true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', 'BAN', uuid(), 'Journal de Banque', 'BANK', null, true, toTimestamp(now()), toTimestamp(now()), 'system', 'system'),
+('default', 'OD', uuid(), 'Opérations Diverses', 'GENERAL', null, true, toTimestamp(now()), toTimestamp(now()), 'system', 'system');
