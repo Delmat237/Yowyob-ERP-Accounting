@@ -1,61 +1,78 @@
-// Transaction
 package com.yowyob.erp.accounting.entity;
 
-import com.yowyob.erp.common.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
+import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
+import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Entity
-@Table(name = "transaction")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-public class Transaction extends BaseEntity {
+import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
+import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 
-    @Column(name = "numero_recu", unique = true)
+@Table("transaction")
+@Data
+public class Transaction {
+
+    @PrimaryKey
+    private TransactionKey key;
+
+    @Size(max = 100, message = "Le numéro de reçu ne doit pas dépasser 100 caractères")
     private String numeroRecu;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "operation_comptable_id")
-    private OperationComptable operationComptable;
+    @Size(max = 100, message = "L'identifiant de l'opération comptable ne doit pas dépasser 100 caractères")
+    private String operationComptableId;
 
-    @Column(name = "montant_transaction", nullable = false)
+    @NotNull(message = "Le montant de la transaction ne peut pas être nul")
+    @PositiveOrZero(message = "Le montant de la transaction doit être positif ou zéro")
     private Double montantTransaction;
 
-    @Column(name = "montant_lettre")
+    @Size(max = 255, message = "Le montant en lettre ne doit pas dépasser 255 caractères")
     private String montantLettre;
 
-    @Column(name = "est_montant_ttc", nullable = false)
+    @NotNull(message = "Le statut montant TTC ne peut pas être nul")
     private Boolean estMontantTTC = true;
 
-    @Column(name = "date_transaction", nullable = false)
+    @NotNull(message = "La date de transaction ne peut pas être nulle")
     private LocalDateTime dateTransaction;
 
-    @Column(name = "est_validee", nullable = false)
+    @NotNull(message = "Le statut validé ne peut pas être nul")
     private Boolean estValidee = false;
 
-    @Column(name = "date_validation")
     private LocalDateTime dateValidation;
 
-    @Column(name = "reference_objet")
+    @Size(max = 255, message = "La référence objet ne doit pas dépasser 255 caractères")
     private String referenceObjet;
 
-    @Column(name = "caissier")
+    @Size(max = 255, message = "Le caissier ne doit pas dépasser 255 caractères")
     private String caissier;
 
-    @Column(name = "est_comptabilisee", nullable = false)
+    @NotNull(message = "Le statut comptabilisé ne peut pas être nul")
     private Boolean estComptabilisee = false;
 
-    @Column(name = "notes")
+    @Size(max = 100, message = "L'identifiant de l'écriture comptable ne doit pas dépasser 100 caractères")
+    private String ecritureComptableId;
+
+    @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ecriture_comptable_id")
-    private EcritureComptable ecritureComptable;
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+}
+
+@PrimaryKeyClass
+@Data
+class TransactionKey {
+    @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
+    @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
+    @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
+    private String tenantId;
+
+    @PrimaryKeyColumn(name = "id", ordinal = 1, type = CLUSTERED, ordering = CLUSTERING_ASC)
+    private UUID id;
 }
