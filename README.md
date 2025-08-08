@@ -161,8 +161,8 @@ src/main/java/com/yowyob/erp
 
 1. **Cloner le dépôt** :
    ```bash
-   git clone https://github.com/yowyob/yowyob-erp.git
-   cd yowyob-erp
+   git clone https://github.com/Delmat237/yowyob-erp-accounting-backend.git
+   cd yowyob-erp-accounting-backend
    ```
 
 2. **Installer les dépendances** :
