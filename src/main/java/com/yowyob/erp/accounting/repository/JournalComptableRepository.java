@@ -1,21 +1,29 @@
-// Repository Journal Comptable
 package com.yowyob.erp.accounting.repository;
 
 import com.yowyob.erp.accounting.entity.JournalComptable;
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.yowyob.erp.accounting.entityKey.JournalComptableKey;
+
+import org.springframework.data.cassandra.repository.CassandraRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface JournalComptableRepository extends JpaRepository<JournalComptable, Long> {
+public interface JournalComptableRepository extends CassandraRepository<JournalComptable, JournalComptableKey> {
 
-    List<JournalComptable> findByTenantIdAndActifTrue(String tenantId);
+    List<JournalComptable> findByKeyTenantId(UUID tenantId);
 
-    Optional<JournalComptable> findByTenantIdAndCodeJournal(String tenantId, String codeJournal);
+    List<JournalComptable> findByKeyTenantIdAndActifTrue(UUID tenantId);
 
-    List<JournalComptable> findByTenantIdAndTypeJournal(String tenantId, String typeJournal);
+    Optional<JournalComptable> findByKeyTenantIdAndKeyId(UUID tenantId, UUID id);
 
-    boolean existsByTenantIdAndCodeJournal(String tenantId, String codeJournal);
+    Optional<JournalComptable> findByKeyTenantIdAndCodeJournal(UUID tenantId, String codeJournal);
+
+    List<JournalComptable> findByKeyTenantIdAndTypeJournal(UUID tenantId, String typeJournal);
+
+    boolean existsByKeyTenantIdAndCodeJournal(UUID tenantId, String codeJournal);
+
+    boolean existsByKeyTenantIdAndKeyId(UUID tenantId, UUID id);
 }

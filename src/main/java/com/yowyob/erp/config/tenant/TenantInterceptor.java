@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
+import java.util.UUID;
 
 // Intercepteur pour extraire le tenantId des requêtes
 @Component
@@ -25,7 +26,7 @@ public class TenantInterceptor implements HandlerInterceptor {
     public boolean preHandle(@NonNull HttpServletRequest request, 
                            @NonNull HttpServletResponse response, 
                            @NonNull Object handler) {
-        String tenantId = extractTenantId(request);
+        UUID tenantId = extractTenantId(request);
         TenantContext.setCurrentTenant(tenantId);
         log.debug("Tenant défini: {}", tenantId);
         return true;
@@ -38,21 +39,27 @@ public class TenantInterceptor implements HandlerInterceptor {
         TenantContext.clear();
     }
 
-    private String extractTenantId(HttpServletRequest request) {
+    private UUID extractTenantId(HttpServletRequest request) {
         // Extraction depuis le header
-        String tenantId = request.getHeader(tenantHeaderName);
-        
-        if (tenantId == null || tenantId.trim().isEmpty()) {
+        String tenantIdStr = request.getHeader(tenantHeaderName);
+
+        if (tenantIdStr == null || tenantIdStr.trim().isEmpty()) {
             // Extraction depuis JWT token (si disponible)
-            tenantId = extractFromJWT(request);
+            tenantIdStr = extractFromJWT(request);
         }
-        
-        if (tenantId == null || tenantId.trim().isEmpty()) {
+
+        if (tenantIdStr == null || tenantIdStr.trim().isEmpty()) {
             // Extraction depuis les paramètres de requête
-            tenantId = request.getParameter("tenantId");
+            tenantIdStr = request.getParameter("tenantId");
         }
-        
-        return tenantId != null ? tenantId.trim() : defaultTenant;
+
+        String finalTenantId = tenantIdStr != null && !tenantIdStr.trim().isEmpty() ? tenantIdStr.trim() : defaultTenant;
+        try {
+            return UUID.fromString(finalTenantId);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid tenantId format: {}. Using default tenantId.", finalTenantId);
+            return UUID.fromString(defaultTenant);
+        }
     }
     
     private String extractFromJWT(HttpServletRequest request) {

@@ -27,12 +27,8 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-cassandra</artifactId>
         </dependency>
-        <!-- ScyllaDB Driver -->
-        <dependency>
-            <groupId>com.scylladb</groupId>
-            <artifactId>scylla-spring-boot-starter</artifactId>
-            <version>3.2.0</version>
-        </dependency>
+        <!-- ScyllaDB Driver removed: missing artifact. 
+             Use the standard Cassandra driver provided by Spring Boot Starter Data Cassandra. -->
         <!-- Spring Boot WebFlux pour WebClient -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

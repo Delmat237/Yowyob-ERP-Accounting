@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -14,10 +15,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ContrepartieDto {
 
-    private Long id;
+    private UUID id;
 
     @NotNull(message = "L'ID de l'opération comptable est obligatoire")
-    private Long operationComptableId;
+    private UUID operationComptableId;
 
     @NotBlank(message = "Le compte est obligatoire")
     private String compte;
@@ -32,7 +33,7 @@ public class ContrepartieDto {
     private String typeMontant;
 
     @NotNull(message = "Le journal comptable est obligatoire")
-    private Long journalComptableId;
+    private UUID journalComptableId;
 
     private String notes;
 }

@@ -1,19 +1,14 @@
 package com.yowyob.erp.accounting.entity;
 
+import com.yowyob.erp.accounting.entityKey.JournalAuditKey;
 import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 
 @Table("journal_audit")
 @Data
@@ -22,8 +17,7 @@ public class JournalAudit implements Auditable {
     @PrimaryKey
     private JournalAuditKey key;
 
-    @Size(max = 100, message = "L'identifiant de l'écriture comptable ne doit pas dépasser 100 caractères")
-    private String ecritureComptableId;
+    private UUID ecritureComptableId;
 
     @NotBlank(message = "L'action ne peut pas être vide")
     @Pattern(regexp = "CREATION|VALIDATION|MODIFICATION", message = "L'action doit être CREATION, VALIDATION ou MODIFICATION")
@@ -56,27 +50,15 @@ public class JournalAudit implements Auditable {
     private String updatedBy;
 
     @Override
-    public String getTenantId() {
+    public UUID getTenantId() {
         return key.getTenantId();
     }
 
     @Override
-    public void setTenantId(String tenantId) {
+    public void setTenantId(UUID tenantId) {
         if (key == null) {
             key = new JournalAuditKey();
         }
         key.setTenantId(tenantId);
     }
-}
-
-@PrimaryKeyClass
-@Data
-class JournalAuditKey {
-    @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
-    @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
-    @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
-    private String tenantId;
-
-    @PrimaryKeyColumn(name = "id", ordinal = 1, type = CLUSTERED, ordering = CLUSTERING_ASC)
-    private UUID id;
 }

@@ -87,7 +87,7 @@ public class KafkaMessageService {
         sendMessage(auditLogsTopic, tenantId, message);
     }
 
-    private void sendMessage(String topic, String key, Object message) {
+    public void sendMessage(String topic, String key, Object message) {
         try {
             CompletableFuture<SendResult<String, Object>> future = 
                     kafkaTemplate.send(topic, key, message);

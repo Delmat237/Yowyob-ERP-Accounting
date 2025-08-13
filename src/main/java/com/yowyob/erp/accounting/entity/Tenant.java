@@ -1,5 +1,6 @@
-package com.yowyob.erp.entity;
+package com.yowyob.erp.accounting.entity;
 
+import com.yowyob.erp.accounting.entityKey.TenantKey;
 import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -14,7 +15,7 @@ import java.util.UUID;
 public class Tenant implements Auditable {
 
     @PrimaryKey
-    private UUID tenantId;
+    private TenantKey key;
 
     @NotBlank(message = "Le nom ne peut pas être vide")
     @Size(max = 255, message = "Le nom ne doit pas dépasser 255 caractères")
@@ -55,33 +56,23 @@ public class Tenant implements Auditable {
 
     private LocalDateTime updatedAt;
 
+    @Size(max = 255, message = "Créé par ne doit pas dépasser 255 caractères")
+    private String createdBy;
+
+    @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
+    private String updatedBy;
+
     @Override
-    public String getTenantId() {
-        return tenantId.toString();
+    public UUID getTenantId() {
+        return key.getTenantId();
     }
 
     @Override
-    public void setTenantId(String tenantId) {
-        this.tenantId = UUID.fromString(tenantId);
-    }
-
-    @Override
-    public String getCreatedBy() {
-        return null; // Non applicable pour Tenant
-    }
-
-    @Override
-    public void setCreatedBy(String createdBy) {
-        // Non applicable pour Tenant
-    }
-
-    @Override
-    public String getUpdatedBy() {
-        return null; // Non applicable pour Tenant
-    }
-
-    @Override
-    public void setUpdatedBy(String updatedBy) {
-        // Non applicable pour Tenant
+    public void setTenantId(UUID tenantId) {
+        if (key == null) {
+            key = new TenantKey();
+        }
+        key.setTenantId(tenantId);
     }
 }
+

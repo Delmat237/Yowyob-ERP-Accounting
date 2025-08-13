@@ -1,31 +1,35 @@
-// Repository Période Comptable
 package com.yowyob.erp.accounting.repository;
 
 import com.yowyob.erp.accounting.entity.PeriodeComptable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import com.yowyob.erp.accounting.entityKey.PeriodeComptableKey;
+
+import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.cassandra.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
 
 @Repository
-public interface PeriodeComptableRepository extends JpaRepository<PeriodeComptable, Long> {
+public interface PeriodeComptableRepository extends CassandraRepository<PeriodeComptable, PeriodeComptableKey> {
 
-    List<PeriodeComptable> findByTenantIdOrderByDateDebutDesc(String tenantId);
+    List<PeriodeComptable> findByKeyTenantIdOrderByDateDebutDesc(UUID tenantId);
 
-    Optional<PeriodeComptable> findByTenantIdAndCode(String tenantId, String code);
+    Optional<PeriodeComptable> findByKeyTenantIdAndCode(UUID tenantId, String code);
 
-    @Query("SELECT p FROM PeriodeComptable p WHERE p.tenantId = :tenantId AND :date BETWEEN p.dateDebut AND p.dateFin")
-    Optional<PeriodeComptable> findByTenantIdAndDateInRange(@Param("tenantId") String tenantId, 
-                                                          @Param("date") LocalDate date);
+    Optional<PeriodeComptable> findByKeyTenantIdAndKeyId(UUID tenantId, UUID periodeComptableId);    
 
-    List<PeriodeComptable> findByTenantIdAndClotureeFalse(String tenantId);
+    @Query("SELECT * FROM periode_comptable WHERE tenant_id = :tenantId AND date_debut <= :date AND date_fin >= :date ALLOW FILTERING")
+    Optional<PeriodeComptable> findByTenantIdAndDateInRange(UUID tenantId, LocalDate date);
 
-    @Query("SELECT p FROM PeriodeComptable p WHERE p.tenantId = :tenantId AND p.dateDebut >= :startDate AND p.dateFin <= :endDate")
-    List<PeriodeComptable> findByTenantIdAndPeriodRange(@Param("tenantId") String tenantId,
-                                                       @Param("startDate") LocalDate startDate,
-                                                       @Param("endDate") LocalDate endDate);
+    List<PeriodeComptable> findByKeyTenantIdAndClotureeFalse(UUID tenantId);
+
+    List<PeriodeComptable> findByKeyTenantId(UUID tenantId);
+
+
+    @Query("SELECT * FROM periode_comptable WHERE tenant_id = :tenantId AND date_debut >= :startDate AND date_fin <= :endDate ALLOW FILTERING")
+    List<PeriodeComptable> findByTenantIdAndPeriodRange(UUID tenantId, LocalDate startDate, LocalDate endDate);
 }

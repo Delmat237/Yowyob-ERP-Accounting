@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class PlanComptableDto {
 
-    private Long id;
+    private UUID id;
 
     @NotBlank(message = "Le numéro de compte est obligatoire")
     @Pattern(regexp = "^[1-8][0-9]{4,7}$", message = "Format de numéro de compte OHADA invalide")

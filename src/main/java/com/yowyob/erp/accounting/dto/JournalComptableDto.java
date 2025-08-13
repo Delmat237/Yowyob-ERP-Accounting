@@ -6,7 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import java.util.UUID;
 import java.time.LocalDateTime;
 
 @Data
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class JournalComptableDto {
 
-    private Long id;
+    private UUID id;
 
     @NotBlank(message = "Le code journal est obligatoire")
     private String codeJournal;

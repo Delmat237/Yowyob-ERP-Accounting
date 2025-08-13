@@ -1,19 +1,14 @@
 package com.yowyob.erp.accounting.entity;
 
+import com.yowyob.erp.accounting.entityKey.ContrepartieKey;
 import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 
 @Table("contrepartie")
 @Data
@@ -37,9 +32,8 @@ public class Contrepartie implements Auditable {
     @Pattern(regexp = "HT|TTC|TVA|PAU", message = "Le type de montant doit être HT, TTC, TVA ou PAU")
     private String typeMontant;
 
-    @NotBlank(message = "L'identifiant du journal comptable ne peut pas être vide")
-    @Size(max = 20, message = "L'identifiant du journal comptable ne doit pas dépasser 20 caractères")
-    private String journalComptableId;
+    @NotNull(message = "L'identifiant du journal comptable ne peut pas être nul")
+    private UUID journalComptableId;
 
     @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
@@ -55,31 +49,15 @@ public class Contrepartie implements Auditable {
     private String updatedBy;
 
     @Override
-    public String getTenantId() {
+    public UUID getTenantId() {
         return key.getTenantId();
     }
 
     @Override
-    public void setTenantId(String tenantId) {
+    public void setTenantId(UUID tenantId) {
         if (key == null) {
             key = new ContrepartieKey();
         }
         key.setTenantId(tenantId);
     }
-}
-
-@PrimaryKeyClass
-@Data
-class ContrepartieKey {
-    @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
-    @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
-    @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
-    private String tenantId;
-
-    @PrimaryKeyColumn(name = "operation_comptable_id", ordinal = 1, type = CLUSTERED)
-    @NotNull(message = "L'identifiant de l'opération comptable ne peut pas être null")
-    private UUID operationComptableId;
-
-    @PrimaryKeyColumn(name = "id", ordinal = 2, type = CLUSTERED, ordering = CLUSTERING_ASC)
-    private UUID id;
 }

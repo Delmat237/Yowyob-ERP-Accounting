@@ -1,24 +1,29 @@
 package com.yowyob.erp.accounting.repository;
 
 import com.yowyob.erp.accounting.entity.PlanComptable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import com.yowyob.erp.accounting.entityKey.PlanComptableKey;
+
+import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.cassandra.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
-public interface PlanComptableRepository extends JpaRepository<PlanComptable, Long> {
+public interface PlanComptableRepository extends CassandraRepository<PlanComptable, PlanComptableKey> {
 
-    List<PlanComptable> findByTenantIdAndActifTrue(String tenantId);
+    Optional<PlanComptable> findByKey(PlanComptableKey key);
 
-    Optional<PlanComptable> findByTenantIdAndNoCompte(String tenantId, String noCompte);
+    boolean existsByKeyTenantIdAndNoCompte(UUID tenantId, String noCompte);
 
-    @Query("SELECT p FROM PlanComptable p WHERE p.tenantId = :tenantId AND p.noCompte LIKE :prefix%")
-    List<PlanComptable> findByTenantIdAndNoCompteStartsWith(@Param("tenantId") String tenantId, 
-                                                           @Param("prefix") String prefix);
+    Optional<PlanComptable> findByKeyTenantIdAndNoCompte(UUID tenantId, String noCompte);
 
-    boolean existsByTenantIdAndNoCompte(String tenantId, String noCompte);
+    List<PlanComptable> findByKeyTenantIdAndActifTrue(UUID tenantId);
+
+    @Query("SELECT * FROM plan_comptable WHERE tenant_id = ?0 AND no_compte LIKE ?1%")
+    List<PlanComptable> findByKeyTenantIdAndNoComptePrefix(UUID tenantId, String prefix);
+
+    List<PlanComptable> findByKeyTenantIdAndClasse(UUID tenantId, Integer classe);
 }

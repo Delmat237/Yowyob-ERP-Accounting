@@ -1,40 +1,40 @@
-// DTO pour les périodes comptables
 package com.yowyob.erp.accounting.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.*;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class PeriodeComptableDto {
 
-    private Long id;
+    private UUID id;
 
-    @NotBlank(message = "Le code est obligatoire")
+    @NotBlank(message = "Le code ne peut pas être vide")
+    @Size(max = 50, message = "Le code ne doit pas dépasser 50 caractères")
+    @Pattern(regexp = "^\\d{4}-\\d{2}$", message = "Le code doit être au format YYYY-MM")
     private String code;
 
-    @NotNull(message = "La date de début est obligatoire")
+    @NotNull(message = "La date de début ne peut pas être nulle")
     private LocalDate dateDebut;
 
-    @NotNull(message = "La date de fin est obligatoire")
+    @NotNull(message = "La date de fin ne peut pas être nulle")
     private LocalDate dateFin;
 
-    private Boolean cloturee = false;
+    @NotNull(message = "Le statut clôturé ne peut pas être nul")
+    private Boolean cloturee;
 
     private LocalDate dateCloture;
 
+    @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
 }

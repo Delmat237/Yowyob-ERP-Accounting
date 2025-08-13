@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -20,7 +21,7 @@ public class SynchronizationService {
      * Synchronise les données offline avec le serveur central
      */
     @Async("taskExecutor")
-    public CompletableFuture<Void> synchronizeOfflineData(String tenantId) {
+    public CompletableFuture<Void> synchronizeOfflineData(UUID tenantId) {
         log.info("Début de la synchronisation offline pour le tenant: {}", tenantId);
         
         try {
@@ -46,7 +47,7 @@ public class SynchronizationService {
     /**
      * Vérifie la connectivité réseau et déclenche la synchronisation
      */
-    public void checkAndSync(String tenantId) {
+    public void checkAndSync(UUID tenantId) {
         // TODO: Vérifier la connectivité réseau
         boolean isOnline = true; // Simulation
         

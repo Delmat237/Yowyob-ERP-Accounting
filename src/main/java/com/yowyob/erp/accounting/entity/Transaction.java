@@ -1,19 +1,14 @@
 package com.yowyob.erp.accounting.entity;
 
+import com.yowyob.erp.accounting.entityKey.TransactionKey;
 import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-
-import static org.springframework.data.cassandra.core.cql.Ordering.CLUSTERING_ASC;
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.CLUSTERED;
-import static org.springframework.data.cassandra.core.cql.PrimaryKeyType.PARTITIONED;
 
 @Table("transaction")
 @Data
@@ -25,8 +20,7 @@ public class Transaction implements Auditable {
     @Size(max = 100, message = "Le numéro de reçu ne doit pas dépasser 100 caractères")
     private String numeroRecu;
 
-    @Size(max = 100, message = "L'identifiant de l'opération comptable ne doit pas dépasser 100 caractères")
-    private String operationComptableId;
+    private UUID operationComptableId;
 
     @NotNull(message = "Le montant de la transaction ne peut pas être nul")
     @PositiveOrZero(message = "Le montant de la transaction doit être positif ou zéro")
@@ -55,8 +49,7 @@ public class Transaction implements Auditable {
     @NotNull(message = "Le statut comptabilisé ne peut pas être nul")
     private Boolean estComptabilisee = false;
 
-    @Size(max = 100, message = "L'identifiant de l'écriture comptable ne doit pas dépasser 100 caractères")
-    private String ecritureComptableId;
+    private UUID ecritureComptableId;
 
     @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
@@ -72,27 +65,15 @@ public class Transaction implements Auditable {
     private String updatedBy;
 
     @Override
-    public String getTenantId() {
+    public UUID getTenantId() {
         return key.getTenantId();
     }
 
     @Override
-    public void setTenantId(String tenantId) {
+    public void setTenantId(UUID tenantId) {
         if (key == null) {
             key = new TransactionKey();
         }
         key.setTenantId(tenantId);
     }
-}
-
-@PrimaryKeyClass
-@Data
-class TransactionKey {
-    @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PARTITIONED)
-    @NotBlank(message = "L'identifiant du tenant ne peut pas être vide")
-    @Size(max = 255, message = "L'identifiant du tenant ne doit pas dépasser 255 caractères")
-    private String tenantId;
-
-    @PrimaryKeyColumn(name = "id", ordinal = 1, type = CLUSTERED, ordering = CLUSTERING_ASC)
-    private UUID id;
 }

@@ -1,0 +1,170 @@
+% Configuration de la classe de document et des paquets nécessaires
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{noto}
+
+% Configuration du paquet listings pour les extraits de code
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{gray},
+    showstringspaces=false
+}
+
+% Définition du titre, de l'auteur et de la date
+\title{Rapport de Développement : Module Comptable du Système ERP}
+\author{Équipe de Développement Yowyob ERP}
+\date{13 août 2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Ce rapport documente le développement, l'intégration et les tests du module comptable du système ERP Yowyob, en se concentrant sur le \texttt{PlanComptableInitializationService}, \texttt{EcritureComptableController}, \texttt{OperationComptableController}, \texttt{PeriodeComptableController} et \texttt{PlanComptableController}. Le module respecte les normes comptables OHADA, prend en charge une architecture multi-tenant, utilise ScyllaDB pour la persistance des données, Kafka pour le streaming d'événements et Swagger UI pour la documentation des API. L'implémentation inclut l'initialisation des services, les API RESTful, les configurations de sécurité et les procédures de test complètes.
+\end{abstract}
+
+\section{Introduction}
+% Description de l'objectif et de la portée du module comptable
+Le module comptable du système ERP Yowyob est conçu pour gérer les opérations financières conformément aux normes de l'Organisation pour l'Harmonisation en Afrique du Droit des Affaires (OHADA). Le module prend en charge une architecture multi-tenant, garantissant l'isolation des données entre les tenants, et s'intègre avec ScyllaDB pour un stockage performant, Kafka pour le traitement asynchrone des événements et Swagger UI pour la documentation des API. Ce rapport détaille l'implémentation des composants clés, y compris l'initialisation du plan comptable OHADA, les contrôleurs REST pour les écritures, opérations, périodes et comptes comptables, ainsi que la stratégie de test pour garantir la fiabilité et la conformité.
+
+\section{Architecture du Système}
+% Présentation des composants architecturaux
+Le module comptable est construit avec Spring Boot 3.3.x, avec les composants clés suivants :
+\begin{itemize}
+    \item \textbf{ScyllaDB} : Une base de données NoSQL distribuée pour le stockage des données comptables avec une haute disponibilité et une faible latence.
+    \item \textbf{Kafka} : Streaming d'événements pour la communication asynchrone, permettant l'audit et le traitement événementiel.
+    \item \textbf{Spring Security} : Authentification de base avec contrôle d'accès basé sur les rôles (ADMIN, ACCOUNTANT, USER).
+    \item \textbf{Swagger UI} : Documentation des API accessible à \texttt{http://localhost:8081/swagger-ui}.
+    \item \textbf{Liquibase} : Gestion des schémas de base de données pour les tables et vues matérialisées ScyllaDB.
+\end{itemize}
+
+\section{Détails de l'Implémentation}
+% Description détaillée de l'implémentation de chaque composant
+
+\subsection{PlanComptableInitializationService}
+% Description du service d'initialisation
+Le \texttt{PlanComptableInitializationService} est un \texttt{CommandLineRunner} Spring qui initialise le plan comptable OHADA pour chaque tenant au démarrage de l'application. Il crée des comptes standard (par exemple, 101000 pour le capital, 401000 pour les fournisseurs, 701000 pour les ventes) pour les classes OHADA 1 à 7, en vérifiant l'absence de doublons via le \texttt{PlanComptableRepository}. Les fonctionnalités clés incluent :
+\begin{itemize}
+    \item \textbf{Conformité OHADA} : Les comptes respectent la convention de numérotation OHADA (commençant par 1 à 7).
+    \item \textbf{Isolation des Tenants} : Utilise \texttt{TenantContext} pour définir des contextes spécifiques aux tenants.
+    \item \textbf{Audit} : Les actions sont enregistrées via \texttt{JournalAuditRepository} et publiées sur les topics Kafka (\texttt{plan.comptable.created}).
+    \item \textbf{Gestion des Erreurs} : Ignore les comptes en doublon avec des journaux d'avertissement.
+\end{itemize}
+
+\subsection{EcritureComptableController}
+% Description du contrôleur des écritures comptables
+Le \texttt{EcritureComptableController} fournit des endpoints RESTful pour gérer les écritures comptables (\texttt{ecriture_comptable}). Les mises à jour incluent :
+\begin{itemize}
+    \item \textbf{Format de Réponse} : Utilisation de \texttt{ApiResponse} pour des réponses standardisées (succès/erreur).
+    \item \textbf{Sécurité} : Implémentation de \texttt{@SecurityRequirement("BasicAuth")} et \texttt{@PreAuthorize} pour les rôles (ADMIN, ACCOUNTANT, USER).
+    \item \textbf{Gestion des Dates} : Mise à jour de \texttt{searchEcritures} pour utiliser \texttt{LocalDateTime} pour des plages de dates précises et ajout d'une validation (\texttt{startDate} $\leq$ \texttt{endDate}).
+    \item \textbf{Annotations Swagger} : Améliorées avec \texttt{@ApiResponses} pour des codes de réponse détaillés (par exemple, 201, 400, 401, 403, 404).
+    \item \textbf{Endpoints} : Création, validation, pagination, récupération des écritures non validées, recherche par date/journal et génération automatique d'écritures.
+\end{itemize}
+
+\subsection{OperationComptableController}
+% Description du contrôleur des opérations comptables
+Le \texttt{OperationComptableController} gère les opérations comptables (par exemple, achats, ventes) avec des endpoints pour les opérations CRUD et les recherches par type/mode. Les fonctionnalités incluent :
+\begin{itemize}
+    \item \textbf{Intégration OHADA} : Validation du \texttt{comptePrincipal} contre \texttt{PlanComptable} (par exemple, 401000 pour les fournisseurs).
+    \item \textbf{Format de Réponse} : Utilisation de \texttt{ApiResponse} pour la cohérence.
+    \item \textbf{Sécurité} : Application d'un contrôle d'accès basé sur les rôles (ADMIN, ACCOUNTANT, USER).
+    \item \textbf{Endpoints} : Création, récupération, liste, recherche par type/mode, mise à jour et suppression des opérations.
+\end{itemize}
+
+\subsection{PeriodeComptableController}
+% Description du contrôleur des périodes comptables
+Le \texttt{PeriodeComptableController} gère les périodes comptables, garantissant que les écritures sont créées dans des périodes valides et non clôturées. Les mises à jour incluent :
+\begin{itemize}
+    \item \textbf{Validation des Dates} : Ajout d'une validation pour les plages de dates dans \texttt{getPeriodesByRange} (\texttt{startDate} $\leq$ \texttt{endDate}).
+    \item \textbf{Format de Réponse} : Utilisation de \texttt{ApiResponse}.
+    \item \textbf{Endpoints} : Création, récupération, liste, récupération par code/date, liste des périodes non clôturées, requêtes par plage, mise à jour, clôture et suppression des périodes.
+\end{itemize}
+
+\subsection{PlanComptableController}
+% Description du contrôleur du plan comptable
+Le \texttt{PlanComptableController} gère le plan comptable OHADA avec des endpoints pour :
+\begin{itemize}
+    \item \textbf{Opérations CRUD} : Création, récupération, liste, mise à jour et suppression des comptes.
+    \item \textbf{Filtrage par Classe} : Récupération des comptes par classe OHADA (1 à 7) avec validation.
+    \item \textbf{Conformité OHADA} : Application des motifs de numérotation des comptes (par exemple, \texttt{^[1-7][0-9]\{4,\}\$}).
+    \item \textbf{Sécurité} : Utilisation de l'authentification de base et du contrôle d'accès basé sur les rôles.
+\end{itemize}
+
+\section{Schéma de la Base de Données}
+% Définition du schéma ScyllaDB
+Le schéma ScyllaDB comprend des tables et des vues matérialisées pour des requêtes efficaces :
+\begin{itemize}
+    \item \texttt{plan_comptable} : Stocke les comptes OHADA avec \texttt{tenant_id} et \texttt{no_compte} comme clés primaires.
+    \item \texttt{ecriture_comptable} : Stocke les écritures comptables avec des champs comme \texttt{numero_ecriture}, \texttt{date_ecriture} et \texttt{validee}.
+    \item \texttt{operation_comptable} : Stocke les opérations avec une vue matérialisée (\texttt{operations_comptable_by_type_and_mode}) pour les requêtes par type/mode.
+    \item \texttt{periode_comptable} : Stocke les périodes avec une vue matérialisée (\texttt{periode_comptable_by_date}) pour les requêtes basées sur les dates.
+    \item \texttt{journal_audit} : Enregistre toutes les actions pour l'audit.
+\end{itemize}
+Le schéma est géré via des changelogs Liquibase, garantissant des déploiements cohérents.
+
+\section{Intégration}
+% Explication de l'intégration avec les autres composants
+Les composants s'intègrent comme suit :
+\begin{itemize}
+    \item \textbf{PlanComptableInitializationService} : Remplit \texttt{plan_comptable} au démarrage, utilisé par \texttt{OperationComptableService} et \texttt{EcritureComptableService} pour la validation des comptes.
+    \item \textbf{EcritureComptableController} : S'intègre avec \texttt{PeriodeComptableService} pour valider les périodes et \texttt{OperationComptableService} pour les écritures automatiques.
+    \item \textbf{Kafka} : Publie des événements (par exemple, \texttt{plan.comptable.created}, \texttt{ecriture.comptable.validated}) pour un traitement en aval.
+    \item \textbf{Swagger UI} : Documente tous les endpoints, accessible à \texttt{http://localhost:8081/swagger-ui}.
+    \item \textbf{Sécurité} : Applique l'authentification de base (\texttt{admin/admin123}, \texttt{accountant/accountant123}, \texttt{user/user123}).
+\end{itemize}
+
+\section{Tests}
+% Présentation de la stratégie de test
+Le module a été testé comme suit :
+\begin{enumerate}
+    \item \textbf{Configuration des Dépendances} :
+    \begin{lstlisting}[language=bash]
+docker run -p 9092:9092 -e KAFKA_CFG_NODE_ID=0 ... apache/kafka:latest
+docker run -p 9042:9042 --name scylla -d scylladb/scylla
+docker run -p 6379:6379 redis:6
+    \end{lstlisting}
+    \item \textbf{Création des Topics Kafka} :
+    \begin{lstlisting}[language=bash]
+docker exec kafka kafka-topics --create --topic plan.comptable.created ...
+    \end{lstlisting}
+    \item \textbf{Exécution de l'Application} :
+    \begin{lstlisting}[language=bash]
+mvn clean install
+mvn spring-boot:run
+    \end{lstlisting}
+    \item \textbf{Tests avec Swagger UI} : Test des endpoints via \texttt{http://localhost:8081/swagger-ui} avec les identifiants \texttt{admin/admin123}.
+    \item \textbf{Vérification des Données} : Requêtes sur les tables ScyllaDB (\texttt{SELECT * FROM yowyob_erp.plan_comptable;}) et consommation des événements Kafka.
+\end{enumerate}
+
+\section{Défis et Solutions}
+% Présentation des défis rencontrés
+\begin{itemize}
+    \item \textbf{Défi} : Garantir la conformité OHADA pour les numéros de compte.
+    \item \textbf{Solution} : Implémentation d'une validation regex (\texttt{^[1-7][0-9]\{4,\}\$}) dans \texttt{PlanComptableDto}.
+    \item \textbf{Défi} : Éviter les doublons de comptes lors de l'initialisation.
+    \item \textbf{Solution} : Ajout de vérifications dans \texttt{PlanComptableService} pour ignorer les comptes existants.
+    \item \textbf{Défi} : Précision des dates dans \texttt{EcritureComptableController}.
+    \item \textbf{Solution} : Mise à jour vers \texttt{LocalDateTime} et ajout d'une validation des plages de dates.
+\end{itemize}
+
+\section{Conclusion}
+% Résumé des travaux
+Le module comptable implémente avec succès la gestion des comptes conforme à l'OHADA, le traitement des écritures, la gestion des opérations et des périodes. Le \texttt{PlanComptableInitializationService} garantit un plan comptable standardisé, tandis que les contrôleurs REST fournissent des API robustes avec sécurité, documentation et gestion des erreurs. Le module est entièrement intégré avec ScyllaDB, Kafka et Swagger UI, et a été testé pour sa fiabilité. Les futures améliorations pourraient inclure des contrôleurs supplémentaires (par exemple, \texttt{JournalComptableController}) et des optimisations de performance pour les tenants à haut volume.
+
+\end{document}

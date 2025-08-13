@@ -22,7 +22,7 @@ public class AccountingKafkaListener {
     @KafkaListener(topics = "invoice.events", groupId = "${spring.kafka.consumer.group-id}")
     public void handleInvoiceEvents(@Payload KafkaMessage message,
                                    @Header(KafkaHeaders.RECEIVED_TOPIC) String topic,
-                                   @Header(KafkaHeaders.RECEIVED_PARTITION_ID) int partition,
+                                   @Header(KafkaHeaders.RECEIVED_PARTITION) int partition,
                                    Acknowledgment acknowledgment) {
         try {
             log.info("Réception d'un événement de facture: {} pour le tenant: {}", 

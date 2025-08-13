@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -14,13 +15,13 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class DetailEcritureDto {
 
-    private Long id;
+    private UUID id;
 
     @NotNull(message = "L'ID de l'écriture comptable est obligatoire")
-    private Long ecritureComptableId;
+    private UUID ecritureComptableId;
 
     @NotNull(message = "Le plan comptable est obligatoire")
-    private Long planComptableId;
+    private UUID planComptableId;
 
     private String planComptableNumero;
 

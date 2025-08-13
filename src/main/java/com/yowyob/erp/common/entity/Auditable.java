@@ -1,10 +1,11 @@
 package com.yowyob.erp.common.entity;
 
+import java.util.UUID;
 import java.time.LocalDateTime;
 
 public interface Auditable {
-    String getTenantId();
-    void setTenantId(String tenantId);
+    UUID getTenantId();
+    void setTenantId(UUID tenantId);
     LocalDateTime getCreatedAt();
     void setCreatedAt(LocalDateTime createdAt);
     LocalDateTime getUpdatedAt();

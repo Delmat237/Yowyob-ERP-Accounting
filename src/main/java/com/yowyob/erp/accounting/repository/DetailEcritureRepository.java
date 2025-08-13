@@ -1,33 +1,35 @@
-// Repository Détail Écriture
 package com.yowyob.erp.accounting.repository;
 
 import com.yowyob.erp.accounting.entity.DetailEcriture;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import com.yowyob.erp.accounting.entityKey.DetailEcritureKey;
+
+import org.springframework.data.cassandra.repository.CassandraRepository;
+import org.springframework.data.cassandra.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
-public interface DetailEcritureRepository extends JpaRepository<DetailEcriture, Long> {
+public interface DetailEcritureRepository extends CassandraRepository<DetailEcriture, DetailEcritureKey> {
 
-    List<DetailEcriture> findByTenantIdAndEcritureComptable_Id(String tenantId, Long ecritureId);
+    List<DetailEcriture> findByKeyTenantIdAndKeyEcritureComptableId(UUID tenantId, UUID ecritureComptableId);
 
-    @Query("SELECT d FROM DetailEcriture d WHERE d.tenantId = :tenantId AND d.planComptable.noCompte = :noCompte")
-    List<DetailEcriture> findByTenantIdAndAccountNumber(@Param("tenantId") String tenantId,
-                                                       @Param("noCompte") String noCompte);
+    List<DetailEcriture> findByKeyTenantId(UUID tenantId);
 
-    @Query("SELECT d FROM DetailEcriture d JOIN d.ecritureComptable e WHERE d.tenantId = :tenantId AND e.dateEcriture BETWEEN :startDate AND :endDate")
-    List<DetailEcriture> findByTenantIdAndDateRange(@Param("tenantId") String tenantId,
-                                                   @Param("startDate") LocalDate startDate,
-                                                   @Param("endDate") LocalDate endDate);
+    // Requires secondary index on plan_comptable_id
+    List<DetailEcriture> findByKeyTenantIdAndPlanComptableId(UUID tenantId, UUID planComptableId);
 
-    @Query("SELECT SUM(d.montantDebit) - SUM(d.montantCredit) FROM DetailEcriture d WHERE d.tenantId = :tenantId AND d.planComptable.noCompte = :noCompte")
-    Double calculateAccountBalance(@Param("tenantId") String tenantId, @Param("noCompte") String noCompte);
+    // Balance calculation (application-side for ScyllaDB)
+    default Double calculateAccountBalance(UUID tenantId, UUID planComptableId) {
+        List<DetailEcriture> entries = findByKeyTenantIdAndPlanComptableId(tenantId, planComptableId);
+        return entries.stream()
+                .mapToDouble(e -> e.getMontantDebit() - e.getMontantCredit())
+                .sum();
+    }
 
-    @Query("SELECT d FROM DetailEcriture d WHERE d.tenantId = :tenantId AND d.planComptable.noCompte LIKE :accountPrefix%")
-    List<DetailEcriture> findByTenantIdAndAccountPrefix(@Param("tenantId") String tenantId,
-                                                       @Param("accountPrefix") String accountPrefix);
+    // Date range query (requires materialized view)
+    @Query("SELECT * FROM detail_ecriture_by_date WHERE tenant_id = :tenantId AND date_ecriture >= :startDate AND date_ecriture <= :endDate")
+    List<DetailEcriture> findByTenantIdAndDateRange(UUID tenantId, LocalDateTime startDate, LocalDateTime endDate);
 }

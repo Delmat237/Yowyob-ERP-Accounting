@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -18,7 +19,7 @@ import java.util.List;
 @AllArgsConstructor
 public class EcritureComptableDto {
 
-    private Long id;
+    private UUID id;
 
     private String numeroEcriture;
 
@@ -29,12 +30,12 @@ public class EcritureComptableDto {
     private LocalDate dateEcriture;
 
     @NotNull(message = "Le journal comptable est obligatoire")
-    private Long journalComptableId;
+    private UUID journalComptableId;
 
     private String journalComptableLibelle;
 
     @NotNull(message = "La période comptable est obligatoire")
-    private Long periodeComptableId;
+    private UUID periodeComptableId;
 
     private String periodeComptableCode;
 

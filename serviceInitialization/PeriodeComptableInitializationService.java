@@ -1,0 +1,41 @@
+package com.yowyob.erp.accounting.serviceInitialization;
+
+import com.yowyob.erp.accounting.dto.PeriodeComptableDto;
+import com.yowyob.erp.accounting.service.PeriodeComptableService;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Service
+public class PeriodeComptableInitializationService implements CommandLineRunner {
+
+    private final PeriodeComptableService periodeComptableService;
+
+    public PeriodeComptableInitializationService(PeriodeComptableService periodeComptableService) {
+        this.periodeComptableService = periodeComptableService;
+    }
+
+    @Override
+    public void run(String... args) {
+        UUID tenantId = UUID.randomUUID(); // Replace with actual tenant ID
+        for (int month = 1; month <= 12; month++) {
+            String code = String.format("2025-%02d", month);
+            LocalDate startDate = LocalDate.of(2025, month, 1);
+            LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
+            PeriodeComptableDto dto = PeriodeComptableDto.builder()
+                    .code(code)
+                    .dateDebut(startDate)
+                    .dateFin(endDate)
+                    .cloturee(false)
+                    .build();
+            try {
+                periodeComptableService.createPeriodeComptable(dto);
+            } catch (IllegalArgumentException e) {
+                // Skip if period already exists
+            }
+        }
+    }
+}
