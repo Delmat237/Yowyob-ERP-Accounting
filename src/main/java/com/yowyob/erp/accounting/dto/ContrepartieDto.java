@@ -23,6 +23,7 @@ public class ContrepartieDto {
     @NotBlank(message = "Le compte est obligatoire")
     private String compte;
 
+    @Builder.Default
     @NotNull(message = "Le statut du compte tiers est obligatoire")
     private Boolean estCompteTiers = false;
 

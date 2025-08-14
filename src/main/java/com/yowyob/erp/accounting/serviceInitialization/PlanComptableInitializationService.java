@@ -1,7 +1,7 @@
-package com.yowyob.erp.accounting.service;
+package com.yowyob.erp.accounting.serviceInitialization;
 
 import com.yowyob.erp.accounting.entity.PlanComptable;
-import com.yowyob.erp.accounting.entity.PlanComptableKey;
+import com.yowyob.erp.accounting.entityKey.PlanComptableKey;
 import com.yowyob.erp.accounting.repository.PlanComptableRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;

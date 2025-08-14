@@ -28,6 +28,7 @@ public class PlanComptableDto {
 
     private String notes;
 
+    @Builder.Default
     private Boolean actif = true;
 
     private LocalDateTime createdAt;

@@ -26,11 +26,13 @@ public class TransactionDto {
 
     private String montantLettre;
 
+    @Builder.Default
     private Boolean estMontantTTC = true;
 
     @NotNull(message = "La date de transaction est obligatoire")
     private LocalDateTime dateTransaction;
 
+    @Builder.Default
     private Boolean estValidee = false;
 
     private LocalDateTime dateValidation;
@@ -39,6 +41,7 @@ public class TransactionDto {
 
     private String caissier;
 
+    @Builder.Default
     private Boolean estComptabilisee = false;
 
     private String notes;

@@ -43,6 +43,8 @@ public class PlanComptable implements Auditable {
     @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
     private String updatedBy;
 
+    private Integer classe;
+    
     @Override
     public UUID getTenantId() {
         return key.getTenantId();

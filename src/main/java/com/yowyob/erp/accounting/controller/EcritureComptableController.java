@@ -10,8 +10,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,7 +63,7 @@ public class EcritureComptableController {
         return ResponseEntity.ok(ApiResponseWrapper.success(validated, "Écriture comptable validée"));
     }
 
-    @Operation(summary = "Récupérer toutes les écritures comptables avec pagination", description = "Liste paginée des écritures comptables")
+    @Operation(summary = "Récupérer toutes les écritures comptables", description = "Liste complète des écritures comptables")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Liste des écritures comptables"),
             @ApiResponse(responseCode = "401", description = "Non autorisé"),
@@ -73,8 +71,8 @@ public class EcritureComptableController {
     })
     @GetMapping
     @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
-    public ResponseEntity<ApiResponseWrapper<Page<EcritureComptableDto>>> getAllEcritures(Pageable pageable) {
-        Page<EcritureComptableDto> ecritures = ecritureService.getAllEcritures(pageable);
+    public ResponseEntity<ApiResponseWrapper<List<EcritureComptableDto>>> getAllEcritures() {
+        List<EcritureComptableDto> ecritures = ecritureService.getAllEcritures();
         return ResponseEntity.ok(ApiResponseWrapper.success(ecritures));
     }
 

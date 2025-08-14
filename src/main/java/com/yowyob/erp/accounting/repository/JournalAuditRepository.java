@@ -19,7 +19,7 @@ public interface JournalAuditRepository extends CassandraRepository<JournalAudit
 
     List<JournalAudit> findByKeyTenantIdAndAction(UUID tenantId, String action);
 
-    List<JournalAudit> findByKeyTenantIdAndDateActionRange(UUID tenantId, LocalDateTime startDate, LocalDateTime endDate);
+    List<JournalAudit> findByKeyTenantIdAndDateAction(UUID tenantId, LocalDateTime startDate, LocalDateTime endDate);
 
     List<JournalAudit> findByKeyTenantIdAndEcritureComptableId(UUID tenantId, UUID ecritureComptableId);
 }

@@ -14,9 +14,6 @@ import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -132,19 +129,14 @@ public class EcritureComptableService {
         return mapToDto(validated);
     }
 
-    public Page<EcritureComptableDto> getAllEcritures(Pageable pageable) {
+    public List<EcritureComptableDto> getAllEcritures() {
         UUID tenantId = TenantContext.getCurrentTenant();
         logger.info("Fetching all ecritures comptables for tenant: {}", tenantId);
 
         List<EcritureComptable> ecritures = ecritureRepository.findByKeyTenantId(tenantId);
-        List<EcritureComptableDto> dtos = ecritures.stream()
+        return ecritures.stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
-
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), dtos.size());
-        List<EcritureComptableDto> pagedDtos = dtos.subList(start, end);
-        return new PageImpl<>(pagedDtos, pageable, dtos.size());
     }
 
     public List<EcritureComptableDto> getNonValidatedEcritures() {

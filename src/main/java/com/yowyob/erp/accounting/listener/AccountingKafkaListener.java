@@ -30,14 +30,9 @@ public class AccountingKafkaListener {
 
             // Traitement selon le type d'événement
             switch (message.getEventType()) {
-                case "INVOICE_CREATED":
-                    handleInvoiceCreated(message);
-                    break;
-                case "INVOICE_PAID":
-                    handleInvoicePaid(message);
-                    break;
-                default:
-                    log.warn("Type d'événement non traité: {}", message.getEventType());
+                case "INVOICE_CREATED" -> handleInvoiceCreated(message);
+                case "INVOICE_PAID" -> handleInvoicePaid(message);
+                default -> log.warn("Type d'événement non traité: {}", message.getEventType());
             }
 
             acknowledgment.acknowledge();

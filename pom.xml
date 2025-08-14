@@ -22,6 +22,24 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- Dépendance Spring Boot pour Liquibase -->
+    <dependency>
+        <groupId>org.liquibase</groupId>
+        <artifactId>liquibase-core</artifactId>
+    </dependency>
+    <!-- Dépendance pour Liquibase Cassandra -->
+    <dependency>
+        <groupId>org.liquibase.ext</groupId>
+        <artifactId>liquibase-cassandra</artifactId>
+        <version>4.29.2</version>
+    </dependency>
+    <!-- Dépendance pour le pilote DataStax Cassandra -->
+    <dependency>
+        <groupId>com.datastax.oss</groupId>
+        <artifactId>java-driver-core</artifactId>
+        <version>4.17.0</version>
+    </dependency>
+    
         <!-- Spring Data Cassandra pour ScyllaDB -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

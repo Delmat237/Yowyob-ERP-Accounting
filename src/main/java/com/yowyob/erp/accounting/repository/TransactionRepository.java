@@ -1,11 +1,8 @@
-// Repository Transaction
 package com.yowyob.erp.accounting.repository;
 
 import com.yowyob.erp.accounting.entity.Transaction;
 import com.yowyob.erp.accounting.entityKey.TransactionKey;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.cassandra.repository.CassandraRepository;
 import org.springframework.data.cassandra.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,8 +18,6 @@ import java.util.UUID;
 public interface TransactionRepository extends  CassandraRepository<Transaction, TransactionKey> {
 
     List<Transaction> findByTenantIdOrderByDateTransactionDesc(UUID tenantId);
-
-    Page<Transaction> findByTenantIdOrderByDateTransactionDesc(UUID tenantId, Pageable pageable);
 
     Optional<Transaction> findByTenantIdAndNumeroRecu(UUID tenantId, String numeroRecu);
 

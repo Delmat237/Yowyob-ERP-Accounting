@@ -5,6 +5,8 @@ import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,8 +16,9 @@ import java.util.UUID;
 @Data
 public class EcritureComptable implements Auditable {
 
-    @NotNull
+    @PrimaryKey
     private EcritureComptableKey key;
+
 
     @NotBlank(message = "Le numéro d'écriture ne peut pas être vide")
     @Size(max = 100, message = "Le numéro d'écriture ne doit pas dépasser 100 caractères")

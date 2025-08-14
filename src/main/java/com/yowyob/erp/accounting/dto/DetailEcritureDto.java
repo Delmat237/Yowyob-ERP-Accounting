@@ -33,8 +33,10 @@ public class DetailEcritureDto {
     @NotBlank(message = "Le sens est obligatoire")
     private String sens;
 
+    @Builder.Default
     private Double montantDebit = 0.0;
 
+    @Builder.Default
     private Double montantCredit = 0.0;
 
     private String notes;
