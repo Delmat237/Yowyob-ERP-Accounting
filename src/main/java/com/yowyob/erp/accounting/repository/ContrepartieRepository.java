@@ -9,10 +9,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
+
 @Repository
 public interface ContrepartieRepository extends CassandraRepository<Contrepartie, ContrepartieKey> {
 
     List<Contrepartie> findByKeyTenantIdAndKeyOperationComptableId(UUID tenantId, UUID operationComptableId);
 
-    List<Contrepartie> findByKeyTenantIdAndKeyCompte(UUID tenantId, String compte);
+    List<Contrepartie> findByKeyTenantIdAndCompte(UUID tenantId, String compte);
 }

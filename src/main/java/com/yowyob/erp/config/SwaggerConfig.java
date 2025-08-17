@@ -10,8 +10,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class SwaggerConfig {
-    private static final String SECURITY_SCHEME_NAME = "bearerAuth";
-
     /**
      * Configures the public API group for Swagger documentation.
      * Includes all endpoints under /api/**.

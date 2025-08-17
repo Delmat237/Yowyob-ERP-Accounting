@@ -7,6 +7,9 @@ import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import java.io.Serializable;
 import java.util.UUID;
 
+import lombok.Data;
+
+@Data
 @PrimaryKeyClass
 public class JournalComptableKey implements Serializable {
 
@@ -20,26 +23,12 @@ public class JournalComptableKey implements Serializable {
     @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
     private UUID tenantId;
 
-    @PrimaryKeyColumn(name = "id", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
+    @PrimaryKeyColumn(name = "id", type = PrimaryKeyType.CLUSTERED, ordinal = 0)
     private UUID id;
 
-    // Getters
-    public UUID getTenantId() {
-        return tenantId;
-    }
+    @PrimaryKeyColumn(name = "code_journal", type = PrimaryKeyType.CLUSTERED, ordinal = 1)
+    private String codeJournal;
 
-    public UUID getId() {
-        return id;
-    }
-
-    // Setters
-    public void setTenantId(UUID tenantId) {
-        this.tenantId = tenantId;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
-    }
 
     // equals and hashCode
     @Override

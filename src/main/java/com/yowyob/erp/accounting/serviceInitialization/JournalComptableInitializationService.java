@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Service
+//@Service
 public class JournalComptableInitializationService implements CommandLineRunner {
 
     private final JournalComptableRepository journalComptableRepository;
@@ -28,13 +28,13 @@ public class JournalComptableInitializationService implements CommandLineRunner 
     }
 
     private void createJournalIfNotExists(UUID tenantId, String codeJournal, String libelle, String typeJournal) {
-        if (!journalComptableRepository.existsByKeyTenantIdAndCodeJournal(tenantId, codeJournal)) {
+        if (!journalComptableRepository.existsByKeyTenantIdAndKeyCodeJournal(tenantId, codeJournal)) {
             JournalComptable journal = new JournalComptable();
             JournalComptableKey key = new JournalComptableKey();
             key.setTenantId(tenantId);
             key.setId(UUID.randomUUID());
             journal.setKey(key);
-            journal.setCodeJournal(codeJournal);
+            journal.getKey().setCodeJournal(codeJournal);
             journal.setLibelle(libelle);
             journal.setTypeJournal(typeJournal);
             journal.setActif(true);

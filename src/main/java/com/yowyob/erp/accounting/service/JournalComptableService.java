@@ -43,8 +43,8 @@ public class JournalComptableService {
         UUID tenantId = TenantContext.getCurrentTenant();
         String currentUser = TenantContext.getCurrentUser();
 
-        if (journalComptableRepository.existsByKeyTenantIdAndCodeJournal(tenantId, journalComptable.getCodeJournal())) {
-            throw new IllegalArgumentException("Code journal déjà utilisé : " + journalComptable.getCodeJournal());
+        if (journalComptableRepository.existsByKeyTenantIdAndKeyCodeJournal(tenantId, journalComptable.getKey().getCodeJournal())) {
+            throw new IllegalArgumentException("Code journal déjà utilisé : " + journalComptable.getKey().getCodeJournal());
         }
 
         JournalComptableKey key = new JournalComptableKey();
@@ -57,7 +57,7 @@ public class JournalComptableService {
         journalComptable.setUpdatedBy(currentUser != null ? currentUser : "system");
 
         JournalComptable savedJournalComptable = journalComptableRepository.save(journalComptable);
-        logAudit(tenantId, null, currentUser, "CREATE", "Created journal: " + journalComptable.getCodeJournal());
+        logAudit(tenantId, null, currentUser, "CREATE", "Created journal: " + journalComptable.getKey().getCodeJournal());
         kafkaTemplate.send("journal.comptable.created", tenantId.toString(), savedJournalComptable);
         logger.info("Journal comptable créé avec succès : {}", savedJournalComptable.getKey().getId());
         return savedJournalComptable;
@@ -95,7 +95,7 @@ public class JournalComptableService {
         updatedJournalComptable.setUpdatedAt(LocalDateTime.now());
         updatedJournalComptable.setUpdatedBy(currentUser != null ? currentUser : "system");
         JournalComptable savedJournalComptable = journalComptableRepository.save(updatedJournalComptable);
-        logAudit(tenantId, null, currentUser, "UPDATE", "Updated journal: " + updatedJournalComptable.getCodeJournal());
+        logAudit(tenantId, null, currentUser, "UPDATE", "Updated journal: " + updatedJournalComptable.getKey().getCodeJournal());
         kafkaTemplate.send("journal.comptable.updated", tenantId.toString(), savedJournalComptable);
         logger.info("Journal comptable mis à jour avec succès : {}", journalComptableId);
         return savedJournalComptable;
@@ -122,7 +122,7 @@ public class JournalComptableService {
         if (!violations.isEmpty()) {
             throw new ConstraintViolationException(violations);
         }
-        String codeJournal = journalComptable.getCodeJournal();
+        String codeJournal = journalComptable.getKey().getCodeJournal();
         if (!codeJournal.matches("^[A-Z]{1,5}$")) {
             throw new IllegalArgumentException("Code journal invalide, doit être 1-5 lettres majuscules : " + codeJournal);
         }

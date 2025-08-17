@@ -6,10 +6,15 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.mapping.Column;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+
+import org.springframework.data.redis.core.RedisHash;
+
+//@RedisHash("operation_comptable")
 @Table("operation_comptable")
 @Data
 public class OperationComptable implements Auditable {
@@ -19,31 +24,39 @@ public class OperationComptable implements Auditable {
 
     @NotBlank(message = "Le type d'opération ne peut pas être vide")
     @Size(max = 50, message = "Le type d'opération ne doit pas dépasser 50 caractères")
+    @Column("type_operation")
     private String typeOperation;
 
     @NotBlank(message = "Le mode de règlement ne peut pas être vide")
     @Size(max = 50, message = "Le mode de règlement ne doit pas dépasser 50 caractères")
+    @Column("mode_reglement")
     private String modeReglement;
 
     @NotBlank(message = "Le compte principal ne peut pas être vide")
     @Size(max = 20, message = "Le compte principal ne doit pas dépasser 20 caractères")
+    @Column("compte_principal")
     private String comptePrincipal;
 
     @NotNull(message = "Le statut compte statique ne peut pas être nul")
+    @Column("est_compte_statique")  
     private Boolean estCompteStatique = false;
 
     @NotBlank(message = "Le sens principal ne peut pas être vide")
     @Pattern(regexp = "DEBIT|CREDIT", message = "Le sens principal doit être DEBIT ou CREDIT")
+    @Column("sens_principal")
     private String sensPrincipal;
 
     @NotNull(message = "L'identifiant du journal comptable ne peut pas être nul")
+    @Column("journal_comptable_id")
     private UUID journalComptableId;
 
     @NotBlank(message = "Le type de montant ne peut pas être vide")
     @Pattern(regexp = "HT|TTC|TVA|PAU", message = "Le type de montant doit être HT, TTC, TVA ou PAU")
+    @Column("type_montant")
     private String typeMontant;
 
     @PositiveOrZero(message = "Le plafond client doit être positif ou zéro")
+    @Column("plafond_client")
     private Double plafondClient;
 
     @NotNull(message = "Le statut actif ne peut pas être nul")
@@ -52,14 +65,18 @@ public class OperationComptable implements Auditable {
     @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
 
+    @Column("created_at")
     private LocalDateTime createdAt;
 
+    @Column("updated_at")
     private LocalDateTime updatedAt;
 
     @Size(max = 255, message = "Créé par ne doit pas dépasser 255 caractères")
+    @Column("created_by")
     private String createdBy;
 
     @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
+    @Column("updated_by")
     private String updatedBy;
 
     @Override

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Service
+//@Service
 public class PlanComptableInitializationService implements CommandLineRunner {
 
     private final PlanComptableRepository planComptableRepository;

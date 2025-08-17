@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+
 @Repository
 public interface JournalComptableRepository extends CassandraRepository<JournalComptable, JournalComptableKey> {
 
@@ -19,11 +20,11 @@ public interface JournalComptableRepository extends CassandraRepository<JournalC
 
     Optional<JournalComptable> findByKeyTenantIdAndKeyId(UUID tenantId, UUID id);
 
-    Optional<JournalComptable> findByKeyTenantIdAndCodeJournal(UUID tenantId, String codeJournal);
+    Optional<JournalComptable> findByKeyTenantIdAndKeyCodeJournal(UUID tenantId, String codeJournal);
 
     List<JournalComptable> findByKeyTenantIdAndTypeJournal(UUID tenantId, String typeJournal);
 
-    boolean existsByKeyTenantIdAndCodeJournal(UUID tenantId, String codeJournal);
+    boolean existsByKeyTenantIdAndKeyCodeJournal(UUID tenantId, String codeJournal);
 
     boolean existsByKeyTenantIdAndKeyId(UUID tenantId, UUID id);
 }

@@ -1,71 +1,72 @@
-version: '3.8'
-
 services:
-  # Base de données ScyllaDB pour la persistance des données (remplace PostgreSQL).
+  # ScyllaDB : base de données NoSQL compatible Cassandra pour la persistance des données
   scylla:
     image: scylladb/scylla:5.4
     container_name: scylla
-    # Expose le port CQL (9042) pour les connexions clients.
     ports:
       - "9042:9042"
-    # Définit les options de performance et de configuration.
-    command: --smp 2 --memory 2G --overprovisioned 1
+
+    command: ["--smp", "2", "--memory", "2G", "--overprovisioned", "1"]
     volumes:
-      # Crée un volume persistant pour stocker les données de ScyllaDB.
       - scylla-data:/var/lib/scylla
-      # Monte un script CQL pour initialiser le keyspace et la table.
-      - ./init.cql:/init.cql
     networks:
       - my-network
-    # Vérifie si ScyllaDB est prêt à accepter des connexions CQL.
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces'"]
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces' > /dev/null 2>&1"]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 10
 
-  # Moteur de recherche Elasticsearch pour l'indexation et la recherche de données.
+  # scylla-init : service pour initialiser ScyllaDB avec le script CQL
+  scylla-init:
+    image: scylladb/scylla:5.4
+    container_name: scylla-init
+    volumes:
+      - ./init.cql:/init.cql
+    entrypoint: ["bash", "-c"]
+    command: >
+      "
+        echo 'Waiting for ScyllaDB to be ready...'
+        until cqlsh scylla 9042 -e 'describe keyspaces' >/dev/null 2>&1; do
+          sleep 5
+        done
+        echo 'ScyllaDB is ready. Executing init.cql...'
+        cqlsh scylla 9042 -f /init.cql
+      "
+    networks:
+      - my-network
+    depends_on:
+      scylla:
+        condition: service_healthy
+
+  # Elasticsearch : moteur de recherche pour l'indexation et la recherche de données
   elasticsearch:
     image: elasticsearch:8.11.1
     hostname: elasticsearch
     container_name: elasticsearch
-    # Expose les ports HTTP (9200) et de communication inter-nœuds (9300).
     ports:
       - "9200:9200"
       - "9300:9300"
     environment:
-      # Configure Elasticsearch pour fonctionner comme un nœud unique.
       - discovery.type=single-node
-      # Désactive la sécurité pour faciliter les tests et le développement.
       - xpack.security.enabled=false
       - xpack.security.http.ssl.enabled=false
-      # Verrouille la mémoire pour éviter que la JVM ne soit paginée sur le disque.
       - bootstrap.memory_lock=true
-      # Définit la taille de la mémoire allouée à la JVM d'Elasticsearch.
       - ES_JAVA_OPTS=-Xms1g -Xmx1g
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
-      # Crée un volume persistant pour stocker les données d'Elasticsearch.
       - es-data:/usr/share/elasticsearch/data
     networks:
       - my-network
-    # Vérifie l'état de santé du cluster Elasticsearch.
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Gestionnaire de messages Kafka, divisé en deux services: Zookeeper et Kafka.
-  # Zookeeper est un coordinateur essentiel pour le cluster Kafka.
+  # Zookeeper : coordinateur pour le cluster Kafka
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     hostname: zookeeper
     container_name: zookeeper
-    # Expose le port par défaut de Zookeeper.
     ports:
       - "2181:2181"
     environment:
@@ -74,93 +75,90 @@ services:
       ZOOKEEPER_SYNC_LIMIT: 2
     networks:
       - my-network
-    # Vérifie si le service Zookeeper est actif.
-    healthcheck:
-      test: ["CMD-SHELL", "echo stat | nc localhost 2181"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
-  # Kafka est le broker de messages, qui dépend de Zookeeper.
+  # Kafka : broker de messages, dépendant de Zookeeper
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     hostname: kafka
     container_name: kafka
-    # Expose le port par défaut (9092) et le port public (9093).
     ports:
       - "9092:9092"
-      - "9093:9093"
     environment:
       KAFKA_BROKER_ID: 1
-      # Connecte Kafka au service Zookeeper via son nom de service Docker.
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      # Définit les listeners pour les connexions internes et externes.
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:9093
-      # Indique aux clients (externes) comment se connecter.
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      # Permet la création automatique de sujets.
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'  
-      # Permet la suppression de sujets.
-      KAFKA_DELETE_TOPIC_ENABLE: 'true'   
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
     networks:
       - my-network
-    # Démarre Kafka uniquement après que Zookeeper soit sain.
     depends_on:
       zookeeper:
-        condition: service_healthy
-    # Vérifie si le broker Kafka est accessible.
-    healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+        condition: service_started
 
-  # Base de données In-Memory Redis pour la mise en cache.
+  # Redis : base de données en mémoire pour le cache
   redis:
     image: redis:7.2.4-alpine
     container_name: redis
-    # Expose le port par défaut de Redis.
     ports:
-      - "6379:6379"
-    # Lance Redis avec un mot de passe.
+      - "6380:6380"
     command: redis-server --requirepass azaleodel
     volumes:
-      # Crée un volume persistant pour les données de Redis (facultatif pour le cache).
       - redis-data:/data
     networks:
       - my-network
-    # Vérifie la connexion à Redis avec le mot de passe.
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a azaleodel ping"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  # Kafka UI pour l'administration et le monitoring de Kafka.
+  # Kafka UI : interface utilisateur pour l'administration de Kafka
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
-    # Expose le port de l'interface utilisateur.
     ports:
       - "8080:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
-      # Se connecte à Kafka en utilisant son nom de service Docker.
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      # Se connecte à Zookeeper en utilisant son nom de service Docker.
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - my-network
-    # Démarre Kafka-UI uniquement après que Kafka soit sain.
     depends_on:
       kafka:
+        condition: service_started
+
+  # Votre application Spring Boot
+  yowyob-erp-backend:
+    build:
+      context: .
+    container_name: yowyob-erp-backend
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - spring.cassandra.contact-points=scylla:9042
+      - spring.kafka.bootstrap-servers=kafka:9092
+    depends_on:
+      scylla:
         condition: service_healthy
+      scylla-init:
+        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_started
+      kafka:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - my-network
 
 # Définition des volumes nommés pour la persistance des données.
 volumes:
@@ -172,3 +170,4 @@ volumes:
 networks:
   my-network:
     driver: bridge
+

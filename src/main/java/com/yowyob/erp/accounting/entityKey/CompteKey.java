@@ -1,30 +1,22 @@
 package com.yowyob.erp.accounting.entityKey;
 
-import org.springframework.data.cassandra.core.cql.Ordering;
+import java.io.Serializable;
+import java.util.UUID;
+
 import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyClass;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
-
-import java.io.Serializable;
-import java.util.UUID;
 
 import lombok.Data;
 
 @Data
 @PrimaryKeyClass
-public class OperationComptableKey implements Serializable {
-
-    public OperationComptableKey(UUID tenantId, UUID id) {
-        this.tenantId = tenantId;
-        this.id = id;
-    }
-    public OperationComptableKey() {
-    }
+public class CompteKey implements Serializable {
 
     @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
     private UUID tenantId;
 
-    @PrimaryKeyColumn(name = "id", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.ASCENDING)
+    @PrimaryKeyColumn(name = "id", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
     private UUID id;
 
     
@@ -34,7 +26,7 @@ public class OperationComptableKey implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        OperationComptableKey that = (OperationComptableKey) o;
+        CompteKey that = (CompteKey) o;
         return tenantId.equals(that.tenantId) && id.equals(that.id);
     }
 

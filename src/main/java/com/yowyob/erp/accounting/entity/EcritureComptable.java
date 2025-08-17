@@ -5,6 +5,7 @@ import com.yowyob.erp.common.entity.Auditable;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 
 
@@ -12,6 +13,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.data.redis.core.RedisHash;
+
+//@RedisHash("ecriture_comptable")
 @Table("ecriture_comptable")
 @Data
 public class EcritureComptable implements Auditable {
@@ -19,9 +23,9 @@ public class EcritureComptable implements Auditable {
     @PrimaryKey
     private EcritureComptableKey key;
 
-
     @NotBlank(message = "Le numéro d'écriture ne peut pas être vide")
     @Size(max = 100, message = "Le numéro d'écriture ne doit pas dépasser 100 caractères")
+    @Column("numero_ecriture")
     private String numeroEcriture;
 
     @NotBlank(message = "Le libellé ne peut pas être vide")
@@ -29,35 +33,46 @@ public class EcritureComptable implements Auditable {
     private String libelle;
 
     @NotNull(message = "La date d'écriture ne peut pas être nulle")
+    @Column("date_ecriture")
     private LocalDate dateEcriture;
 
     @NotNull(message = "L'identifiant du journal comptable ne peut pas être nul")
+    @Column("journal_comptable_id")
     private UUID journalComptableId;
 
     @NotNull(message = "L'identifiant de la période comptable ne peut pas être nul")
+    @Column("periode_comptable_id")
     private UUID periodeComptableId;
 
     @NotNull(message = "Le montant total ne peut pas être nul")
     @PositiveOrZero(message = "Le montant total doit être positif ou zéro")
+    @Column("montant_total")
     private Double montantTotal;
 
     @NotNull(message = "Le statut validée ne peut pas être nul")
     private Boolean validee = false;
 
+    @Column("date_validation")
     private LocalDateTime dateValidation;
 
     @Size(max = 255, message = "L'utilisateur de validation ne doit pas dépasser 255 caractères")
+    @Column("utilisateur_validation")
     private String utilisateurValidation;
 
     @Size(max = 255, message = "La référence externe ne doit pas dépasser 255 caractères")
+    @Column("reference_externe")
     private String referenceExterne;
 
     @Size(max = 1000, message = "Les notes ne doivent pas dépasser 1000 caractères")
     private String notes;
 
+    @Column("created_at")
     private LocalDateTime createdAt;
+    @Column("updated_at")
     private LocalDateTime updatedAt;
+    @Column("created_by")
     private String createdBy;
+    @Column("updated_by")
     private String updatedBy;
 
     @Override

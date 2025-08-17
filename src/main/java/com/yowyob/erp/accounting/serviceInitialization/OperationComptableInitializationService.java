@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Service
+//@Service
 public class OperationComptableInitializationService implements CommandLineRunner {
 
     private final OperationComptableRepository operationComptableRepository;
@@ -25,11 +25,11 @@ public class OperationComptableInitializationService implements CommandLineRunne
     @Override
     public void run(String... args) {
         UUID tenantId = UUID.randomUUID(); // Replace with actual tenant ID
-        JournalComptable journalAN = journalComptableRepository.findByKeyTenantIdAndCodeJournal(tenantId, "AN")
+        JournalComptable journalAN = journalComptableRepository.findByKeyTenantIdAndKeyCodeJournal(tenantId, "AN")
                 .orElseThrow(() -> new IllegalStateException("Journal AN not found"));
-        JournalComptable journalVE = journalComptableRepository.findByKeyTenantIdAndCodeJournal(tenantId, "VE")
+        JournalComptable journalVE = journalComptableRepository.findByKeyTenantIdAndKeyCodeJournal(tenantId, "VE")
                 .orElseThrow(() -> new IllegalStateException("Journal VE not found"));
-        JournalComptable journalTR = journalComptableRepository.findByKeyTenantIdAndCodeJournal(tenantId, "TR")
+        JournalComptable journalTR = journalComptableRepository.findByKeyTenantIdAndKeyCodeJournal(tenantId, "TR")
                 .orElseThrow(() -> new IllegalStateException("Journal TR not found"));
 
         createOperationIfNotExists(tenantId, "ACHAT", "ESPECE", "401000", false, "DEBIT", journalAN.getKey().getId(), "HT", 1000000.0);

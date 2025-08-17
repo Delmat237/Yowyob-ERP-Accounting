@@ -6,11 +6,15 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.mapping.Column;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.springframework.data.redis.core.RedisHash;
+
+//@RedisHash("periode_comptable")
 @Table("periode_comptable")
 @Data
 public class PeriodeComptable implements Auditable {
@@ -23,27 +27,34 @@ public class PeriodeComptable implements Auditable {
     private String code;
 
     @NotNull(message = "La date de début ne peut pas être nulle")
+    @Column("date_debut")
     private LocalDate dateDebut;
 
     @NotNull(message = "La date de fin ne peut pas être nulle")
+    @Column("date_fin")
     private LocalDate dateFin;
 
     @NotNull(message = "Le statut clôturé ne peut pas être nul")
     private Boolean cloturee = false;
 
+    @Column("date_cloture")
     private LocalDate dateCloture;
 
     @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
 
+    @Column("created_at")
     private LocalDateTime createdAt;
 
+    @Column("updated_at")
     private LocalDateTime updatedAt;
 
     @Size(max = 255, message = "Créé par ne doit pas dépasser 255 caractères")
+    @Column("created_by")
     private String createdBy;
 
     @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
+    @Column("updated_by")
     private String updatedBy;
 
     @Override

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 import org.springframework.data.cassandra.core.mapping.Table;
+import org.springframework.data.cassandra.core.mapping.Column;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -23,12 +24,15 @@ public class Tenant implements Auditable {
 
     @NotBlank(message = "Le nom légal ne peut pas être vide")
     @Size(max = 255, message = "Le nom légal ne doit pas dépasser 255 caractères")
+    @Column("legal_name")
     private String legalName;
 
     @Size(max = 100, message = "Le numéro d'enregistrement ne doit pas dépasser 100 caractères")
+    @Column("registration_number")
     private String registrationNumber;
 
     @Size(max = 100, message = "L'identifiant fiscal ne doit pas dépasser 100 caractères")
+    @Column("tax_id")
     private String taxId;
 
     @Size(max = 255, message = "L'adresse ne doit pas dépasser 255 caractères")
@@ -46,20 +50,26 @@ public class Tenant implements Auditable {
     private String currency;
 
     @NotNull(message = "Le statut actif ne peut pas être nul")
+    @Column("is_active")
     private Boolean isActive;
 
     @NotBlank(message = "Le code comptable ne peut pas être vide")
     @Size(max = 100, message = "Le code comptable ne doit pas dépasser 100 caractères")
+    @Column("accounting_code")
     private String accountingCode;
 
+    @Column("created_at")
     private LocalDateTime createdAt;
 
+    @Column("updated_at")
     private LocalDateTime updatedAt;
 
     @Size(max = 255, message = "Créé par ne doit pas dépasser 255 caractères")
+    @Column("created_by")
     private String createdBy;
 
     @Size(max = 255, message = "Mis à jour par ne doit pas dépasser 255 caractères")
+    @Column("updated_by")
     private String updatedBy;
 
     @Override

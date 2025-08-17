@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+
 @Repository
 public interface EcritureComptableRepository extends CassandraRepository<EcritureComptable, EcritureComptableKey> {
     List<EcritureComptable> findByKeyTenantId(UUID tenantId);
