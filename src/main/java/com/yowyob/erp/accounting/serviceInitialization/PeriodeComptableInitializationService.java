@@ -2,7 +2,9 @@ package com.yowyob.erp.accounting.serviceInitialization;
 
 import com.yowyob.erp.accounting.dto.PeriodeComptableDto;
 import com.yowyob.erp.accounting.service.PeriodeComptableService;
+import com.yowyob.erp.config.tenant.TenantContext;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +16,16 @@ public class PeriodeComptableInitializationService implements CommandLineRunner 
 
     private final PeriodeComptableService periodeComptableService;
 
-    public PeriodeComptableInitializationService(PeriodeComptableService periodeComptableService) {
+    public PeriodeComptableInitializationService(PeriodeComptableService periodeComptableService,
+    @Value("${app.tenant.default-tenant:550e8400-e29b-41d4-a716-446655440000}")
+     String tenantIdStr) {
         this.periodeComptableService = periodeComptableService;
+        TenantContext.setCurrentTenant(UUID.fromString(tenantIdStr));
     }
 
     @Override
     public void run(String... args) {
-        UUID tenantId = UUID.randomUUID(); // Replace with actual tenant ID
+        
         for (int month = 1; month <= 12; month++) {
             String code = String.format("2025-%02d", month);
             LocalDate startDate = LocalDate.of(2025, month, 1);

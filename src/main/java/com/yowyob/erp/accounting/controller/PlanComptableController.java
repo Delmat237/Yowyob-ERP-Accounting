@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yowyob.erp.accounting.dto.PlanComptableDto;
-import com.yowyob.erp.accounting.dto.PlanComptableDto;
 import com.yowyob.erp.accounting.service.PlanComptableService;
 import com.yowyob.erp.common.dto.ApiResponseWrapper;
 
