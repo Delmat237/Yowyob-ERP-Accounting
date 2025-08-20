@@ -19,7 +19,7 @@ public class TenantInterceptor implements HandlerInterceptor {
     @Value("${app.tenant.header-name:X-Tenant-ID}")
     private String tenantHeaderName;
     
-    @Value("${app.tenant.default-tenant:default}")
+    @Value("${app.tenant.default-tenant:550e8400-e29b-41d4-a716-446655440000}")
     private String defaultTenant;
 
     @Override

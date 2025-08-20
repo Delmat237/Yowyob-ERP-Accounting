@@ -23,8 +23,11 @@ public class PlanComptable implements Auditable {
     @PrimaryKey
     private PlanComptableKey key;
 
+    @Column("code_classe")
+    private Integer classe;
+
     @NotBlank(message = "Le numéro de compte ne peut pas être vide")
-    @Size(max = 20, message = "Le numéro de compte ne doit pas dépasser 20 caractères")
+    @Size(max = 10, message = "Le numéro de compte ne doit pas dépasser 10 caractères")
     @Column("no_compte")
     private String noCompte;
 
@@ -52,7 +55,7 @@ public class PlanComptable implements Auditable {
     @Column("updated_by")
     private String updatedBy;
 
-    private Integer classe;
+ 
     
     @Override
     public UUID getTenantId() {

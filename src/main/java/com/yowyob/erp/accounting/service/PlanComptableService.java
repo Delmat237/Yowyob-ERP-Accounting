@@ -2,6 +2,7 @@ package com.yowyob.erp.accounting.service;
 
 import com.yowyob.erp.accounting.dto.PlanComptableDto;
 import com.yowyob.erp.accounting.entity.PlanComptable;
+
 import com.yowyob.erp.accounting.entityKey.PlanComptableKey;
 import com.yowyob.erp.accounting.repository.PlanComptableRepository;
 import com.yowyob.erp.common.exception.ResourceNotFoundException;
@@ -32,18 +33,18 @@ public class PlanComptableService {
     public PlanComptableDto createAccount(PlanComptableDto dto) {
         UUID tenantId = TenantContext.getCurrentTenant();
         String currentUser = TenantContext.getCurrentUser();
-        log.info("Creating account for tenant: {}, noCompte: {}", tenantId, dto.getNoCompte());
+        log.info("Creating account for tenant: {}, noCompte: {}", tenantId,dto.getNoCompte());
 
-        // Validation du numéro de compte
+        // Validation du numéro de planComptable
         validationService.validateAccountNumber(dto.getNoCompte());
 
         // Vérification de l'unicité
-        if (planComptableRepository.existsByKeyTenantIdAndNoCompte(tenantId, dto.getNoCompte())) {
-            throw new BusinessException("Un compte avec ce numéro existe déjà: " + dto.getNoCompte());
+        if (planComptableRepository.existsByKeyTenantIdAndNoCompte(tenantId,dto.getNoCompte())) {
+            throw new BusinessException("Un Compte Comptable avec ce numéro existe déjà: " +dto.getNoCompte());
         }
 
-        PlanComptable account = new PlanComptable();
-        PlanComptableKey key = new PlanComptableKey();
+       PlanComptable account = new PlanComptable();
+       PlanComptableKey key = new PlanComptableKey();
         key.setTenantId(tenantId);
         key.setId(UUID.randomUUID());
         account.setKey(key);
@@ -58,7 +59,7 @@ public class PlanComptableService {
 
         PlanComptable saved = planComptableRepository.save(account);
         kafkaTemplate.send("plan.comptable.created", tenantId.toString(), mapToDto(saved));
-        log.info("Compte créé: {} - {}", saved.getNoCompte(), saved.getLibelle());
+        log.info("Compte Comptable créé: {} - {}", saved.getNoCompte(), saved.getLibelle());
         return mapToDto(saved);
     }
 
@@ -70,16 +71,27 @@ public class PlanComptableService {
                 .collect(Collectors.toList());
     }
 
+    
     public PlanComptableDto getAccountById(UUID id) {
         UUID tenantId = TenantContext.getCurrentTenant();
-        PlanComptableKey key = new PlanComptableKey();
+       PlanComptableKey key = new PlanComptableKey();
         key.setTenantId(tenantId);
         key.setId(id);
 
         PlanComptable account = planComptableRepository.findByKey(key)
-                .orElseThrow(() -> new ResourceNotFoundException("Compte", id.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("Compte Comptable", id.toString()));
         return mapToDto(account);
     }
+
+    
+   public List<PlanComptableDto> getPlanComptablesByClasse(Integer classe) {
+        UUID tenantId = TenantContext.getCurrentTenant();
+        return planComptableRepository.findByKeyTenantIdAndClasse(tenantId, classe)
+                    .stream()   
+                     .map(this::mapToDto)
+                     .collect(Collectors.toList());
+    }
+    
 
     public List<PlanComptableDto> getAccountsByPrefix(String prefix) {
         UUID tenantId = TenantContext.getCurrentTenant();
@@ -98,7 +110,7 @@ public class PlanComptableService {
         key.setId(id);
 
         PlanComptable account = planComptableRepository.findByKey(key)
-                .orElseThrow(() -> new ResourceNotFoundException("Compte", id.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("PlanComptable", id.toString()));
 
         account.setLibelle(dto.getLibelle());
         account.setNotes(dto.getNotes());
@@ -106,7 +118,7 @@ public class PlanComptableService {
         account.setUpdatedBy(currentUser != null ? currentUser : "system");
 
         PlanComptable saved = planComptableRepository.save(account);
-        kafkaTemplate.send("plan.comptable.updated", tenantId.toString(), mapToDto(saved));
+        kafkaTemplate.send("planComptable.updated", tenantId.toString(), mapToDto(saved));
         return mapToDto(saved);
     }
 
@@ -119,15 +131,15 @@ public class PlanComptableService {
         key.setId(id);
 
         PlanComptable account = planComptableRepository.findByKey(key)
-                .orElseThrow(() -> new ResourceNotFoundException("Compte", id.toString()));
+                .orElseThrow(() -> new ResourceNotFoundException("PlanComptable", id.toString()));
 
         account.setActif(false);
         account.setUpdatedAt(LocalDateTime.now());
         account.setUpdatedBy(currentUser != null ? currentUser : "system");
         planComptableRepository.save(account);
 
-        kafkaTemplate.send("plan.comptable.deactivated", tenantId.toString(), id);
-        log.info("Compte désactivé: {}", account.getNoCompte());
+        kafkaTemplate.send("account.deactivated", tenantId.toString(), id);
+        log.info("PlanComptable désactivé: {}", account.getNoCompte());
     }
 
     private PlanComptableDto mapToDto(PlanComptable account) {
@@ -141,4 +153,5 @@ public class PlanComptableService {
                 .updatedAt(account.getUpdatedAt())
                 .build();
     }
+
 }

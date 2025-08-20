@@ -49,14 +49,14 @@ public class GlobalExceptionHandler {
         });
         
         log.error("Erreurs de validation: {}", errors);
-        return ResponseEntity.badRequest()
+        return ResponseEntity.badRequest() 
                  .body(ApiResponseWrapper.error(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponseWrapper<Object>> handleGenericException(Exception ex) {
         log.error("Erreur interne du serveur", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponseWrapper.error("Erreur interne du serveur"));
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR) //500
+                .body(ApiResponseWrapper.error("Erreur interne du serveur "));
     }
 }

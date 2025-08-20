@@ -10,11 +10,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import java.math.BigDecimal;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CompteDTO {
+public class CompteDto {
 
     private UUID id;
 
@@ -26,6 +28,10 @@ public class CompteDTO {
     private String libelle;
 
     private String notes;
+
+    private BigDecimal soldes;
+    private Integer classe;
+    private String typeCompte;
 
     @Builder.Default
     private Boolean actif = true;

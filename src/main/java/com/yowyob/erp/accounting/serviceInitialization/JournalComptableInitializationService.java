@@ -6,6 +6,8 @@ import com.yowyob.erp.accounting.repository.JournalComptableRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -13,14 +15,19 @@ import java.util.UUID;
 public class JournalComptableInitializationService implements CommandLineRunner {
 
     private final JournalComptableRepository journalComptableRepository;
+    private final UUID tenantId;
 
-    public JournalComptableInitializationService(JournalComptableRepository journalComptableRepository) {
+
+    public JournalComptableInitializationService(JournalComptableRepository journalComptableRepository,
+     @Value("${app.tenant.default-tenant:550e8400-e29b-41d4-a716-446655440000}")
+     String tenantIdStr) {
         this.journalComptableRepository = journalComptableRepository;
+            this.tenantId = UUID.fromString(tenantIdStr);
+
     }
 
     @Override
     public void run(String... args) {
-        UUID tenantId = UUID.randomUUID(); // Replace with actual tenant ID
         createJournalIfNotExists(tenantId, "AN", "Journal des Achats", "ACHAT");
         createJournalIfNotExists(tenantId, "VE", "Journal des Ventes", "VENTE");
         createJournalIfNotExists(tenantId, "TR", "Journal de Trésorerie", "TRESORERIE");

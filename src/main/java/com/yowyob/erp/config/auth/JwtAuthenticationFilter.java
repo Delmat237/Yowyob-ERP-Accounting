@@ -1,4 +1,4 @@
-// Filtre JWT
+
 package com.yowyob.erp.config.auth;
 
 import jakarta.servlet.FilterChain;

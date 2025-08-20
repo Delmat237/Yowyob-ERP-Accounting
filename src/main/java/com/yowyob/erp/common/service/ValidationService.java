@@ -1,4 +1,3 @@
-// Service de validation métier
 package com.yowyob.erp.common.service;
 
 import com.yowyob.erp.common.exception.BusinessException;
@@ -12,7 +11,7 @@ import java.util.regex.Pattern;
 @Slf4j
 public class ValidationService {
 
-    private static final Pattern ACCOUNT_NUMBER_PATTERN = Pattern.compile("^[1-8][0-9]{4,7}$");
+    private static final Pattern ACCOUNT_NUMBER_PATTERN = Pattern.compile("^[1-8][0-9]{4,7}$"); // eg : "101000", "211000"
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@(.+)$");
 
     /**
