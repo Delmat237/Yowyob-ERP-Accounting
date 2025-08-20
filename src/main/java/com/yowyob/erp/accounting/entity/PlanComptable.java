@@ -18,7 +18,6 @@ import org.springframework.data.redis.core.RedisHash;
 @Data
 public class PlanComptable implements Auditable {
 
-    private UUID id;
 
     @PrimaryKey
     private PlanComptableKey key;

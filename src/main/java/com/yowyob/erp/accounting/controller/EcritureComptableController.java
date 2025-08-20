@@ -38,7 +38,7 @@ public class EcritureComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<EcritureComptableDto>> createEcriture(
             @Valid @RequestBody EcritureComptableDto ecritureDto) {
         EcritureComptableDto created = ecritureService.createEcriture(ecritureDto);
@@ -55,7 +55,7 @@ public class EcritureComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PostMapping("/{id}/validate")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<EcritureComptableDto>> validateEcriture(
             @PathVariable UUID id,
             Authentication authentication) {
@@ -70,7 +70,7 @@ public class EcritureComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<List<EcritureComptableDto>>> getAllEcritures() {
         List<EcritureComptableDto> ecritures = ecritureService.getAllEcritures();
         return ResponseEntity.ok(ApiResponseWrapper.success(ecritures));
@@ -83,7 +83,7 @@ public class EcritureComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/non-validated")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<List<EcritureComptableDto>>> getNonValidatedEcritures() {
         List<EcritureComptableDto> ecritures = ecritureService.getNonValidatedEcritures();
         return ResponseEntity.ok(ApiResponseWrapper.success(ecritures));
@@ -97,7 +97,7 @@ public class EcritureComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<List<EcritureComptableDto>>> searchEcritures(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
@@ -119,7 +119,7 @@ public class EcritureComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PostMapping("/generate")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<EcritureComptableDto>> generateAutomaticEntry(
             @RequestParam UUID transactionId,
             @RequestParam UUID operationId) {

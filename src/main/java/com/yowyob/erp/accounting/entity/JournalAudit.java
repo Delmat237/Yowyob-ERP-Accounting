@@ -29,7 +29,7 @@ public class JournalAudit implements Auditable {
     private String action;
 
     @NotNull(message = "La date d'action ne peut pas être nulle")
-    @Column
+    @Column("date_action")
     private LocalDateTime dateAction;
 
     @NotBlank(message = "L'utilisateur ne peut pas être vide")

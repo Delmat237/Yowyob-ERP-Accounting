@@ -35,7 +35,7 @@ public class OperationComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<OperationComptableDto>> createOperationComptable(
             @Valid @RequestBody OperationComptableDto dto) {
         OperationComptableDto created = operationComptableService.createOperationComptable(dto);
@@ -51,7 +51,7 @@ public class OperationComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<OperationComptableDto>> getOperationComptable(@PathVariable UUID id) {
         return operationComptableService.getOperationComptable(id)
                 .map(dto -> ResponseEntity.ok(ApiResponseWrapper.success(dto)))
@@ -66,7 +66,7 @@ public class OperationComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<List<OperationComptableDto>>> getAllOperationsComptables() {
         List<OperationComptableDto> operations = operationComptableService.getAllOperationsComptables();
         return ResponseEntity.ok(ApiResponseWrapper.success(operations));
@@ -80,7 +80,7 @@ public class OperationComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<OperationComptableDto>> getOperationByTypeAndMode(
             @RequestParam String typeOperation,
             @RequestParam String modeReglement) {
@@ -99,7 +99,7 @@ public class OperationComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<OperationComptableDto>> updateOperationComptable(
             @PathVariable UUID id,
             @Valid @RequestBody OperationComptableDto dto) {
@@ -115,7 +115,7 @@ public class OperationComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<Void>> deleteOperationComptable(@PathVariable UUID id) {
         operationComptableService.deleteOperationComptable(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT)

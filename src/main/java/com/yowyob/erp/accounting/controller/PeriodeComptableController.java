@@ -37,7 +37,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<PeriodeComptableDto>> createPeriodeComptable(
             @Valid @RequestBody PeriodeComptableDto dto) {
         PeriodeComptableDto created = periodeComptableService.createPeriodeComptable(dto);
@@ -53,7 +53,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<PeriodeComptableDto>> getPeriodeComptable(@PathVariable UUID id) {
         return periodeComptableService.getPeriodeComptable(id)
                 .map(dto -> ResponseEntity.ok(ApiResponseWrapper.success(dto)))
@@ -68,7 +68,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<List<PeriodeComptableDto>>> getAllPeriodeComptables() {
         List<PeriodeComptableDto> periodes = periodeComptableService.getAllPeriodeComptables();
         return ResponseEntity.ok(ApiResponseWrapper.success(periodes));
@@ -82,7 +82,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/code/{code}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<PeriodeComptableDto>> getPeriodeByCode(@PathVariable String code) {
         return periodeComptableService.getPeriodeByCode(code)
                 .map(dto -> ResponseEntity.ok(ApiResponseWrapper.success(dto)))
@@ -98,7 +98,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/date")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<PeriodeComptableDto>> getPeriodeByDate(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
         return periodeComptableService.getPeriodeByDate(date)
@@ -114,7 +114,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/non-closed")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<List<PeriodeComptableDto>>> getNonClosedPeriodes() {
         List<PeriodeComptableDto> periodes = periodeComptableService.getNonClosedPeriodes();
         return ResponseEntity.ok(ApiResponseWrapper.success(periodes));
@@ -128,7 +128,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @GetMapping("/range")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<List<PeriodeComptableDto>>> getPeriodesByRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -149,7 +149,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<PeriodeComptableDto>> updatePeriodeComptable(
             @PathVariable UUID id,
             @Valid @RequestBody PeriodeComptableDto dto) {
@@ -166,7 +166,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @PutMapping("/{id}/close")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<PeriodeComptableDto>> closePeriodeComptable(@PathVariable UUID id) {
         PeriodeComptableDto closed = periodeComptableService.closePeriodeComptable(id);
         return ResponseEntity.ok(ApiResponseWrapper.success(closed, "Période comptable clôturée"));
@@ -181,7 +181,7 @@ public class PeriodeComptableController {
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<Void>> deletePeriodeComptable(@PathVariable UUID id) {
         periodeComptableService.deletePeriodeComptable(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT)

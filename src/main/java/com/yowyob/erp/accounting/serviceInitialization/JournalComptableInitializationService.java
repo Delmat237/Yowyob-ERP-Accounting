@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-//@Service
+@Service
 public class JournalComptableInitializationService implements CommandLineRunner {
 
     private final JournalComptableRepository journalComptableRepository;
@@ -35,13 +35,13 @@ public class JournalComptableInitializationService implements CommandLineRunner 
     }
 
     private void createJournalIfNotExists(UUID tenantId, String codeJournal, String libelle, String typeJournal) {
-        if (!journalComptableRepository.existsByKeyTenantIdAndKeyCodeJournal(tenantId, codeJournal)) {
+        if (!journalComptableRepository.existsByKeyTenantIdAndCodeJournal(tenantId, codeJournal)) {
             JournalComptable journal = new JournalComptable();
             JournalComptableKey key = new JournalComptableKey();
             key.setTenantId(tenantId);
             key.setId(UUID.randomUUID());
             journal.setKey(key);
-            journal.getKey().setCodeJournal(codeJournal);
+            journal.setCodeJournal(codeJournal);
             journal.setLibelle(libelle);
             journal.setTypeJournal(typeJournal);
             journal.setActif(true);

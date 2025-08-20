@@ -20,11 +20,11 @@ public interface JournalComptableRepository extends CassandraRepository<JournalC
 
     Optional<JournalComptable> findByKeyTenantIdAndKeyId(UUID tenantId, UUID id);
 
-    Optional<JournalComptable> findByKeyTenantIdAndKeyCodeJournal(UUID tenantId, String codeJournal);
+    Optional<JournalComptable> findByKeyTenantIdAndCodeJournal(UUID tenantId, String codeJournal);
 
     List<JournalComptable> findByKeyTenantIdAndTypeJournal(UUID tenantId, String typeJournal);
 
-    boolean existsByKeyTenantIdAndKeyCodeJournal(UUID tenantId, String codeJournal);
+    boolean existsByKeyTenantIdAndCodeJournal(UUID tenantId, String codeJournal);
 
     boolean existsByKeyTenantIdAndKeyId(UUID tenantId, UUID id);
 }

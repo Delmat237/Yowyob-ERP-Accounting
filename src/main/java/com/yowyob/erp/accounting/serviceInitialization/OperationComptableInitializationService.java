@@ -34,11 +34,11 @@ public class OperationComptableInitializationService implements CommandLineRunne
     @Override
     public void run(String... args) {
         //UUID tenantId = UUID.randomUUID(); // Replace with actual tenant ID
-        JournalComptable journalAN = journalComptableRepository.findByKeyTenantIdAndKeyCodeJournal(tenantId, "AN")
+        JournalComptable journalAN = journalComptableRepository.findByKeyTenantIdAndCodeJournal(tenantId, "AN")
                 .orElseThrow(() -> new IllegalStateException("Journal AN not found"));
-        JournalComptable journalVE = journalComptableRepository.findByKeyTenantIdAndKeyCodeJournal(tenantId, "VE")
+        JournalComptable journalVE = journalComptableRepository.findByKeyTenantIdAndCodeJournal(tenantId, "VE")
                 .orElseThrow(() -> new IllegalStateException("Journal VE not found"));
-        JournalComptable journalTR = journalComptableRepository.findByKeyTenantIdAndKeyCodeJournal(tenantId, "TR")
+        JournalComptable journalTR = journalComptableRepository.findByKeyTenantIdAndCodeJournal(tenantId, "TR")
                 .orElseThrow(() -> new IllegalStateException("Journal TR not found"));
 
         createOperationIfNotExists(tenantId, "ACHAT", "ESPECE", "401000", false, "DEBIT", journalAN.getKey().getId(), "HT", 1000000.0);

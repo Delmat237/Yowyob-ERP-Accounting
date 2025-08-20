@@ -23,11 +23,9 @@ public class JournalComptableKey implements Serializable {
     @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
     private UUID tenantId;
 
-    @PrimaryKeyColumn(name = "id", type = PrimaryKeyType.CLUSTERED, ordinal = 0)
+    @PrimaryKeyColumn(name = "id", type = PrimaryKeyType.CLUSTERED, ordinal = 1)
     private UUID id;
 
-    @PrimaryKeyColumn(name = "code_journal", type = PrimaryKeyType.CLUSTERED, ordinal = 1)
-    private String codeJournal;
 
 
     // equals and hashCode

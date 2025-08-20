@@ -143,9 +143,12 @@ CREATE TABLE IF NOT EXISTS journal_comptable (
     updated_at TIMESTAMP,
     created_by TEXT,
     updated_by TEXT,
-    PRIMARY KEY ((tenant_id), id,code_journal)
+    PRIMARY KEY (tenant_id, id)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
+
+-- Creation d'index' sur les journaux comptables
+CREATE INDEX IF NOT EXISTS  ON journal_comptable(code_journal);
 
 -- Table pour les opérations comptables
 CREATE TABLE IF NOT EXISTS operation_comptable (
