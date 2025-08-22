@@ -21,25 +21,25 @@ YOWYOB ERP est un système ERP multi-tenant conforme aux normes OHADA, développ
   - [Licence](#licence)
 
 ## Fonctionnalités
-- **Multi-tenant** : Isolation des données par tenant avec `TenantContext` et `TenantInterceptor`.
-- **Comptabilité OHADA** : Gestion des transactions comptables à double entrée avec un plan comptable standardisé.
-- **Entités Complètes** : 11 entités principales (`Tenant`, `PlanComptable`, `JournalComptable`, `OperationComptable`, `Contrepartie`, `DeclarationFiscale`, `DetailEcriture`, `EcritureComptable`, `JournalAudit`, `PeriodeComptable`, `Transaction`).
+- **Multi-tenant** : Isolation des données par tenant avec `TenantContext` et `TenantInterceptor`, support pour plus de 100 tenants simultanés.
+- **Comptabilité OHADA** : Gestion des transactions comptables à double entrée avec un plan comptable standardisé, support polymorphe pour transactions, factures, et mouvements de stock.
+- **Entités Complètes** : 11 entités principales (`Tenant`, `PlanComptable`, `JournalComptable`, `OperationComptable`, `Contrepartie`, `DeclarationFiscale`, `DetailEcriture`, `EcritureComptable`, `JournalAudit`, `PeriodeComptable`, `Transaction`) et extensions pour `FactureComptable` et `MouvementStockComptable`.
 - **Gestion des utilisateurs** : Authentification JWT avec rôles (`ADMIN`, `ACCOUNTANT`, `USER`, `AUDITOR`).
-- **Cache** : Redis pour les sessions utilisateur, tokens JWT, et soldes de comptes.
-- **Événements asynchrones** : Kafka pour les événements (`accounting.entries`, `invoice.events`, `notifications`, `audit.logs`).
-- **Recherche avancée** : Elasticsearch pour l'indexation des écritures comptables et la recherche full-text.
-- **API REST** : Plus de 25 endpoints avec validation JSR-303, pagination, et documentation Swagger.
-- **Audit et traçabilité** : Journalisation complète des actions avec `JournalAudit`.
+- **Cache** : Redis pour les sessions utilisateur, tokens JWT, soldes de comptes, et caches spécifiques (ex. `ecrituresAll`).
+- **Événements asynchrones** : Kafka pour les événements (`accounting.entries`, `invoice.events`, `notifications`, `audit.logs`, `stock.movements`).
+- **Recherche avancée** : Elasticsearch pour l'indexation des écritures comptables, factures, et mouvements de stock avec recherche full-text.
+- **API REST** : Plus de 30 endpoints avec validation JSR-303, pagination, et documentation Swagger.
+- **Audit et traçabilité** : Journalisation complète des actions avec `JournalAudit`, incluant l'origine des écritures (transaction, facture, stock).
 - **Performance** : Optimisation avec ScyllaDB pour une persistance à haute performance et Redis pour le caching.
 
 ## Architecture
 Le backend suit une architecture multi-tenant optimisée pour la scalabilité :
-- **Framework** : Spring Boot 3.x avec Java 17.
-- **Persistance** : Spring Data Cassandra avec ScyllaDB pour une gestion performante des entités.
+- **Framework** : Spring Boot 3.x avec Java 21 (mise à jour récente).
+- **Persistance** : Spring Data Cassandra avec ScyllaDB 5.4 pour une gestion performante des entités.
 - **Authentification** : JWT via une API externe avec validation des tokens et caching Redis.
-- **Événements** : Apache Kafka pour la communication asynchrone (ex. : création d'écritures comptables).
-- **Cache** : Redis pour des accès rapides aux données fréquentes.
-- **Recherche** : Elasticsearch pour des recherches full-text performantes.
+- **Événements** : Apache Kafka pour la communication asynchrone (ex. : création d'écritures comptables, mise à jour de stock).
+- **Cache** : Redis 7.x pour des accès rapides aux données fréquentes.
+- **Recherche** : Elasticsearch 8.x pour des recherches full-text performantes.
 - **API** : Endpoints REST documentés avec Swagger/OpenAPI.
 - **Audit** : Interface `Auditable` pour standardiser les champs d’audit (`tenant_id`, `created_at`, `updated_at`, `created_by`, `updated_by`).
 
@@ -49,6 +49,8 @@ src/main/java/com/yowyob/erp
 ├── accounting
 │   ├── controller
 │   │   ├── EcritureComptableController.java
+│   │   ├── FactureComptableController.java
+│   │   ├── MouvementStockController.java
 │   │   ├── OperationComptableController.java
 │   │   ├── PlanComptableController.java
 │   ├── dto
@@ -57,8 +59,10 @@ src/main/java/com/yowyob/erp
 │   │   ├── DeclarationFiscaleDto.java
 │   │   ├── DetailEcritureDto.java
 │   │   ├── EcritureComptableDto.java
+│   │   ├── FactureComptableDto.java
 │   │   ├── GrandLivreDto.java
 │   │   ├── JournalComptableDto.java
+│   │   ├── MouvementStockDto.java
 │   │   ├── OperationComptableDto.java
 │   │   ├── PeriodeComptableDto.java
 │   │   ├── PlanComptableDto.java
@@ -68,8 +72,10 @@ src/main/java/com/yowyob/erp
 │   │   ├── DeclarationFiscale.java
 │   │   ├── DetailEcriture.java
 │   │   ├── EcritureComptable.java
+│   │   ├── FactureComptable.java
 │   │   ├── JournalAudit.java
 │   │   ├── JournalComptable.java
+│   │   ├── MouvementStock.java
 │   │   ├── OperationComptable.java
 │   │   ├── PeriodeComptable.java
 │   │   ├── PlanComptable.java
@@ -77,18 +83,24 @@ src/main/java/com/yowyob/erp
 │   │   ├── Transaction.java
 │   ├── listener
 │   │   ├── AccountingKafkaListener.java
+│   │   ├── StockKafkaListener.java
 │   ├── repository
 │   │   ├── ContrepartieRepository.java
 │   │   ├── DeclarationFiscaleRepository.java
 │   │   ├── DetailEcritureRepository.java
 │   │   ├── EcritureComptableRepository.java
+│   │   ├── FactureComptableRepository.java
 │   │   ├── JournalAuditRepository.java
 │   │   ├── JournalComptableRepository.java
+│   │   ├── MouvementStockRepository.java
 │   │   ├── OperationComptableRepository.java
 │   │   ├── PeriodeComptableRepository.java
 │   │   ├── PlanComptableRepository.java
 │   │   ├── TransactionRepository.java
 │   ├── service
+│   │   ├── EcritureComptableService.java
+│   │   ├── FactureComptableService.java
+│   │   ├── MouvementStockService.java
 │   │   ├── PlanComptableService.java
 │   │   ├── SynchronizationService.java
 ├── common
@@ -149,10 +161,10 @@ src/main/java/com/yowyob/erp
 ```
 
 ## Prérequis
-- **Java** : JDK 17 ou supérieur
-- **Maven** : 3.8.x ou supérieur
+- **Java** : JDK 21 ou supérieur
+- **Maven** : 3.9.x ou supérieur
 - **ScyllaDB** : 5.4 ou supérieur
-- **Redis** : 6 ou supérieur
+- **Redis** : 7.x ou supérieur
 - **Kafka** : Confluent Platform 7.5.x ou supérieur
 - **Elasticsearch** : 8.x ou supérieur
 - **Docker** : Pour exécuter les services d’infrastructure et les tests avec Testcontainers
@@ -190,7 +202,7 @@ src/main/java/com/yowyob/erp
 - **Framework** : Spring Boot 3.x
 - **Base de données** : ScyllaDB 5.4 (Spring Data Cassandra)
 - **Messaging** : Apache Kafka (confluentinc/cp-kafka:7.5.0)
-- **Caching** : Redis 6.x
+- **Caching** : Redis 7.x
 - **Recherche** : Elasticsearch 8.x
 - **Sécurité** : JWT via une API externe
 - **Documentation** : Swagger (springdoc-openapi)
@@ -217,11 +229,15 @@ spring.kafka.producer.value-serializer=org.springframework.kafka.support.seriali
 spring.kafka.consumer.key-deserializer=org.apache.kafka.common.serialization.StringDeserializer
 spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer
 spring.kafka.consumer.properties.spring.json.trusted.packages=com.yowyob.erp
+spring.kafka.topic.accounting.entries=yowyob.accounting.entries
+spring.kafka.topic.stock.movements=yowyob.stock.movements
 
 # Redis
 spring.redis.host=localhost
 spring.redis.port=6379
 spring.redis.password=secret
+spring.cache.redis.time-to-live=600000
+spring.cache.redis.cache-null-values=false
 
 # Elasticsearch
 spring.elasticsearch.uris=http://localhost:9200
@@ -237,7 +253,7 @@ springdoc.swagger-ui.operations-sorter=alpha
 springdoc.swagger-ui.tags-sorter=alpha
 springdoc.info.title=YOWYOB ERP Backend API
 springdoc.info.description=API pour la gestion multi-tenant des opérations comptables OHADA
-springdoc.info.version=1.0.0
+springdoc.info.version=1.1.0
 ```
 
 ## Exécution de l'application
@@ -263,7 +279,9 @@ springdoc.info.version=1.0.0
   - `/api/comptable/plan` : Gestion du plan comptable.
   - `/api/comptable/journal` : Gestion des journaux comptables.
   - `/api/comptable/operation` : Paramétrage des opérations comptables.
-  - `/api/comptable/ecriture` : Gestion des écritures comptables.
+  - `/api/comptable/ecriture` : Gestion des écritures comptables (transactions, factures, stocks).
+  - `/api/comptable/facture` : Gestion des factures comptables.
+  - `/api/comptable/stock` : Gestion des mouvements de stock.
   - `/api/comptable/declaration` : Gestion des déclarations fiscales.
   - `/api/comptable/transaction` : Enregistrement des transactions.
 
@@ -277,7 +295,9 @@ springdoc.info.version=1.0.0
   ```
 - Classes de test principales :
   - `PlanComptableServiceTest` : Teste la création et la récupération des comptes.
-  - `EcritureComptableServiceTest` : Teste la validation des écritures comptables.
+  - `EcritureComptableServiceTest` : Teste la validation des écritures comptables (transactions, factures, stocks).
+  - `FactureComptableServiceTest` : Teste la génération d'écritures à partir de factures.
+  - `MouvementStockServiceTest` : Teste les impacts comptables des mouvements de stock.
   - `DeclarationFiscaleServiceTest` : Teste la gestion des déclarations fiscales.
 
 ### Dépendances de test
@@ -319,7 +339,7 @@ Assurez-vous que les dépendances suivantes sont dans votre `pom.xml` :
 ```
 
 ## Notifications en temps réel
-- Les événements Kafka (ex. : `accounting.entries`, `audit.logs`) sont relayés via WebSocket pour les mises à jour en temps réel.
+- Les événements Kafka (ex. : `yowyob.accounting.entries`, `yowyob.audit.logs`, `yowyob.stock.movements`) sont relayés via WebSocket pour les mises à jour en temps réel.
 - Exemple de connexion client :
   ```javascript
   import SockJS from 'sockjs-client';
