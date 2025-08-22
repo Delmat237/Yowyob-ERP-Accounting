@@ -81,7 +81,7 @@ public class PlanComptableController {
     }
 
     // Récupérer tous les plans comptables pour un tenant
-    @GetMapping
+    @GetMapping("/{tenantId}")
     public ResponseEntity<List<PlanComptable>> getAllPlanComptables(@RequestParam UUID tenantId) {
         // Récupère la liste des plans comptables pour un tenant spécifique
         List<PlanComptable> plans = planComptableService.findAllByTenantId(tenantId);

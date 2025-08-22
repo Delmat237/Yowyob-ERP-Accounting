@@ -48,7 +48,7 @@ public class EcritureComptableService {
     private final KafkaOperations<String, Object> kafkaOperations;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
+    //@Autowired
     public EcritureComptableService(EcritureComptableRepository ecritureRepository,
                                     OperationComptableRepository operationComptableRepository,
                                     TransactionRepository transactionRepository,

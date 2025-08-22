@@ -17,8 +17,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -27,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 @EnableCaching
 @Slf4j
-@EnableRedisRepositories(basePackages = "com.yowyob.erp.caching.repository")
 public class RedisConfig {
 
     @Value("${spring.data.redis.host}")
@@ -39,14 +36,18 @@ public class RedisConfig {
     @Value("${spring.data.redis.password}")
     private String redisPassword;
 
+    @Value("${spring.data.redis.timeout}")
+    private Duration redisTimeout;
+
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
         config.setHostName(redisHost);
         config.setPort(redisPort);
         config.setPassword(redisPassword);
+        //config.setConnectTimeout(redisTimeout);
         
-        log.info("Connecting to Redis at {}:{}", redisHost, redisPort);
+        log.info("Connecting to Redis at {}:{} with timeout {}", redisHost, redisPort, redisTimeout.toMillis());
         return new LettuceConnectionFactory(config);
     }
 
@@ -55,7 +56,6 @@ public class RedisConfig {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         
-        // Configuration des sérialiseurs
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -67,32 +67,43 @@ public class RedisConfig {
         template.setHashValueSerializer(jsonSerializer);
         
         template.afterPropertiesSet();
-        log.info("RedisTemplate configured with JSON serialization");
+        log.info("RedisTemplate configured with JSON serialization and timeout {}", redisTimeout.toMillis());
         return template;
     }
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // Configurations par défaut
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10)) // TTL par défaut
+                .entryTtl(Duration.ofMillis(600000)) // Aligné avec spring.cache.redis.time-to-live
                 .serializeKeysWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
                         .fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
-                        .fromSerializer(new GenericJackson2JsonRedisSerializer()));
+                        .fromSerializer(new GenericJackson2JsonRedisSerializer()))
+                .disableCachingNullValues(); // Aligné avec spring.cache.redis.cache-null-values=false
 
-        // Configurations spécifiques par cache name
         RedisCacheManagerBuilderCustomizer customizer = builder -> {
-            builder.withCacheConfiguration("compteSolde",
+            builder.withCacheConfiguration("ecrituresAll", 
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)));
+            builder.withCacheConfiguration("ecrituresNonValidated", 
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)));
+            builder.withCacheConfiguration("ecrituresSearch", 
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)));
+            builder.withCacheConfiguration("compteSolde", 
                     RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)));
-            builder.withCacheConfiguration("compteAll",
+            builder.withCacheConfiguration("compteAll", 
                     RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)));
-            builder.withCacheConfiguration("compteByNoCompte",
+            builder.withCacheConfiguration("compteByNoCompte", 
                     RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)));
         };
 
         RedisCacheManager cacheManager = RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
+                .withCacheConfiguration("ecrituresAll", 
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration("ecrituresNonValidated", 
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
+                .withCacheConfiguration("ecrituresSearch", 
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(10)))
                 .withCacheConfiguration("compteSolde", 
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
                 .withCacheConfiguration("compteAll", 
@@ -101,7 +112,8 @@ public class RedisConfig {
                         RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)))
                 .build();
 
-        log.info("CacheManager configured with custom TTLs: compteSolde=5m, compteAll=1h, compteByNoCompte=15m");
+        log.info("CacheManager configured with TTLs: ecrituresAll=10m, ecrituresNonValidated=10m, ecrituresSearch=10m, " +
+                "compteSolde=5m, compteAll=1h, compteByNoCompte=15m");
         return cacheManager;
     }
 }
