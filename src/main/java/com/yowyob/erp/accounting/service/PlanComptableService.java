@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -61,6 +62,11 @@ public class PlanComptableService {
         kafkaTemplate.send("plan.comptable.created", tenantId.toString(), mapToDto(saved));
         log.info("Compte Comptable créé: {} - {}", saved.getNoCompte(), saved.getLibelle());
         return mapToDto(saved);
+    }
+
+    public List<PlanComptable> findAllByTenantId(UUID tenantId) {
+        // Récupère tous les plans comptables pour un tenant
+        return planComptableRepository.findAllByKeyTenantId(tenantId);
     }
 
     public List<PlanComptableDto> getAllActiveAccounts() {

@@ -1,9 +1,9 @@
-// Configuration Redis
 package com.yowyob.erp.config.redis;
 
 import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -21,8 +21,6 @@ import org.springframework.data.redis.repository.configuration.EnableRedisReposi
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,6 +46,7 @@ public class RedisConfig {
         config.setPort(redisPort);
         config.setPassword(redisPassword);
         
+        log.info("Connecting to Redis at {}:{}", redisHost, redisPort);
         return new LettuceConnectionFactory(config);
     }
 
@@ -60,8 +59,7 @@ public class RedisConfig {
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
-        GenericJackson2JsonRedisSerializer jsonSerializer = 
-                new GenericJackson2JsonRedisSerializer(objectMapper);
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
         
         template.setKeySerializer(stringSerializer);
         template.setHashKeySerializer(stringSerializer);
@@ -69,20 +67,41 @@ public class RedisConfig {
         template.setHashValueSerializer(jsonSerializer);
         
         template.afterPropertiesSet();
+        log.info("RedisTemplate configured with JSON serialization");
         return template;
     }
 
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10))
+        // Configurations par défaut
+        RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(10)) // TTL par défaut
                 .serializeKeysWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
                         .fromSerializer(new StringRedisSerializer()))
                 .serializeValuesWith(org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair
                         .fromSerializer(new GenericJackson2JsonRedisSerializer()));
 
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
+        // Configurations spécifiques par cache name
+        RedisCacheManagerBuilderCustomizer customizer = builder -> {
+            builder.withCacheConfiguration("compteSolde",
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)));
+            builder.withCacheConfiguration("compteAll",
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)));
+            builder.withCacheConfiguration("compteByNoCompte",
+                    RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)));
+        };
+
+        RedisCacheManager cacheManager = RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(defaultConfig)
+                .withCacheConfiguration("compteSolde", 
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5)))
+                .withCacheConfiguration("compteAll", 
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
+                .withCacheConfiguration("compteByNoCompte", 
+                        RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(15)))
                 .build();
+
+        log.info("CacheManager configured with custom TTLs: compteSolde=5m, compteAll=1h, compteByNoCompte=15m");
+        return cacheManager;
     }
 }

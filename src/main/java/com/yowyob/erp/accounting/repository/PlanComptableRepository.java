@@ -15,6 +15,8 @@ import java.util.UUID;
 @Repository
 public interface PlanComptableRepository extends CassandraRepository<PlanComptable, PlanComptableKey> {
 
+    List<PlanComptable> findAllByKeyTenantId(UUID tenantId);
+
     Optional<PlanComptable> findByKey(PlanComptableKey key);
 
     boolean existsByKeyTenantIdAndNoCompte(UUID tenantId, String noCompte);

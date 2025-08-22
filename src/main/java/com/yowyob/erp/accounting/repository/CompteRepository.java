@@ -16,6 +16,9 @@ import java.util.UUID;
 public interface CompteRepository extends CassandraRepository<Compte, CompteKey> {
 
     Optional<Compte> findByKey(CompteKey key);
+    List<Compte> findAllByKeyTenantId(UUID tenantId);
+    
+    void deleteById(CompteKey key);
 
     boolean existsByKeyTenantIdAndNoCompte(UUID tenantId, String noCompte);
 

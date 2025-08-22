@@ -12,9 +12,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yowyob.erp.accounting.dto.PlanComptableDto;
+import com.yowyob.erp.accounting.entity.PlanComptable;
 import com.yowyob.erp.accounting.service.PlanComptableService;
 import com.yowyob.erp.common.dto.ApiResponseWrapper;
 
@@ -45,6 +47,7 @@ public class PlanComptableController {
    // @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<PlanComptableDto>> createPlanComptable(
             @Valid @RequestBody PlanComptableDto dto) {
+                //Valide et persiste le nouveau plan comptable
         PlanComptableDto created = planComptableService.createAccount(dto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseWrapper.success(created, "PlanComptable comptable créé avec succès"));
@@ -76,6 +79,15 @@ public class PlanComptableController {
         List<PlanComptableDto> accounts = planComptableService.getAllActiveAccounts();
         return ResponseEntity.ok(ApiResponseWrapper.success(accounts));
     }
+
+    // Récupérer tous les plans comptables pour un tenant
+    @GetMapping
+    public ResponseEntity<List<PlanComptable>> getAllPlanComptables(@RequestParam UUID tenantId) {
+        // Récupère la liste des plans comptables pour un tenant spécifique
+        List<PlanComptable> plans = planComptableService.findAllByTenantId(tenantId);
+        return ResponseEntity.ok(plans);
+    }
+
 
     @Operation(summary = "Lister les comptes par préfixe", description = "Récupère les comptes comptables commençant par un préfixe donné")
     @ApiResponses({
