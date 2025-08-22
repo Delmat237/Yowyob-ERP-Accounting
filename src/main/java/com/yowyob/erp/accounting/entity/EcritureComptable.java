@@ -8,6 +8,7 @@ import org.springframework.data.cassandra.core.mapping.Table;
 import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 
+import com.yowyob.erp.common.enums.SourceType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -65,6 +66,13 @@ public class EcritureComptable implements Auditable {
 
     @Size(max = 1000, message = "Les notes ne doivent pas dépasser 1000 caractères")
     private String notes;
+
+    @NotNull(message = "Le type de source ne peut pas être nul")
+    @Column("source_type")
+    private SourceType sourceType;
+
+    @Column("source_id")
+    private UUID sourceId;
 
     @Column("created_at")
     private LocalDateTime createdAt;

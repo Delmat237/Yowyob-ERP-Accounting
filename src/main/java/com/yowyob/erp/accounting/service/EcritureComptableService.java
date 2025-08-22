@@ -7,6 +7,7 @@ import com.yowyob.erp.accounting.entityKey.DetailEcritureKey;
 import com.yowyob.erp.accounting.entityKey.EcritureComptableKey;
 import com.yowyob.erp.accounting.entityKey.JournalAuditKey;
 import com.yowyob.erp.accounting.repository.*;
+import com.yowyob.erp.common.entity.ComptableObject;
 import com.yowyob.erp.common.exception.ResourceNotFoundException;
 import com.yowyob.erp.config.tenant.TenantContext;
 import com.yowyob.erp.config.kafka.KafkaMessageService;
@@ -173,6 +174,48 @@ public class EcritureComptableService {
         }
         return ecritures != null ? ecritures : List.of();
     }
+    
+     @Transactional
+     public EcritureComptableDto generateFromComptableObject(ComptableObject comptableObject) {
+         UUID tenantId = TenantContext.getCurrentTenant();
+         String currentUser = TenantContext.getCurrentUser();
+         logger.info("Generating ecriture from comptable object for tenant: {}, type: {}, id: {}", 
+                 tenantId, comptableObject.getClass().getSimpleName(), comptableObject.getId());
+
+         UUID periodeComptableId = getCurrentPeriodeComptableId(tenantId);
+         periodeComptableService.getPeriodeComptable(periodeComptableId)
+                 .filter(p -> !p.getCloturee())
+                 .orElseThrow(() -> new IllegalStateException("Période comptable clôturée : " + periodeComptableId));
+
+         EcritureComptable ecriture = new EcritureComptable();
+         EcritureComptableKey key = new EcritureComptableKey();
+         key.setTenantId(tenantId);
+         key.setId(UUID.randomUUID());
+         ecriture.setKey(key);
+         ecriture.setNumeroEcriture("ECR-" + comptableObject.getId() + "-" + System.currentTimeMillis());
+         ecriture.setLibelle(comptableObject.getLibelle());
+         ecriture.setDateEcriture(comptableObject.getDate());
+         ecriture.setJournalComptableId(comptableObject.getJournalComptableId());
+         ecriture.setPeriodeComptableId(periodeComptableId);
+         ecriture.setMontantTotal(comptableObject.getMontant());
+         ecriture.setValidee(false);
+         ecriture.setSourceType(comptableObject.getSourceType());
+         ecriture.setSourceId(comptableObject.getId());
+         ecriture.setCreatedAt(LocalDateTime.now());
+         ecriture.setUpdatedAt(LocalDateTime.now());
+         ecriture.setCreatedBy(currentUser != null ? currentUser : "system");
+         ecriture.setUpdatedBy(currentUser != null ? currentUser : "system");
+
+         EcritureComptable saved = ecritureRepository.save(ecriture);
+         List<DetailEcriture> details = comptableObject.generateEcritureDetails(tenantId, saved.getKey().getId());
+         details.forEach(detailEcritureService::createDetailEcriture);
+         validateBalance(details);
+
+         logAuditAndSendKafka(tenantId, key.getId(), currentUser, "CREATE", 
+                 "Generated ecriture from " + comptableObject.getClass().getSimpleName() + ": " + ecriture.getNumeroEcriture());
+         invalidateCaches(tenantId);
+         return mapToDto(saved);
+     }
 
     public List<EcritureComptableDto> searchEcritures(LocalDateTime startDate, LocalDateTime endDate, UUID journalId) {
         UUID tenantId = TenantContext.getCurrentTenant();

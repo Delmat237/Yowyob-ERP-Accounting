@@ -3,6 +3,9 @@ package com.yowyob.erp.accounting.controller;
 import com.yowyob.erp.accounting.dto.EcritureComptableDto;
 import com.yowyob.erp.accounting.service.EcritureComptableService;
 import com.yowyob.erp.common.dto.ApiResponseWrapper;
+import com.yowyob.erp.common.dto.ComptableObjectRequest;
+import com.yowyob.erp.common.entity.ComptableObject;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -10,8 +13,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +24,8 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+
+import static com.yowyob.erp.accounting.util.AccountingUtils.mapToComptableObject;
 
 @RestController
 @RequestMapping("/api/accounting/entries")
@@ -112,20 +116,20 @@ public class EcritureComptableController {
         return ResponseEntity.ok(ApiResponseWrapper.success(ecritures));
     }
 
-    @Operation(summary = "Générer automatiquement une écriture à partir d'une transaction", description = "Génère une écriture comptable basée sur une transaction et une opération")
+    @Operation(summary = "Générer automatiquement une écriture à partir d'un objetcomtable ", description = "Génère une écriture comptable basée sur un objet compatbe(transaction , facture , mouvement de stock)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Écriture générée"),
-            @ApiResponse(responseCode = "400", description = "Transaction ou opération invalide"),
-            @ApiResponse(responseCode = "404", description = "Transaction ou opération non trouvée"),
+            @ApiResponse(responseCode = "400", description = "Object  invalide"),
+            @ApiResponse(responseCode = "404", description = "objet non trouvée"),
             @ApiResponse(responseCode = "401", description = "Non autorisé"),
             @ApiResponse(responseCode = "403", description = "Accès interdit")
     })
-    @PostMapping("/generate")
-   //  @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
-    public ResponseEntity<ApiResponseWrapper<EcritureComptableDto>> generateAutomaticEntry(
-            @RequestParam UUID transactionId,
-            @RequestParam UUID operationId) {
-        EcritureComptableDto generated = ecritureService.generateAutomaticEntry(transactionId, operationId);
-        return ResponseEntity.ok(ApiResponseWrapper.success(generated, "Écriture générée automatiquement"));
-    }
+   @PostMapping("/generate-from-object")
+        //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
+        public ResponseEntity<ApiResponseWrapper<EcritureComptableDto>> generateFromComptableObject(
+                @RequestBody ComptableObjectRequest request) {
+        ComptableObject object = mapToComptableObject(request); // Méthode de mapping
+        EcritureComptableDto generated = ecritureService.generateFromComptableObject(object);
+        return ResponseEntity.ok(ApiResponseWrapper.success(generated, "Écriture générée"));
+        }
 }
