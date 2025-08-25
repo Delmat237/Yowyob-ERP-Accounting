@@ -16,7 +16,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 
-import org.springframework.data.redis.core.RedisHash;
+//import org.springframework.data.redis.core.RedisHash;
 
 //@RedisHash("compte")
 @Table("compte")

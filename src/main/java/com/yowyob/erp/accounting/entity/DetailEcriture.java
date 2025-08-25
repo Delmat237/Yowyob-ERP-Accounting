@@ -18,7 +18,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 
-import org.springframework.data.redis.core.RedisHash;
+//import org.springframework.data.redis.core.RedisHash;
 
 //@RedisHash("detail_ecriture")
 @Table("detail_ecriture")
@@ -28,9 +28,12 @@ public class DetailEcriture implements Auditable {
     @PrimaryKey
     private DetailEcritureKey key;
 
-    @NotNull(message = "L'identifiant du plan comptable ne peut pas être nul")
-    @Column("plan_comptable_id")
-    private UUID planComptableId;
+    @Column("ecriture_id")
+    private UUID ecritureComptableId;
+
+    @NotNull(message = "L'identifiant du compte comptable ne peut pas être nul")
+    @Column("compte_comptable_id")
+    private UUID compteComptableId;
 
     /*
     @NotBlank(message = "Le numéro de compte ne peut pas être vide")

@@ -10,7 +10,7 @@ import org.springframework.data.cassandra.core.mapping.Column;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import org.springframework.data.redis.core.RedisHash;
+//import org.springframework.data.redis.core.RedisHash;
 
 //@RedisHash("transaction")
 @Table("transaction")

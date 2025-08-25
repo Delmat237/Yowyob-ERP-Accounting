@@ -151,9 +151,9 @@ public class DetailEcritureService {
         UUID tenantId = TenantContext.getCurrentTenant();
         PlanComptableKey planKey = new PlanComptableKey();
         planKey.setTenantId(tenantId);
-        planKey.setId(detail.getPlanComptableId());
+        planKey.setId(detail.getCompteComptableId());
         PlanComptable plan = planComptableRepository.findByKey(planKey)
-                .orElseThrow(() -> new IllegalArgumentException("Plan comptable ID invalide : " + detail.getPlanComptableId()));
+                .orElseThrow(() -> new IllegalArgumentException("Plan comptable ID invalide : " + detail.getCompteComptableId()));
         if (!plan.getActif()) {
             throw new IllegalArgumentException("Compte inactif : " + plan.getNoCompte());
         }

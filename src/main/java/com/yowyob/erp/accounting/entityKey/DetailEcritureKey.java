@@ -16,7 +16,7 @@ public class DetailEcritureKey implements Serializable {
     @PrimaryKeyColumn(name = "tenant_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
     private UUID tenantId;
 
-    @PrimaryKeyColumn(name = "ecriture_comptable_id", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
+    @PrimaryKeyColumn(name = "ecriture_id", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
     private UUID ecritureComptableId;
 
     @PrimaryKeyColumn(name = "id", ordinal = 2, type = PrimaryKeyType.CLUSTERED)

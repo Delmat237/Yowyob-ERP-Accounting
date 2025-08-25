@@ -19,11 +19,11 @@ public interface DetailEcritureRepository extends CassandraRepository<DetailEcri
     List<DetailEcriture> findByKeyTenantId(UUID tenantId);
 
     // Requires secondary index on plan_comptable_id
-    List<DetailEcriture> findByKeyTenantIdAndPlanComptableId(UUID tenantId, UUID planComptableId);
+    List<DetailEcriture> findByKeyTenantIdAndCompteComptableId(UUID tenantId, UUID compteComptableId);
 
     // Balance calculation (application-side for ScyllaDB)
-    default Double calculateAccountBalance(UUID tenantId, UUID planComptableId) {
-        List<DetailEcriture> entries = findByKeyTenantIdAndPlanComptableId(tenantId, planComptableId);
+    default Double calculateAccountBalance(UUID tenantId, UUID compteComptableId) {
+        List<DetailEcriture> entries = findByKeyTenantIdAndCompteComptableId(tenantId, compteComptableId);
         return entries.stream()
                 .mapToDouble(e -> e.getMontantDebit() - e.getMontantCredit())
                 .sum();

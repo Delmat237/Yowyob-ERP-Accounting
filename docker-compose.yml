@@ -22,7 +22,7 @@ services:
     image: scylladb/scylla:5.4
     container_name: scylla-init
     volumes:
-      - ./init.cql:/init.cql
+      - ./src/main/resources/db/init.cql:/src/main/resources/db/init.cql
     entrypoint: ["bash", "-c"]
     command: >
       "
@@ -31,7 +31,7 @@ services:
           sleep 5
         done
         echo 'ScyllaDB is ready. Executing init.cql...'
-        cqlsh scylla 9042 -f /init.cql
+        cqlsh scylla 9042 -f /src/main/resources/db/init.cql
       "
     networks:
       - my-network
@@ -108,7 +108,7 @@ services:
     container_name: redis
     ports:
       - "6380:6380"
-    command: redis-server --requirepass azaleodel
+    command: redis-server  --bind 0.0.0.0 --requirepass azaleodel
     volumes:
       - redis-data:/data
     networks:
@@ -152,11 +152,11 @@ services:
       scylla-init:
         condition: service_completed_successfully
       elasticsearch:
-        condition: service_started
+        condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
     networks:
       - my-network
 

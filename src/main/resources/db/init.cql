@@ -1,6 +1,6 @@
 -- Création du keyspace avec réplication NetworkTopologyStrategy
 CREATE KEYSPACE IF NOT EXISTS yowyob_erp
-WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': 1}
+WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': 3}
 AND durable_writes = true;
 
 USE yowyob_erp;
@@ -70,7 +70,8 @@ WITH compression = {'sstable_compression': 'LZ4Compressor'};
 CREATE TABLE IF NOT EXISTS detail_ecriture (
     tenant_id UUID,
      id UUID,
-    plan_comptable_id UUID,
+    ecriture_id UUID,
+    compte_comptable_id UUID,
     libelle TEXT,
     sens TEXT,
     montant_debit DOUBLE,
@@ -81,9 +82,12 @@ CREATE TABLE IF NOT EXISTS detail_ecriture (
     updated_at TIMESTAMP,
     created_by TEXT,
     updated_by TEXT,
-    PRIMARY KEY (tenant_id, plan_comptable_id)
+    PRIMARY KEY (tenant_id, id)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
+
+--iNDEX POUR TRIER PAR ecriture_comptable
+CREATE INDEX IF NOT EXISTS ON detail_ecriture(ecriture_id);
 
 -- Table pour les écritures comptables
 CREATE TABLE IF NOT EXISTS ecriture_comptable (

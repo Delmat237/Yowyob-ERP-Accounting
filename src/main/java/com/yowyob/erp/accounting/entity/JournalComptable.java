@@ -6,15 +6,15 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
+//import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
-import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
+//import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
 import org.springframework.data.cassandra.core.mapping.Column;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import org.springframework.data.redis.core.RedisHash;
+//import org.springframework.data.redis.core.RedisHash;
 
 //@RedisHash("journal_comptable")
 @Table("journal_comptable")

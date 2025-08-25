@@ -9,6 +9,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.UUID;
 
+import java.time.LocalDateTime;
+
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -21,11 +24,9 @@ public class DetailEcritureDto {
     private UUID ecritureComptableId;
 
     @NotNull(message = "Le plan comptable est obligatoire")
-    private UUID planComptableId;
+    private UUID compteComptableId;
 
-    private String planComptableNumero;
 
-    private String planComptableLibelle;
 
     @NotBlank(message = "Le libellé est obligatoire")
     private String libelle;
@@ -40,4 +41,7 @@ public class DetailEcritureDto {
     private Double montantCredit = 0.0;
 
     private String notes;
+
+    private LocalDateTime dateEcriture;
+
 }

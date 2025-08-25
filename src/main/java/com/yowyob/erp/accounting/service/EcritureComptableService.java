@@ -8,6 +8,7 @@ import com.yowyob.erp.accounting.entityKey.EcritureComptableKey;
 import com.yowyob.erp.accounting.entityKey.JournalAuditKey;
 import com.yowyob.erp.accounting.repository.*;
 import com.yowyob.erp.common.entity.ComptableObject;
+import com.yowyob.erp.common.exception.BusinessException;
 import com.yowyob.erp.common.exception.ResourceNotFoundException;
 import com.yowyob.erp.config.tenant.TenantContext;
 import com.yowyob.erp.config.kafka.KafkaMessageService;
@@ -25,6 +26,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -90,6 +92,7 @@ public class EcritureComptableService {
                 .filter(p -> !p.getCloturee())
                 .orElseThrow(() -> new IllegalArgumentException("Période comptable invalide ou clôturée : " + ecritureDto.getPeriodeComptableId()));
 
+        
         EcritureComptable ecriture = mapToEntity(ecritureDto, tenantId);
         EcritureComptableKey key = new EcritureComptableKey();
         key.setTenantId(tenantId);
@@ -141,6 +144,7 @@ public class EcritureComptableService {
         return mapToDto(validated);
     }
 
+
     public List<EcritureComptableDto> getAllEcritures() {
         UUID tenantId = TenantContext.getCurrentTenant();
         logger.info("Fetching all ecritures comptables for tenant: {}", tenantId);
@@ -173,6 +177,24 @@ public class EcritureComptableService {
             redisTemplate.opsForValue().set(cacheKey, ecritures, Duration.ofMinutes(10));
         }
         return ecritures != null ? ecritures : List.of();
+    }
+
+    @Transactional
+    public void deleteEcriture(UUID id) {
+        UUID tenantId = TenantContext.getCurrentTenant();
+        Optional<EcritureComptable> ecritureOpt = ecritureRepository.findByKeyTenantIdAndKeyId( tenantId,id);
+
+        if (ecritureOpt.isEmpty()) {
+            throw new BusinessException("Écriture non trouvée avec ID : " + id);
+        }
+
+        EcritureComptable ecriture = ecritureOpt.get();
+        if (ecriture.getValidee()) {
+            throw new BusinessException("Impossible de supprimer une écriture déjà validée");
+        }
+
+        ecritureRepository.delete(ecriture);
+        logger.info("Écriture avec ID {} supprimée avec succès pour le tenant {}", id, tenantId);
     }
     
      @Transactional
@@ -308,7 +330,7 @@ public class EcritureComptableService {
         debitKey.setEcritureComptableId(ecritureComptableId);
         debitKey.setId(UUID.randomUUID());
         debitEntry.setKey(debitKey);
-        debitEntry.setPlanComptableId(operation.getSensPrincipal().equals("DEBIT") ? principalAccount.getKey().getId() : counterAccount.getKey().getId());
+        debitEntry.setCompteComptableId(operation.getSensPrincipal().equals("DEBIT") ? principalAccount.getKey().getId() : counterAccount.getKey().getId());
         debitEntry.setLibelle("Transaction " + transaction.getNumeroRecu() + ", operation: " + operation.getTypeOperation());
         debitEntry.setSens("DEBIT");
         debitEntry.setMontantDebit(transaction.getMontantTransaction());
@@ -325,7 +347,7 @@ public class EcritureComptableService {
         creditKey.setEcritureComptableId(ecritureComptableId);
         creditKey.setId(UUID.randomUUID());
         creditEntry.setKey(creditKey);
-        creditEntry.setPlanComptableId(operation.getSensPrincipal().equals("CREDIT") ? principalAccount.getKey().getId() : counterAccount.getKey().getId());
+        creditEntry.setCompteComptableId(operation.getSensPrincipal().equals("CREDIT") ? principalAccount.getKey().getId() : counterAccount.getKey().getId());
         creditEntry.setLibelle("Transaction " + transaction.getNumeroRecu() + ", operation: " + operation.getTypeOperation());
         creditEntry.setSens("CREDIT");
         creditEntry.setMontantCredit(transaction.getMontantTransaction());
