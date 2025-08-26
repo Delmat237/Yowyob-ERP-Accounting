@@ -64,10 +64,6 @@ public class PlanComptableService {
         return mapToDto(saved);
     }
 
-    public List<PlanComptable> findAllByTenantId(UUID tenantId) {
-        // Récupère tous les plans comptables pour un tenant
-        return planComptableRepository.findAllByKeyTenantId(tenantId);
-    }
 
     public List<PlanComptableDto> getAllActiveAccounts() {
         UUID tenantId = TenantContext.getCurrentTenant();

@@ -107,17 +107,18 @@ services:
     image: redis:7.2.4-alpine
     container_name: redis
     ports:
-      - "6380:6380"
-    command: redis-server  --bind 0.0.0.0 --requirepass azaleodel
+      - "6380:6379"  # Correction : mappe 6380 (hôte) vers 6379 (conteneur)
+    command: redis-server --bind 0.0.0.0 --requirepass azaleodel --port 6379
     volumes:
       - redis-data:/data
     networks:
       - my-network
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a azaleodel ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "redis-cli -a azaleodel -p 6379 ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Kafka UI : interface utilisateur pour l'administration de Kafka
   kafka-ui:
@@ -135,7 +136,7 @@ services:
       kafka:
         condition: service_started
 
-  # Votre application Spring Boot
+  # Votre application Spring Boot (yowyob-erp-backend)
   yowyob-erp-backend:
     build:
       context: .
@@ -144,7 +145,12 @@ services:
       - "8081:8081"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - spring.cassandra.contact-points=scylla:9042
+      - spring.cassandra.contact-points=scylla
+      - spring.cassandra.port=9042
+      - spring.cassandra.local-datacenter=datacenter1
+      - spring.redis.host=redis
+      - spring.redis.port=6380
+      - spring.redis.password=azaleodel
       - spring.kafka.bootstrap-servers=kafka:9092
     depends_on:
       scylla:
@@ -152,9 +158,9 @@ services:
       scylla-init:
         condition: service_completed_successfully
       elasticsearch:
-        condition: service_healthy
+        condition: service_started
       kafka:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_healthy
     networks:

@@ -52,9 +52,13 @@ public class EcritureComptableController {
    //  @PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT')")
     public ResponseEntity<ApiResponseWrapper<EcritureComptableDto>> createEcriture(
             @Valid @RequestBody EcritureComptableDto ecritureDto) {
-        EcritureComptableDto created = ecritureService.createEcriture(ecritureDto);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponseWrapper.success(created, "Écriture comptable créée avec succès"));
+        try{
+                EcritureComptableDto created = ecritureService.createEcriture(ecritureDto);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body(ApiResponseWrapper.success(created, "Écriture comptable créée avec succès"));
+        }  catch (Exception e) {
+            throw new BusinessException("Données invalides : " + e.getMessage());
+        }
     }
 
   @Operation(summary = "Valider une écriture comptable", description = "Valide une écriture comptable existante avec enregistrement de l'utilisateur validant.")

@@ -48,9 +48,14 @@ public class PlanComptableController {
     public ResponseEntity<ApiResponseWrapper<PlanComptableDto>> createPlanComptable(
             @Valid @RequestBody PlanComptableDto dto) {
                 //Valide et persiste le nouveau plan comptable
-        PlanComptableDto created = planComptableService.createAccount(dto);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponseWrapper.success(created, "PlanComptable comptable créé avec succès"));
+        try{
+            PlanComptableDto created = planComptableService.createAccount(dto);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(ApiResponseWrapper.success(created, "PlanComptable comptable créé avec succès"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponseWrapper.error("Erreur lors de la création du compte comptable: "   ));
+        }
     }
 
     @Operation(summary = "Récupérer un compte comptable par ID", description = "Récupère un compte comptable par son identifiant UUID")
@@ -67,6 +72,7 @@ public class PlanComptableController {
         return ResponseEntity.ok(ApiResponseWrapper.success(dto));
     }
 
+    
     @Operation(summary = "Lister tous les comptes comptables actifs", description = "Récupère tous les comptes comptables actifs du tenant courant")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Liste des comptes comptables"),
@@ -78,14 +84,6 @@ public class PlanComptableController {
     public ResponseEntity<ApiResponseWrapper<List<PlanComptableDto>>> getAllPlanComptables() {
         List<PlanComptableDto> accounts = planComptableService.getAllActiveAccounts();
         return ResponseEntity.ok(ApiResponseWrapper.success(accounts));
-    }
-
-    // Récupérer tous les plans comptables pour un tenant
-    @GetMapping("/{tenantId}")
-    public ResponseEntity<List<PlanComptable>> getAllPlanComptables(@RequestParam UUID tenantId) {
-        // Récupère la liste des plans comptables pour un tenant spécifique
-        List<PlanComptable> plans = planComptableService.findAllByTenantId(tenantId);
-        return ResponseEntity.ok(plans);
     }
 
 
