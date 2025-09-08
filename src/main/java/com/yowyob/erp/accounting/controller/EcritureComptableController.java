@@ -92,6 +92,22 @@ public class EcritureComptableController {
         return ResponseEntity.ok(ApiResponseWrapper.success(ecritures));
     }
 
+    @Operation(summary = "Récupérer une écriture comptable spécifique", description = "Récupère une écriture comptable par son ID avec ses détails d'écriture.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Écriture comptable récupérée avec succès",
+                    content = @Content(schema = @Schema(implementation = EcritureComptableDto.class))),
+            @ApiResponse(responseCode = "404", description = "Écriture non trouvée"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès interdit")
+    })
+    @GetMapping("/{id}")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    public ResponseEntity<ApiResponseWrapper<EcritureComptableDto>> getEcritureById(@PathVariable UUID id) {
+        EcritureComptableDto ecriture = ecritureService.getEcritureById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Écriture comptable", id.toString()));
+        return ResponseEntity.ok(ApiResponseWrapper.success(ecriture, "Écriture comptable récupérée avec succès"));
+    }
+
    @Operation(summary = "Récupérer les écritures non validées", description = "Liste paginée des écritures comptables non validées pour l'utilisateur courant.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Liste des écritures non validées",

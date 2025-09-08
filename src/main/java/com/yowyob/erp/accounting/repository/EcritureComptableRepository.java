@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-
 @Repository
 public interface EcritureComptableRepository extends CassandraRepository<EcritureComptable, EcritureComptableKey> {
     List<EcritureComptable> findByKeyTenantId(UUID tenantId);
@@ -24,4 +23,8 @@ public interface EcritureComptableRepository extends CassandraRepository<Ecritur
 
     @Query("SELECT * FROM ecriture_comptable_by_date WHERE tenant_id = :tenantId AND journal_comptable_id = :journalId AND date_ecriture >= :startDate AND date_ecriture <= :endDate")
     List<EcritureComptable> findByKeyTenantIdAndJournalComptableIdAndDateEcritureRange(UUID tenantId, UUID journalId, LocalDateTime startDate, LocalDateTime endDate);
+
+    // New method to fetch all EcritureComptable entries for a specific journalComptableId
+    @Query("SELECT * FROM ecriture_comptable_by_date WHERE tenant_id = :tenantId AND journal_comptable_id = :journalId")
+    List<EcritureComptable> findByKeyTenantIdAndJournalComptableId(UUID tenantId, UUID journalId);
 }

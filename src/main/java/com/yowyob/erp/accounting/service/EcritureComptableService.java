@@ -2,6 +2,8 @@ package com.yowyob.erp.accounting.service;
 
 import com.yowyob.erp.accounting.dto.EcritureComptableDto;
 import com.yowyob.erp.accounting.dto.PeriodeComptableDto;
+import com.yowyob.erp.accounting.dto.DetailEcritureDto;
+import com.yowyob.erp.accounting.dto.JournalComptableDto;
 import com.yowyob.erp.accounting.entity.*;
 import com.yowyob.erp.accounting.entityKey.DetailEcritureKey;
 import com.yowyob.erp.accounting.entityKey.EcritureComptableKey;
@@ -80,14 +82,21 @@ public class EcritureComptableService {
 
     @Transactional
     public EcritureComptableDto createEcriture(EcritureComptableDto ecritureDto) {
+
+        //Extraction de l'utilisateur et du Tenant
         UUID tenantId = TenantContext.getCurrentTenant();
         String currentUser = TenantContext.getCurrentUser();
         logger.info("Creating ecriture comptable for tenant: {}, numero: {}", tenantId, ecritureDto.getNumeroEcriture());
 
+        //Validation de l'ecriture comptable
         validateEcritureDto(ecritureDto);
+
+        //Recuperation du journal comptable 
         journalComptableService.getJournalComptable(ecritureDto.getJournalComptableId())
-                .filter(JournalComptable::getActif)
+                .filter(JournalComptableDto::getActif)
                 .orElseThrow(() -> new IllegalArgumentException("Journal comptable invalide ou inactif : " + ecritureDto.getJournalComptableId()));
+
+        //Recuperation de l'exercice
         PeriodeComptableDto periode = periodeComptableService.getPeriodeComptable(ecritureDto.getPeriodeComptableId())
                 .filter(p -> !p.getCloturee())
                 .orElseThrow(() -> new IllegalArgumentException("Période comptable invalide ou clôturée : " + ecritureDto.getPeriodeComptableId()));
@@ -170,6 +179,22 @@ public class EcritureComptableService {
         return ecritures != null ? ecritures : List.of();
     }
 
+    public Optional<EcritureComptableDto> getEcritureById(UUID id) {
+        UUID tenantId = TenantContext.getCurrentTenant();
+        logger.info("Fetching ecriture comptable by ID: {} for tenant: {}", id, tenantId);
+
+        return ecritureRepository.findByKeyTenantIdAndKeyId(tenantId, id)
+                .map(ecriture -> {
+                    EcritureComptableDto dto = mapToDto(ecriture);
+                    // Fetch and map associated DetailEcriture entries
+                    List<DetailEcritureDto> details = detailEcritureService.findByKeyTenantIdAndKeyEcritureComptableId(tenantId, id)
+                            .stream()
+                            .map(this::mapToDetailEcritureDto)
+                            .collect(Collectors.toList());
+                    dto.setDetailsEcriture(details);
+                    return dto;
+                });
+    }
     public List<EcritureComptableDto> getNonValidatedEcritures() {
         UUID tenantId = TenantContext.getCurrentTenant();
         logger.info("Fetching non-validated ecritures comptables for tenant: {}", tenantId);
@@ -237,7 +262,8 @@ public class EcritureComptableService {
         ecriture.setDateEcriture(comptableObject.getDate());
         ecriture.setJournalComptableId(comptableObject.getJournalComptableId());
         ecriture.setPeriodeComptableId(periodeComptableId);
-        ecriture.setMontantTotal(comptableObject.getMontant());
+        ecriture.setMontantTotalDebit(comptableObject.getMontant());
+       // ecriture.setMontantTotalCredit(comptableObject.getMontant());
         ecriture.setValidee(false);
         ecriture.setSourceType(comptableObject.getSourceType());
         ecriture.setSourceId(comptableObject.getId());
@@ -263,7 +289,7 @@ public class EcritureComptableService {
 
         if (journalId != null) {
             journalComptableService.getJournalComptable(journalId)
-                    .filter(JournalComptable::getActif)
+                    .filter(JournalComptableDto::getActif)
                     .orElseThrow(() -> new IllegalArgumentException("Journal comptable invalide ou inactif : " + journalId));
         }
 
@@ -305,7 +331,7 @@ public class EcritureComptableService {
                 .orElseThrow(() -> new ResourceNotFoundException("Operation comptable", operationId.toString()));
 
         journalComptableService.getJournalComptable(operation.getJournalComptableId())
-                .filter(JournalComptable::getActif)
+                .filter(JournalComptableDto::getActif)
                 .orElseThrow(() -> new IllegalArgumentException("Journal comptable invalide ou inactif : " + operation.getJournalComptableId()));
 
         UUID periodeComptableId = getCurrentPeriodeComptableId(tenantId);
@@ -323,7 +349,10 @@ public class EcritureComptableService {
         ecriture.setDateEcriture(LocalDate.now());
         ecriture.setJournalComptableId(operation.getJournalComptableId());
         ecriture.setPeriodeComptableId(periodeComptableId);
-        ecriture.setMontantTotal(transaction.getMontantTransaction());
+        ecriture.setMontantTotalDebit(transaction.getMontantTransaction());
+        //A partir du sens de la transaction
+       // ecriture.setMontantTotalDebit(transaction.getMontantTransaction());
+
         ecriture.setValidee(false);
         ecriture.setCreatedAt(LocalDateTime.now());
         ecriture.setUpdatedAt(LocalDateTime.now());
@@ -406,7 +435,8 @@ public class EcritureComptableService {
         ecriture.setDateEcriture(dto.getDateEcriture());
         ecriture.setJournalComptableId(dto.getJournalComptableId());
         ecriture.setPeriodeComptableId(dto.getPeriodeComptableId());
-        ecriture.setMontantTotal(dto.getMontantTotal());
+        ecriture.setMontantTotalDebit(dto.getMontantTotalDebit());
+        ecriture.setMontantTotalCredit(dto.getMontantTotalCredit());
         ecriture.setValidee(dto.getValidee());
         ecriture.setDateValidation(dto.getDateValidation());
         ecriture.setUtilisateurValidation(dto.getUtilisateurValidation());
@@ -423,7 +453,8 @@ public class EcritureComptableService {
                 .dateEcriture(ecriture.getDateEcriture())
                 .journalComptableId(ecriture.getJournalComptableId())
                 .periodeComptableId(ecriture.getPeriodeComptableId())
-                .montantTotal(ecriture.getMontantTotal())
+                .montantTotalDebit(ecriture.getMontantTotalDebit())
+                .montantTotalCredit(ecriture.getMontantTotalCredit())
                 .validee(ecriture.getValidee())
                 .dateValidation(ecriture.getDateValidation())
                 .utilisateurValidation(ecriture.getUtilisateurValidation())
@@ -431,6 +462,20 @@ public class EcritureComptableService {
                 .notes(ecriture.getNotes())
                 .createdAt(ecriture.getCreatedAt())
                 .updatedAt(ecriture.getUpdatedAt())
+                .build();
+    }
+    
+    private DetailEcritureDto mapToDetailEcritureDto(DetailEcriture detail) {
+        return DetailEcritureDto.builder()
+                .id(detail.getKey().getId())
+                .ecritureComptableId(detail.getKey().getEcritureComptableId())
+                .compteComptableId(detail.getCompteComptableId())
+                .libelle(detail.getLibelle())
+                .sens(detail.getSens())
+                .montantDebit(detail.getMontantDebit())
+                .montantCredit(detail.getMontantCredit())
+                .notes(detail.getNotes())
+                .dateEcriture(detail.getDateEcriture())
                 .build();
     }
 

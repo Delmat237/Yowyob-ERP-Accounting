@@ -98,7 +98,8 @@ CREATE TABLE IF NOT EXISTS ecriture_comptable (
     date_ecriture DATE,
     journal_comptable_id UUID,
     periode_comptable_id UUID,
-    montant_total DOUBLE,
+    montant_total_debit DOUBLE,
+    montant_total_credit DOUBLE,
     validee BOOLEAN,
     date_validation TIMESTAMP,
     utilisateur_validation TEXT,
@@ -112,6 +113,7 @@ CREATE TABLE IF NOT EXISTS ecriture_comptable (
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
 CREATE INDEX IF NOT EXISTS idx_ecriture_numero ON ecriture_comptable (numero_ecriture);
+CREATE INDEX IF NOT EXISTS idx_ecriture_journal ON ecriture_comptable (journal_comptable_id);
 
 -- Table pour les journaux d'audit'
 CREATE TABLE IF NOT EXISTS journal_audit (
@@ -153,6 +155,7 @@ WITH compression = {'sstable_compression': 'LZ4Compressor'};
 
 -- Creation d'index' sur les journaux comptables
 CREATE INDEX IF NOT EXISTS  ON journal_comptable(code_journal);
+CREATE INDEX IF NOT EXISTS ON journal_comptable(actif);
 
 -- Table pour les opérations comptables
 CREATE TABLE IF NOT EXISTS operation_comptable (

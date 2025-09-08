@@ -1,6 +1,7 @@
 // DTO pour les détails d'écriture
 package com.yowyob.erp.accounting.dto;
 
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

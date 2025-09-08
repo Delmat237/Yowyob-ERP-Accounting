@@ -39,9 +39,12 @@ public class EcritureComptableDto {
 
     private String periodeComptableCode;
 
-    @NotNull(message = "Le montant total est obligatoire")
-    private Double montantTotal;
+    @NotNull(message = "Le montant total Debit est obligatoire")
+    private Double montantTotalDebit;
 
+     @NotNull(message = "Le montant total Credit est obligatoire")
+    private Double montantTotalCredit;
+    
     private Boolean validee;
 
     private LocalDateTime dateValidation;

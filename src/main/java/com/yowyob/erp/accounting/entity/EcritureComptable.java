@@ -45,10 +45,15 @@ public class EcritureComptable implements Auditable {
     @Column("periode_comptable_id")
     private UUID periodeComptableId;
 
-    @NotNull(message = "Le montant total ne peut pas être nul")
+    @NotNull(message = "Le montant total DEBIT ne peut pas être nul")
     @PositiveOrZero(message = "Le montant total doit être positif ou zéro")
-    @Column("montant_total")
-    private Double montantTotal;
+    @Column("montant_total_debit")
+    private Double montantTotalDebit;
+
+    @NotNull(message = "Le montant total Credit ne peut pas être nul")
+    @PositiveOrZero(message = "Le montant total doit être positif ou zéro")
+    @Column("montant_total_credit")
+    private Double montantTotalCredit;
 
     @NotNull(message = "Le statut validée ne peut pas être nul")
     private Boolean validee = false;
