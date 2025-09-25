@@ -1,11 +1,10 @@
 services:
   # ScyllaDB : base de données NoSQL compatible Cassandra pour la persistance des données
   scylla:
-    image: scylladb/scylla:5.4
+    image: scylladb/scylla:latest
     container_name: scylla
     ports:
       - "9042:9042"
-
     command: ["--smp", "2", "--memory", "2G", "--overprovisioned", "1"]
     volumes:
       - scylla-data:/var/lib/scylla
@@ -19,7 +18,7 @@ services:
 
   # scylla-init : service pour initialiser ScyllaDB avec le script CQL
   scylla-init:
-    image: scylladb/scylla:5.4
+    image: scylladb/scylla:latest
     container_name: scylla-init
     volumes:
       - ./src/main/resources/db/init.cql:/src/main/resources/db/init.cql
@@ -104,7 +103,7 @@ services:
 
   # Redis : base de données en mémoire pour le cache
   redis:
-    image: redis:7.2.4-alpine
+    image: redis:latest
     container_name: redis
     ports:
       - "6380:6379"  # Correction : mappe 6380 (hôte) vers 6379 (conteneur)

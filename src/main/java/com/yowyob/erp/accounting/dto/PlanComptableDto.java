@@ -26,6 +26,8 @@ public class PlanComptableDto {
     @NotBlank(message = "Le libellé est obligatoire")
     private String libelle;
 
+    private Integer classe;
+
     private String notes;
 
     @Builder.Default

@@ -1,12 +1,15 @@
 package com.yowyob.erp.accounting.service;
 
+import com.yowyob.erp.accounting.dto.ContrepartieDto;
 import com.yowyob.erp.accounting.dto.OperationComptableDto;
+import com.yowyob.erp.accounting.entity.Contrepartie;
 import com.yowyob.erp.accounting.entity.JournalAudit;
 import com.yowyob.erp.accounting.entity.JournalComptable;
 import com.yowyob.erp.accounting.entity.OperationComptable;
 import com.yowyob.erp.accounting.entity.PlanComptable;
 import com.yowyob.erp.accounting.entityKey.JournalAuditKey;
 import com.yowyob.erp.accounting.entityKey.OperationComptableKey;
+import com.yowyob.erp.accounting.repository.ContrepartieRepository;
 import com.yowyob.erp.accounting.repository.JournalAuditRepository;
 import com.yowyob.erp.accounting.repository.JournalComptableRepository;
 import com.yowyob.erp.accounting.repository.OperationComptableRepository;
@@ -32,6 +35,7 @@ public class OperationComptableService {
 
     private static final Logger logger = LoggerFactory.getLogger(OperationComptableService.class);
     private final OperationComptableRepository operationComptableRepository;
+    private final ContrepartieRepository contrePartieRepository;
     private final JournalComptableRepository journalComptableRepository;
     private final PlanComptableRepository planComptableRepository;
     private final JournalAuditRepository journalAuditRepository;
@@ -42,12 +46,14 @@ public class OperationComptableService {
                                     JournalComptableRepository journalComptableRepository,
                                     PlanComptableRepository planComptableRepository,
                                     JournalAuditRepository journalAuditRepository,
+                                    ContrepartieRepository contrePartieRepository,
                                     Validator validator,
                                     KafkaTemplate<String, Object> kafkaTemplate) {
         this.operationComptableRepository = operationComptableRepository;
         this.journalComptableRepository = journalComptableRepository;
         this.planComptableRepository = planComptableRepository;
         this.journalAuditRepository = journalAuditRepository;
+        this.contrePartieRepository = contrePartieRepository;
         this.validator = validator;
         this.kafkaTemplate = kafkaTemplate;
     }
@@ -86,6 +92,25 @@ public class OperationComptableService {
 
         OperationComptable savedOperation = operationComptableRepository.save(operation);
         OperationComptableDto savedDto = mapToDto(savedOperation);
+
+        // Enregistrement des contreparties
+        if (dto.getContreparties() != null && !dto.getContreparties().isEmpty()) {
+            List<Contrepartie> contreparties = dto.getContreparties().stream().map(cpDto -> {
+                Contrepartie cp = new Contrepartie();
+                cp.setTenantId(tenantId);
+                cp.setOperationComptableId(savedOperation.getKey().getId());
+                cp.setJournalComptableId(cpDto.getJournalComptableId());
+                cp.setEstCompteTiers(cpDto.getEstCompteTiers());
+                cp.setCompte(cpDto.getCompte());
+                cp.setSens(cpDto.getSens());
+                cp.setNotes(cpDto.getNotes());
+                cp.setCreatedAt(LocalDateTime.now());
+                cp.setCreatedBy(currentUser != null ? currentUser : "system");
+                return cp;
+            }).collect(Collectors.toList());
+            contrePartieRepository.saveAll(contreparties);
+        }
+
         logAudit(tenantId, null, currentUser, "CREATE", "Created operation: " + savedDto.getTypeOperation() + ", " + savedDto.getModeReglement());
         kafkaTemplate.send("operation.comptable.created", tenantId.toString(), savedDto);
         logger.info("Opération comptable créée avec succès : {}", savedOperation.getKey().getId());
@@ -103,6 +128,22 @@ public class OperationComptableService {
         logger.info("Récupération de toutes les opérations comptables pour le tenant");
         validerAccesTenantId();
         return operationComptableRepository.findByKeyTenantId(TenantContext.getCurrentTenant())
+                .stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<OperationComptableDto> getOperationsByNoCompte(String noCompte) {
+        logger.info("Récupération des opérations comptables par noCompte: {} pour le tenant", noCompte);
+        validerAccesTenantId();
+        UUID tenantId = TenantContext.getCurrentTenant();
+
+        // Validate that the comptePrincipal exists and is active
+        planComptableRepository.findByKeyTenantIdAndNoCompte(tenantId, noCompte)
+                .filter(PlanComptable::getActif)
+                .orElseThrow(() -> new IllegalArgumentException("Compte principal invalide ou inactif : " + noCompte));
+
+        return operationComptableRepository.findByKeyTenantIdAndComptePrincipal(tenantId, noCompte)
                 .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
@@ -144,6 +185,24 @@ public class OperationComptableService {
 
         OperationComptable savedOperation = operationComptableRepository.save(operation);
         OperationComptableDto savedDto = mapToDto(savedOperation);
+
+        // Update or create contreparties
+        contrePartieRepository.deleteByKeyTenantIdAndKeyOperationComptableId(tenantId, operationId);
+        if (dto.getContreparties() != null && !dto.getContreparties().isEmpty()) {
+            List<Contrepartie> contreparties = dto.getContreparties().stream().map(cpDto -> {
+                Contrepartie cp = new Contrepartie();
+                cp.setTenantId(tenantId);
+                cp.setOperationComptableId(operationId);
+                cp.setCompte(cpDto.getCompte());
+                cp.setSens(cpDto.getSens());
+                cp.setNotes(cpDto.getNotes());
+                cp.setCreatedAt(LocalDateTime.now());
+                cp.setCreatedBy(currentUser != null ? currentUser : "system");
+                return cp;
+            }).collect(Collectors.toList());
+            contrePartieRepository.saveAll(contreparties);
+        }
+
         logAudit(tenantId, null, currentUser, "UPDATE", "Updated operation: " + savedDto.getTypeOperation() + ", " + savedDto.getModeReglement());
         kafkaTemplate.send("operation.comptable.updated", tenantId.toString(), savedDto);
         logger.info("Opération comptable mise à jour avec succès : {}", operationId);
@@ -161,6 +220,8 @@ public class OperationComptableService {
         OperationComptable operation = operationComptableRepository.findByKeyTenantIdAndKeyId(tenantId, operationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Opération comptable", operationId.toString()));
 
+        // Delete associated contreparties
+        contrePartieRepository.deleteByKeyTenantIdAndKeyOperationComptableId(tenantId, operationId);
         operationComptableRepository.deleteById(key);
         logAudit(tenantId, null, currentUser, "DELETE", "Deleted operation: " + operation.getTypeOperation() + ", " + operation.getModeReglement());
         kafkaTemplate.send("operation.comptable.deleted", tenantId.toString(), operationId);
@@ -207,6 +268,19 @@ public class OperationComptableService {
                 .updatedAt(operation.getUpdatedAt())
                 .createdBy(operation.getCreatedBy())
                 .updatedBy(operation.getUpdatedBy())
+                .contreparties(contrePartieRepository.findByKeyTenantIdAndKeyOperationComptableId(
+                        operation.getTenantId(), operation.getKey().getId())
+                        .stream()
+                        .map(cp -> ContrepartieDto.builder()
+                                .compte(cp.getCompte())
+                                .sens(cp.getSens())
+                                .typeMontant(cp.getTypeMontant())
+                                .journalComptableId(cp.getJournalComptableId())
+                                .estCompteTiers(cp.getEstCompteTiers())
+                                .notes(cp.getNotes())
+                                .createdAt(cp.getCreatedAt())
+                                .build())
+                        .collect(Collectors.toList()))
                 .build();
     }
 

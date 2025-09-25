@@ -1,14 +1,19 @@
 package com.yowyob.erp.accounting.dto;
 
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class OperationComptableDto {
 
     private UUID id;
@@ -25,7 +30,7 @@ public class OperationComptableDto {
 
     @NotBlank(message = "Le compte principal ne peut pas être vide")
     @Size(max = 20, message = "Le compte principal ne doit pas dépasser 20 caractères")
-    private String comptePrincipal;
+    private String comptePrincipal; 
 
     @NotNull(message = "Le statut compte statique ne peut pas être nul")
     private Boolean estCompteStatique;
@@ -49,6 +54,8 @@ public class OperationComptableDto {
 
     @Size(max = 255, message = "Les notes ne doivent pas dépasser 255 caractères")
     private String notes;
+
+    private List<ContrepartieDto> contreparties;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -18,6 +18,7 @@ public interface PlanComptableRepository extends CassandraRepository<PlanComptab
     List<PlanComptable> findAllByKeyTenantId(UUID tenantId);
 
     Optional<PlanComptable> findByKey(PlanComptableKey key);
+    Optional<PlanComptable> findByKeyTenantIdAndKeyId(UUID tenantId, UUID infod);
 
     boolean existsByKeyTenantIdAndNoCompte(UUID tenantId, String noCompte);
 

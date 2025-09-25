@@ -59,6 +59,19 @@ public class OperationComptableController {
                         .body(ApiResponseWrapper.error("Opération comptable non trouvée")));
     }
 
+    @Operation(summary = "Récupérer les opérations comptables par numéro de compte", description = "Récupère toutes les opérations comptables associées à un numéro de compte (comptePrincipal)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des opérations comptables trouvées"),
+            @ApiResponse(responseCode = "400", description = "Compte principal invalide"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès interdit")
+    })
+    @GetMapping("/by-no-compte")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    public ResponseEntity<ApiResponseWrapper<List<OperationComptableDto>>> getOperationsByNoCompte(@RequestParam String noCompte) {
+        List<OperationComptableDto> operations = operationComptableService.getOperationsByNoCompte(noCompte);
+        return ResponseEntity.ok(ApiResponseWrapper.success(operations, "Opérations comptables récupérées avec succès"));
+    }
     @Operation(summary = "Lister toutes les opérations comptables", description = "Récupère toutes les opérations comptables du tenant courant")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Liste des opérations comptables"),

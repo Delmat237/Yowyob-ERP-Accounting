@@ -25,6 +25,9 @@ public class Contrepartie implements Auditable {
     @Size(max = 20, message = "Le compte ne doit pas dépasser 20 caractères")
     private String compte;
 
+     @Column("operation_comptable_id")
+    private UUID operationComptableId;
+
     @NotNull(message = "Est compte tiers ne peut pas être null")
     private Boolean estCompteTiers = false;
 

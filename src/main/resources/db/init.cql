@@ -1,14 +1,16 @@
--- Création du keyspace avec réplication NetworkTopologyStrategy
+-- Creation du keyspace avec réplication NetworkTopologyStrategy
+-- Changement du facteur de réplication à 1 pour un cluster à un seul nœud
 CREATE KEYSPACE IF NOT EXISTS yowyob_erp
-WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': 3}
-AND durable_writes = true;
+WITH replication = {'class': 'NetworkTopologyStrategy', 'datacenter1': 1}
+AND durable_writes = true
+AND TABLETS = {'enabled': false};
 
 USE yowyob_erp;
 
 -- Table pour les comptes
 CREATE TABLE IF NOT EXISTS compte (
     tenant_id UUID,
-     id UUID,
+    id UUID,
     no_compte TEXT,
     libelle TEXT,
     notes TEXT,
@@ -20,17 +22,17 @@ CREATE TABLE IF NOT EXISTS compte (
     updated_at TIMESTAMP,
     created_by TEXT,
     updated_by TEXT,
-    PRIMARY KEY (tenant_id,id)
+    PRIMARY KEY (tenant_id, id)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
--- Index pour le numéro de compte
--- Cela permet de rechercher les comptes par leur numéro sans avoir à parcourir toute la table
-CREATE INDEX IF NOT EXISTS idx_no_compte ON compte (no_compte);
--- Table pour les contreparties
 
+-- Index pour le numéro de compte
+CREATE INDEX IF NOT EXISTS idx_no_compte ON compte (no_compte);
+
+-- Table pour les contreparties
 CREATE TABLE IF NOT EXISTS contrepartie (
     tenant_id UUID,
-     id UUID,
+    id UUID,
     compte TEXT,
     est_compte_tiers BOOLEAN,
     sens TEXT,
@@ -41,14 +43,14 @@ CREATE TABLE IF NOT EXISTS contrepartie (
     updated_at TIMESTAMP,
     created_by TEXT,
     updated_by TEXT,
-    PRIMARY KEY (tenant_id,id, compte)
+    PRIMARY KEY (tenant_id, id, compte)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
 
 -- Table pour les déclarations fiscales
 CREATE TABLE IF NOT EXISTS declaration_fiscale (
     tenant_id UUID,
-     id UUID,
+    id UUID,
     type_declaration TEXT,
     periode_debut DATE,
     periode_fin DATE,
@@ -62,14 +64,14 @@ CREATE TABLE IF NOT EXISTS declaration_fiscale (
     updated_at TIMESTAMP,
     created_by TEXT,
     updated_by TEXT,
-    PRIMARY KEY (tenant_id,id, type_declaration)
+    PRIMARY KEY (tenant_id, id, type_declaration)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
 
--- Table pour les détails d'écriture'
+-- Table pour les détails d écriture
 CREATE TABLE IF NOT EXISTS detail_ecriture (
     tenant_id UUID,
-     id UUID,
+    id UUID,
     ecriture_id UUID,
     compte_comptable_id UUID,
     libelle TEXT,
@@ -86,7 +88,7 @@ CREATE TABLE IF NOT EXISTS detail_ecriture (
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
 
---iNDEX POUR TRIER PAR ecriture_comptable
+-- Index pour trier par ecriture_comptable
 CREATE INDEX IF NOT EXISTS ON detail_ecriture(ecriture_id);
 
 -- Table pour les écritures comptables
@@ -112,10 +114,11 @@ CREATE TABLE IF NOT EXISTS ecriture_comptable (
     PRIMARY KEY (tenant_id, id)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
+
 CREATE INDEX IF NOT EXISTS idx_ecriture_numero ON ecriture_comptable (numero_ecriture);
 CREATE INDEX IF NOT EXISTS idx_ecriture_journal ON ecriture_comptable (journal_comptable_id);
 
--- Table pour les journaux d'audit'
+-- Table pour les journaux d audit
 CREATE TABLE IF NOT EXISTS journal_audit (
     tenant_id UUID,
     date_action TIMESTAMP,
@@ -136,7 +139,7 @@ CREATE TABLE IF NOT EXISTS journal_audit (
 WITH compression = {'sstable_compression': 'LZ4Compressor'}
 AND CLUSTERING ORDER BY (date_action DESC, id ASC);
 
--- Table pour les journaux comptables (correction du nom de colonne)
+-- Table pour les journaux comptables
 CREATE TABLE IF NOT EXISTS journal_comptable (
     tenant_id UUID,
     id UUID,
@@ -153,14 +156,15 @@ CREATE TABLE IF NOT EXISTS journal_comptable (
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
 
--- Creation d'index' sur les journaux comptables
-CREATE INDEX IF NOT EXISTS  ON journal_comptable(code_journal);
+-- Création d index sur les journaux comptables
+CREATE INDEX IF NOT EXISTS ON journal_comptable(code_journal);
 CREATE INDEX IF NOT EXISTS ON journal_comptable(actif);
 
 -- Table pour les opérations comptables
 CREATE TABLE IF NOT EXISTS operation_comptable (
     tenant_id UUID,
     id UUID,
+    operation_comptable_id UUID,
     type_operation TEXT,
     mode_reglement TEXT,
     compte_principal TEXT,
@@ -178,6 +182,12 @@ CREATE TABLE IF NOT EXISTS operation_comptable (
     PRIMARY KEY (tenant_id, id)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
+
+CREATE INDEX IF NOT EXISTS ON operation_comptable(operation_comptable_id);
+CREATE INDEX IF NOT EXISTS ON operation_comptable(actif);
+CREATE INDEX IF NOT EXISTS ON operation_comptable(journal_comptable_id);    
+CREATE INDEX IF NOT EXISTS ON operation_comptable(compte_principal);    
+
 
 -- Table pour les périodes comptables
 CREATE TABLE IF NOT EXISTS periode_comptable (
@@ -197,14 +207,14 @@ CREATE TABLE IF NOT EXISTS periode_comptable (
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
 
-CREATE INDEX IF NOT EXISTS  ON periode_comptable(code);
+CREATE INDEX IF NOT EXISTS ON periode_comptable(code);
 
 -- Table pour les plan comptables
 CREATE TABLE IF NOT EXISTS plan_comptable (
     tenant_id UUID,
     id UUID,
     no_compte TEXT,
-     code_classe INT,
+    code_classe INT,
     libelle TEXT,
     notes TEXT,
     actif BOOLEAN,
@@ -212,21 +222,19 @@ CREATE TABLE IF NOT EXISTS plan_comptable (
     updated_at TIMESTAMP,
     created_by TEXT,
     updated_by TEXT,
-   
     PRIMARY KEY (tenant_id, id)
 )
 WITH compression = {'sstable_compression': 'LZ4Compressor'};
 
--- CReation des index pour pouvoir effectuer des filtrs , via des columns non clé CLUSTERING
-CREATE INDEX IF NOT EXISTS   ON plan_comptable (actif);
-CREATE INDEX IF NOT EXISTS  ON plan_comptable (code_classe);
-CREATE INDEX IF NOT EXISTS  ON plan_comptable (no_compte);
-
+-- Création des index pour pouvoir effectuer des filtres sur des colonnes non-clés
+CREATE INDEX IF NOT EXISTS ON plan_comptable (actif);
+CREATE INDEX IF NOT EXISTS ON plan_comptable (code_classe);
+CREATE INDEX IF NOT EXISTS ON plan_comptable (no_compte);
 
 -- Table pour les transactions
 CREATE TABLE IF NOT EXISTS transaction (
     tenant_id UUID,
-     id UUID,
+    id UUID,
     numero_recu TEXT,
     operation_comptable_id UUID,
     montant_transaction DOUBLE,

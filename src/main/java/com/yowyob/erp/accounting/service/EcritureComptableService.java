@@ -105,6 +105,7 @@ public class EcritureComptableService {
         EcritureComptableKey key = new EcritureComptableKey();
         key.setTenantId(tenantId);
         key.setId(UUID.randomUUID());
+        ecriture.setNumeroEcriture("ECR-" +key.getId() + "-" + System.currentTimeMillis());
         ecriture.setKey(key);
         ecriture.setCreatedAt(LocalDateTime.now());
         ecriture.setUpdatedAt(LocalDateTime.now());
@@ -263,7 +264,7 @@ public class EcritureComptableService {
         ecriture.setJournalComptableId(comptableObject.getJournalComptableId());
         ecriture.setPeriodeComptableId(periodeComptableId);
         ecriture.setMontantTotalDebit(comptableObject.getMontant());
-       // ecriture.setMontantTotalCredit(comptableObject.getMontant());
+        ecriture.setMontantTotalCredit(comptableObject.getMontant());
         ecriture.setValidee(false);
         ecriture.setSourceType(comptableObject.getSourceType());
         ecriture.setSourceId(comptableObject.getId());

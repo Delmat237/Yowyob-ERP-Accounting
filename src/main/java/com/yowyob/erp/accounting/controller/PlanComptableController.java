@@ -72,8 +72,8 @@ public class PlanComptableController {
         return ResponseEntity.ok(ApiResponseWrapper.success(dto));
     }
 
-    
-    @Operation(summary = "Lister tous les comptes comptables actifs", description = "Récupère tous les comptes comptables actifs du tenant courant")
+
+    @Operation(summary = "Lister tous les comptes comptables ", description = "Récupère tous les comptes comptables  du tenant courant")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Liste des comptes comptables"),
             @ApiResponse(responseCode = "401", description = "Non autorisé"),
@@ -82,6 +82,20 @@ public class PlanComptableController {
     @GetMapping
     //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
     public ResponseEntity<ApiResponseWrapper<List<PlanComptableDto>>> getAllPlanComptables() {
+        List<PlanComptableDto> accounts = planComptableService.getAllAccounts();
+        return ResponseEntity.ok(ApiResponseWrapper.success(accounts));
+    }
+
+    
+    @Operation(summary = "Lister tous les comptes comptables actifs", description = "Récupère tous les comptes comptables actifs du tenant courant")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Liste des comptes comptables actif"),
+            @ApiResponse(responseCode = "401", description = "Non autorisé"),
+            @ApiResponse(responseCode = "403", description = "Accès interdit")
+    })
+    @GetMapping("/actif")
+    //@PreAuthorize("hasRole('ADMIN') or hasRole('ACCOUNTANT') or hasRole('USER')")
+    public ResponseEntity<ApiResponseWrapper<List<PlanComptableDto>>> getActifPlanComptables() {
         List<PlanComptableDto> accounts = planComptableService.getAllActiveAccounts();
         return ResponseEntity.ok(ApiResponseWrapper.success(accounts));
     }

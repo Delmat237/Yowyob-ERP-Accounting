@@ -15,6 +15,10 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.lang.Character;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +33,7 @@ public class PlanComptableService {
     private final PlanComptableRepository planComptableRepository;
     private final ValidationService validationService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+
 
     @Transactional
     public PlanComptableDto createAccount(PlanComptableDto dto) {
@@ -50,6 +55,7 @@ public class PlanComptableService {
         key.setId(UUID.randomUUID());
         account.setKey(key);
         account.setNoCompte(dto.getNoCompte());
+        account.setClasse(Character.getNumericValue(dto.getNoCompte().charAt(0)));
         account.setLibelle(dto.getLibelle());
         account.setNotes(dto.getNotes());
         account.setActif(true);
@@ -65,6 +71,14 @@ public class PlanComptableService {
     }
 
 
+  public List<PlanComptableDto> getAllAccounts() {
+        UUID tenantId = TenantContext.getCurrentTenant();
+        return planComptableRepository.findAllByKeyTenantId(tenantId)
+                .stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
     public List<PlanComptableDto> getAllActiveAccounts() {
         UUID tenantId = TenantContext.getCurrentTenant();
         return planComptableRepository.findByKeyTenantIdAndActifTrue(tenantId)
@@ -76,11 +90,9 @@ public class PlanComptableService {
     
     public PlanComptableDto getAccountById(UUID id) {
         UUID tenantId = TenantContext.getCurrentTenant();
-       PlanComptableKey key = new PlanComptableKey();
-        key.setTenantId(tenantId);
-        key.setId(id);
+      
 
-        PlanComptable account = planComptableRepository.findByKey(key)
+        PlanComptable account = planComptableRepository.findByKeyTenantIdAndKeyId(tenantId,id)
                 .orElseThrow(() -> new ResourceNotFoundException("Compte Comptable", id.toString()));
         return mapToDto(account);
     }
@@ -107,11 +119,9 @@ public class PlanComptableService {
     public PlanComptableDto updateAccount(UUID id, PlanComptableDto dto) {
         UUID tenantId = TenantContext.getCurrentTenant();
         String currentUser = TenantContext.getCurrentUser();
-        PlanComptableKey key = new PlanComptableKey();
-        key.setTenantId(tenantId);
-        key.setId(id);
+        
 
-        PlanComptable account = planComptableRepository.findByKey(key)
+        PlanComptable account = planComptableRepository.findByKeyTenantIdAndKeyId(tenantId,id)
                 .orElseThrow(() -> new ResourceNotFoundException("PlanComptable", id.toString()));
 
         account.setLibelle(dto.getLibelle());
@@ -128,11 +138,9 @@ public class PlanComptableService {
     public void deactivateAccount(UUID id) {
         UUID tenantId = TenantContext.getCurrentTenant();
         String currentUser = TenantContext.getCurrentUser();
-        PlanComptableKey key = new PlanComptableKey();
-        key.setTenantId(tenantId);
-        key.setId(id);
+      
 
-        PlanComptable account = planComptableRepository.findByKey(key)
+        PlanComptable account = planComptableRepository.findByKeyTenantIdAndKeyId(tenantId,id)
                 .orElseThrow(() -> new ResourceNotFoundException("PlanComptable", id.toString()));
 
         account.setActif(false);
@@ -149,6 +157,7 @@ public class PlanComptableService {
                 .id(account.getKey().getId())
                 .noCompte(account.getNoCompte())
                 .libelle(account.getLibelle())
+                .classe(account.getClasse())
                 .notes(account.getNotes())
                 .actif(account.getActif())
                 .createdAt(account.getCreatedAt())
