@@ -1,0 +1,93 @@
+
+> accounting-yowyob-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://172.30.135.11:3000
+- Environments: .env.local
+✓ Ready in 27.4s
+⚠ Slow filesystem detected. The benchmark took 500ms. If /home/delmat/Stage/Yowyob/KSM-ERP-YOWYOB/FRONTEND/.next/dev is a network drive, consider moving it to a local folder.
+See more: https://nextjs.org/docs/app/guides/local-development
+
+○ Compiling /settings/profile ...
+ GET /settings/profile 200 in 27.0s (next.js: 16.7s, application-code: 10.4s)
+ GET / 200 in 375ms (next.js: 257ms, application-code: 118ms)
+ GET / 200 in 1984ms (next.js: 263ms, application-code: 1721ms)
+ GET /accounting/dashboard 200 in 1711ms (next.js: 1563ms, application-code: 149ms)
+ GET /settings/profile 200 in 194ms (next.js: 70ms, application-code: 125ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:266:15)
+    at <unknown> (src/lib/core/request.ts:314:17)
+  264 |     const error = errors[result.status];
+  265 |     if (error) {
+> 266 |         throw new ApiError(options, result, error);
+      |               ^
+  267 |     }
+  268 |
+  269 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:266:15)
+    at <unknown> (src/lib/core/request.ts:314:17)
+  264 |     const error = errors[result.status];
+  265 |     if (error) {
+> 266 |         throw new ApiError(options, result, error);
+      |               ^
+  267 |     }
+  268 |
+  269 |     if (!result.ok) { (app/(dashboard)
+ GET /accounting/chart-of-accounts 200 in 701ms (next.js: 480ms, application-code: 221ms)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/plan-comptable TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:219:18)
+    at <unknown> (src/lib2/core/request.ts:305:38)
+  217 |     onCancel(() => controller.abort());
+  218 |
+> 219 |     return await fetch(url, request);
+      |                  ^
+  220 | };
+  221 |
+  222 | export const getResponseHeader = (response: Response, responseHeader?: string): string | ... (src/lib2/core/request.ts:308:29)
+[browser] Failed to fetch accounts: Error: Erreur de connexion au serveur
+    at ChartOfAccountsPage.useCallback[fetchAccounts] (app/(dashboard)/accounting/chart-of-accounts/page.tsx:40:15)
+  38 |       const response = await AccountingPlanComptableService.getAllPlanComptables();
+  39 |       if (response?.success === false) {
+> 40 |         throw new Error(response.message || "Impossible de charger le plan comptable.");
+     |               ^
+  41 |       }
+  42 |       if (response?.data) {
+  43 |         setAccounts(response.data); (app/(dashboard)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/plan-comptable TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:219:18)
+    at <unknown> (src/lib2/core/request.ts:305:38)
+  217 |     onCancel(() => controller.abort());
+  218 |
+> 219 |     return await fetch(url, request);
+      |                  ^
+  220 | };
+  221 |
+  222 | export const getResponseHeader = (response: Response, responseHeader?: string): string | ... (src/lib2/core/request.ts:308:29)
+[browser] Failed to fetch accounts: Error: Erreur de connexion au serveur
+    at ChartOfAccountsPage.useCallback[fetchAccounts] (app/(dashboard)/accounting/chart-of-accounts/page.tsx:40:15)
+  38 |       const response = await AccountingPlanComptableService.getAllPlanComptables();
+  39 |       if (response?.success === false) {
+> 40 |         throw new Error(response.message || "Impossible de charger le plan comptable.");
+     |               ^
+  41 |       }
+  42 |       if (response?.data) {
+  43 |         setAccounts(response.data); (app/(dashboard)
+ GET / 200 in 497ms (next.js: 234ms, application-code: 263ms)
+ GET / 200 in 955ms (next.js: 47ms, application-code: 908ms)
+ GET /accounting/dashboard 200 in 1177ms (next.js: 891ms, application-code: 286ms)
+ GET /accounting/chart-of-accounts 200 in 1375ms (next.js: 1236ms, application-code: 139ms)
+○ Compiling /accounting/entries ...
+ GET /accounting/entries 200 in 3.4min (next.js: 3.4min, application-code: 552ms)
+✓ Finished writing to filesystem cache in 28.2s
+○ Compiling /accounting/accounts ...
+✓ Finished filesystem cache database compaction in 3.2min
+ GET /accounting/accounts 200 in 2.7min (next.js: 2.6min, application-code: 7.6s)
+ GET /accounting/accounts 200 in 18.8s (next.js: 12.8s, application-code: 6.0s)
+✓ Finished writing to filesystem cache in 39.9s
+ GET /accounting/entries 200 in 17.9s (next.js: 8.9s, application-code: 9.0s)
+ GET /accounting/entries 200 in 529ms (next.js: 291ms, application-code: 239ms)
+✓ Finished filesystem cache database compaction in 6.9min
+ GET /accounting/entries 200 in 148ms (next.js: 5ms, application-code: 142ms)
