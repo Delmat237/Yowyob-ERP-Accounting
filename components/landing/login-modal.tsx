@@ -101,7 +101,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setLoginFeedback(null);
         try {
             const apiBase = OpenAPI.BASE.replace(/\/$/, '');
-            const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? '11111111-1111-1111-1111-111111111112';
+            const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? '11111111-1111-1111-1111-111111111111';
             const res = await fetch(`${apiBase}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
