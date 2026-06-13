@@ -313,7 +313,20 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions): C
 
                 catchErrorCodes(options, result);
 
-                resolve(result.body);
+                // Le kernel enveloppe ses réponses dans { success, data, message }.
+                // Les services générés sont typés sur le modèle direct (ex. User),
+                // on déballe donc .data pour exposer le payload attendu par les pages.
+                // (ne s'applique pas quand un responseHeader spécifique est demandé)
+                const responsePayload = result.body;
+                if (
+                    !options.responseHeader &&
+                    responsePayload && typeof responsePayload === 'object' &&
+                    'success' in responsePayload && 'data' in responsePayload
+                ) {
+                    resolve((responsePayload as any).data);
+                } else {
+                    resolve(responsePayload);
+                }
             }
         } catch (error) {
             reject(error);

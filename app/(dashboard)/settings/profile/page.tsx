@@ -55,12 +55,20 @@ export default function ProfilePage() {
     );
   }
 
+  // Le user kernel ne renvoie pas firstName/lastName (ils vivent sur l'acteur) ;
+  // on retombe sur le username pour l'affichage.
+  const username = (profile as any)?.username as string | undefined;
+
   const initials = profile
-    ? `${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase() || "?"
+    ? (`${profile.firstName?.[0] ?? ""}${profile.lastName?.[0] ?? ""}`.toUpperCase()
+        || username?.[0]?.toUpperCase()
+        || "?")
     : "?";
 
   const fullName = profile
-    ? `${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim() || "Utilisateur"
+    ? (`${profile.firstName ?? ""} ${profile.lastName ?? ""}`.trim()
+        || username
+        || "Utilisateur")
     : "Utilisateur";
 
   return (
