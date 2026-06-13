@@ -22,8 +22,8 @@ export type OpenAPIConfig = {
 export const OpenAPI: OpenAPIConfig = {
     // BASE URL is read from the environment variable, falling back to localhost for local development
     BASE: typeof window !== 'undefined'
-        ? (window as any).__NEXT_PUBLIC_API_URL__ ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081'
-        : process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081',
+        ? (window as any).__NEXT_PUBLIC_API_URL__ ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081'
+        : process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081',
     VERSION: '1.0.0',
     WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',
@@ -35,7 +35,7 @@ export const OpenAPI: OpenAPIConfig = {
         typeof window !== 'undefined'
             ? {
                 'X-Tenant-ID': localStorage.getItem('organization_id') ?? '',
-              }
+            }
             : {}
     ),
     ENCODE_PATH: undefined,

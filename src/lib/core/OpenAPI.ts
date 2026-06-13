@@ -26,8 +26,8 @@ const KERNEL_BASE = process.env.NEXT_PUBLIC_KERNEL_URL ?? 'http://localhost:8080
 
 export const OpenAPI: OpenAPIConfig = {
     BASE: typeof window !== 'undefined'
-        ? (window as any).__NEXT_PUBLIC_KERNEL_URL__ ?? KERNEL_BASE
-        : KERNEL_BASE,
+        ? (window as any).__NEXT_PUBLIC_API_URL__ ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081'
+        : process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081',
     VERSION: '1.0.0',
     WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',
@@ -38,11 +38,7 @@ export const OpenAPI: OpenAPIConfig = {
         typeof window !== 'undefined'
             ? {
                 'X-Tenant-ID': localStorage.getItem('organization_id') ?? '',
-                // Le kernel exige les credentials client (X-Client-Id/X-Api-Key)
-                // en plus du Bearer pour authentifier la requête.
-                'X-Client-Id': process.env.NEXT_PUBLIC_KERNEL_CLIENT_ID ?? 'dev-platform-backend',
-                'X-Api-Key': process.env.NEXT_PUBLIC_KERNEL_API_KEY ?? 'dev-api-key',
-              }
+            }
             : {}
     ),
     ENCODE_PATH: undefined,
