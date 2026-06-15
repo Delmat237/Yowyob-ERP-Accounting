@@ -83,13 +83,17 @@ export const TaxeForm: React.FC<TaxeFormProps> = ({ initialData, onSave, onCance
                 <FormField
                   control={form.control}
                   name="taux"
-                  rules={{ required: "Le taux est requis" }}
+                  rules={{
+                    required: "Le taux est requis",
+                    min: { value: 0, message: "Le taux doit être positif" },
+                    max: { value: 100, message: "Le taux ne peut pas dépasser 100 %" },
+                  }}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-semibold">Taux (en %) <span className="text-red-500">*</span></FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input type="number" step="0.01" {...field} placeholder="18.00" className="pr-8" />
+                          <Input type="number" step="0.01" min={0} max={100} {...field} placeholder="18.00" className="pr-8" />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">%</span>
                         </div>
                       </FormControl>
