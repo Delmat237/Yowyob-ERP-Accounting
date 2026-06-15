@@ -30,11 +30,14 @@ export const OpenAPI: OpenAPIConfig = {
     TOKEN: () => Promise.resolve(typeof window !== 'undefined' ? localStorage.getItem('auth_token') ?? '' : ''),
     USERNAME: undefined,
     PASSWORD: undefined,
-    // Inject X-Tenant-ID header dynamically from localStorage on every request
+    // Tenant and organization are DISTINCT (aligned with the kernel):
+    //   - X-Organization-Id: the business unit owning the data (localStorage 'organization_id')
+    //   - X-Tenant-Id: the platform customer (localStorage 'tenant_id', defaulting to the platform tenant)
     HEADERS: () => Promise.resolve(
         typeof window !== 'undefined'
             ? {
-                'X-Tenant-ID': localStorage.getItem('organization_id') ?? '',
+                'X-Organization-Id': localStorage.getItem('organization_id') ?? '',
+                'X-Tenant-Id': localStorage.getItem('tenant_id') ?? '11111111-1111-1111-1111-111111111111',
               }
             : {}
     ),
