@@ -19,8 +19,12 @@ export type OpenAPIConfig = {
     ENCODE_PATH?: ((path: string) => string) | undefined;
 };
 
+// Ce client cible le KERNEL (services users/actors/organizations/agencies/...),
+// distinct du backend accounting (src/lib2 → NEXT_PUBLIC_API_URL). Les chemins
+// générés sont sans préfixe /api, on le porte donc dans la base URL du kernel.
+const KERNEL_BASE = process.env.NEXT_PUBLIC_KERNEL_URL ?? 'http://172.30.135:8080/api';
+
 export const OpenAPI: OpenAPIConfig = {
-    // BASE URL is read from the environment variable, falling back to localhost for local development
     BASE: typeof window !== 'undefined'
         ? (window as any).__NEXT_PUBLIC_API_URL__ ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081'
         : process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081',
@@ -30,7 +34,6 @@ export const OpenAPI: OpenAPIConfig = {
     TOKEN: () => Promise.resolve(typeof window !== 'undefined' ? localStorage.getItem('auth_token') ?? '' : ''),
     USERNAME: undefined,
     PASSWORD: undefined,
-    // Inject X-Tenant-ID header dynamically from localStorage on every request
     HEADERS: () => Promise.resolve(
         typeof window !== 'undefined'
             ? {
