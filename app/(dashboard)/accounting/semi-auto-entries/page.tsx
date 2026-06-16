@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { DraftAccountingService } from '@/src/lib2/services/DraftAccountingService';
-import { AccountingInvoiceUploadService } from '@/src/lib2/services/AccountingInvoiceUploadService';
 import { BrouillardComptableDto } from '@/src/lib2/models/BrouillardComptableDto';
 import { format } from 'date-fns';
 import {
@@ -93,7 +92,7 @@ export default function AccountingSemiAutoEntryPage() {
     const loadingToastId = toast.loading("Analyse du document en cours par l'OCR...");
 
     try {
-      const response = await AccountingInvoiceUploadService.upload({ file: file as any });
+      const response = await DraftAccountingService.uploadDraftFromInvoice({ file: file as any });
       if (response && response.success) {
         toast.success("Facture importée", {
           id: loadingToastId,

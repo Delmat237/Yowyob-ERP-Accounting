@@ -130,4 +130,23 @@ export class DraftAccountingService {
 
         });
     }
+    /**
+     * Upload an invoice document, run OCR and persist it as a pending draft (brouillard)
+     * scoped to the current organization.
+     * @param formData
+     * @returns ApiResponseWrapperBrouillardComptableDto OK
+     * @throws ApiError
+     */
+    public static uploadDraftFromInvoice(
+        formData?: {
+            file: Blob;
+        },
+    ): CancelablePromise<ApiResponseWrapperBrouillardComptableDto> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/accounting/brouillards/upload',
+            formData: formData,
+            mediaType: 'multipart/form-data',
+        });
+    }
 }

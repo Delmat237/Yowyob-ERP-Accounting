@@ -11,8 +11,20 @@ export const NavigationLoader = () => {
     const { isLoading, stopLoading } = useLoadingStore();
 
     useEffect(() => {
-        // Stop loading once the new route has successfully mounted/rendered
-        stopLoading();
+        // `pathname`/`searchParams` change as soon as the new route is *committed*
+        // (the client page component mounts), which for client-fetched pages happens
+        // BEFORE its data is loaded and painted — stopping here hides the loader too
+        // early, leaving a blank screen. Defer to after the browser has actually
+        // painted the new route's first frame (double rAF) so the overlay hands off
+        // to the page's own content/skeleton without a visible gap.
+        let raf2 = 0;
+        const raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => stopLoading());
+        });
+        return () => {
+            cancelAnimationFrame(raf1);
+            if (raf2) cancelAnimationFrame(raf2);
+        };
     }, [pathname, searchParams, stopLoading]);
 
     if (!isLoading) return null;

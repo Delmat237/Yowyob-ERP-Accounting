@@ -165,7 +165,11 @@ export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptio
     }
 
     if (options.body !== undefined) {
-        if (options.mediaType) {
+        if (isFormData(options.body)) {
+            // Ne pas fixer Content-Type pour un FormData : le navigateur doit
+            // générer lui-même `multipart/form-data; boundary=...`. Le poser à la
+            // main (via mediaType) produit un en-tête sans boundary → 500 côté backend.
+        } else if (options.mediaType) {
             headers['Content-Type'] = options.mediaType;
         } else if (isBlob(options.body)) {
             headers['Content-Type'] = options.body.type || 'application/octet-stream';

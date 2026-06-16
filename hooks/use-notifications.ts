@@ -34,17 +34,20 @@ export function useNotifications(): UseNotificationsReturn {
     if (typeof window === 'undefined') return;
 
     const token = localStorage.getItem('auth_token');
-    const tenantId = localStorage.getItem('organization_id');
+    const organizationId = localStorage.getItem('organization_id');
 
-    if (!token || !tenantId) return;
+    if (!token || !organizationId) return;
 
     // Close any previous connection
     eventSourceRef.current?.close();
 
-    // Build SSE URL with auth params (EventSource doesn't support custom headers)
+    // Build SSE URL with auth params (EventSource doesn't support custom headers).
+    // The backend OrganizationWebFilter requires the `organizationId` query param
+    // (it cannot read an X-Organization-Id header from EventSource); notifications
+    // are keyed by organization, so this is also the SSE sink key.
     const url = new URL(`${apiBase}/api/accounting/notifications/stream`);
     url.searchParams.set('token', token);
-    url.searchParams.set('tenantId', tenantId);
+    url.searchParams.set('organizationId', organizationId);
 
     const es = new EventSource(url.toString(), { withCredentials: false });
 
@@ -88,12 +91,14 @@ export function useNotifications(): UseNotificationsReturn {
   const markAsRead = useCallback(async (id: string) => {
     try {
       const token = localStorage.getItem('auth_token');
-      const tenantId = localStorage.getItem('organization_id');
+      const organizationId = localStorage.getItem('organization_id');
+      const tenantId = localStorage.getItem('tenant_id');
       await fetch(`${apiBase}/api/accounting/notifications/${id}/read`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${token}`,
-          'X-Tenant-ID': tenantId ?? '',
+          'X-Organization-Id': organizationId ?? '',
+          'X-Tenant-Id': tenantId ?? '',
         },
       });
       setNotifications(prev =>
