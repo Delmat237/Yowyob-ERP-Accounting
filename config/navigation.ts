@@ -23,7 +23,8 @@ import {
     Scale,
     ListChecks,
     Layers,
-    ClipboardCheck
+    ClipboardCheck,
+    Rocket
 } from "lucide-react";
 
 export type SidebarLink = {
@@ -123,6 +124,7 @@ export const modules: Record<ModuleKey, Module> = {
         composeActionLabel: "",
         allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE'],
         sidebarLinks: [
+            { title: "Initialisation comptable", icon: Rocket, href: "/accounting/setup", allowedRoles: ['RESPONSABLE_COMPTABLE'] },
             { title: "Plan Comptable", icon: BookOpen, href: "/accounting/chart-of-accounts", allowedRoles: ['RESPONSABLE_COMPTABLE', 'COMPTABLE'] },
             { title: "Comptes Comptables", icon: Landmark, href: "/accounting/accounts", allowedRoles: ['RESPONSABLE_COMPTABLE', 'COMPTABLE'] },
             { title: "Exercices Comptables", icon: FileClock, href: "/accounting/fiscal-years", allowedRoles: ['RESPONSABLE_COMPTABLE'] },
