@@ -131,6 +131,27 @@ export class DraftAccountingService {
         });
     }
     /**
+     * Update an editable draft (amounts, VAT, journal…) before validation
+     * @param id
+     * @param requestBody
+     * @returns ApiResponseWrapperBrouillardComptableDto OK
+     * @throws ApiError
+     */
+    public static updateBrouillard(
+        id: string,
+        requestBody: BrouillardComptableDto,
+    ): CancelablePromise<ApiResponseWrapperBrouillardComptableDto> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/accounting/brouillards/{id}',
+            path: {
+                'id': id,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+        });
+    }
+    /**
      * Upload an invoice document, run OCR and persist it as a pending draft (brouillard)
      * scoped to the current organization.
      * @param formData

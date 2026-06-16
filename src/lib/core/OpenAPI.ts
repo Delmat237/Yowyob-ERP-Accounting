@@ -37,7 +37,12 @@ export const OpenAPI: OpenAPIConfig = {
     HEADERS: () => Promise.resolve(
         typeof window !== 'undefined'
             ? {
-                'X-Tenant-ID': localStorage.getItem('organization_id') ?? '',
+                // X-Tenant-ID = le TENANT (≠ organisation). Au login, le
+                // localStorage est vide → on retombe sur NEXT_PUBLIC_TENANT_ID
+                // (configurable dans .env.local), sinon ''.
+                'X-Tenant-ID': localStorage.getItem('tenant_id')
+                    || process.env.NEXT_PUBLIC_TENANT_ID
+                    || '',
                 // Le kernel exige les credentials client (X-Client-Id/X-Api-Key)
                 // en plus du Bearer pour authentifier la requête.
                 'X-Client-Id': process.env.NEXT_PUBLIC_KERNEL_CLIENT_ID ?? 'dev-platform-backend',

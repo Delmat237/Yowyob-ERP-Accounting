@@ -117,7 +117,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             localStorage.setItem('auth_token', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
-            localStorage.setItem('organization_id', response.user?.organizationId ?? '');
+            // L'org de l'utilisateur peut etre vide (owner pas "membre" au sens kernel) :
+            // on retombe sur NEXT_PUBLIC_ORGANIZATION_ID pour avoir un contexte org valide.
+            localStorage.setItem('organization_id',
+                response.user?.organizationId || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
+            // Stocker le tenant (sinon les clients retombent sur l'env) pour X-Tenant-Id.
+            localStorage.setItem('tenant_id',
+                (response.user as { tenantId?: string })?.tenantId || tenantId || '');
             OpenAPI.TOKEN = response.token;
             setUser(response.user);
 

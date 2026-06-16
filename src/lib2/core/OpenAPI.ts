@@ -42,7 +42,9 @@ export const OpenAPI: OpenAPIConfig = {
                 'X-Organization-Id': localStorage.getItem('organization_id')
                     || process.env.NEXT_PUBLIC_ORGANIZATION_ID
                     || '4e177ff2-89b8-4d24-926a-5763dfa1b19a',
-                'X-Tenant-Id': localStorage.getItem('tenant_id') ?? '11111111-1111-1111-1111-111111111111',
+                'X-Tenant-Id': localStorage.getItem('tenant_id')
+                    || process.env.NEXT_PUBLIC_TENANT_ID
+                    || '11111111-1111-1111-1111-111111111111',
               }
             : {}
     ),
