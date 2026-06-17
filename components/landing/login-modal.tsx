@@ -100,12 +100,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setIsLoading(true);
         setLoginFeedback(null);
         try {
-            // OpenAPI.BASE pointe sur le proxy Kernel du backend (/api/kernel). Le proxy
-            // reconstruit le préfixe /api du Kernel, donc on cible /auth/login (et non
-            // /api/auth/login) → relayé vers le Kernel :8080/api/auth/login.
+            // Le login passe par l'endpoint d'auth PROPRE au backend accounting
+            // (OpenAPI[src/lib2].BASE = :8081), qui encapsule le Kernel (+ fallback mock)
+            // et renvoie un contrat simple { token, user }. Ce n'est PAS le proxy Kernel
+            // (/api/kernel) : celui-ci ne sert qu'aux appels ressources du client src/lib.
             const apiBase = OpenAPI.BASE.replace(/\/$/, '');
             const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? '11111111-1111-1111-1111-111111111111';
-            const res = await fetch(`${apiBase}/auth/login`, {
+            const res = await fetch(`${apiBase}/api/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: data.email, password: data.password, tenantId }),
