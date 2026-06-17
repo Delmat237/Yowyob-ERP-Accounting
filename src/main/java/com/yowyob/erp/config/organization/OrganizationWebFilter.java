@@ -58,7 +58,7 @@ public class OrganizationWebFilter implements WebFilter {
             // /api/kernel = reverse-proxy Kernel : le backend ne consomme pas le contexte org,
             // il relaie tel quel l'éventuel X-Organization-Id au Kernel qui gère sa propre logique.
             "/api/kernel",
-            "/api/auth", "/.well-known", "/actuator", "/swagger", "/v3/api-docs", "/webjars", "/favicon");
+            "/api/auth", "/.well-known", "/actuator", "/swagger", "/api-docs", "/v3/api-docs", "/webjars", "/favicon");
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -78,7 +78,7 @@ public class OrganizationWebFilter implements WebFilter {
             // CORS preflight (OPTIONS) never carries custom headers, and infrastructure paths
             // (auth, health, docs…) don't need an organization — let them through.
             if (org.springframework.http.HttpMethod.OPTIONS.equals(request.getMethod())
-                    || isExempt(request.getPath().value())) {
+                    || isExempt(request)) {
                 return writeContext(chain.filter(exchange), null, tenantId);
             }
             if (requireExplicit) {
@@ -111,7 +111,23 @@ public class OrganizationWebFilter implements WebFilter {
         });
     }
 
-    private boolean isExempt(String path) {
+    private boolean isExempt(ServerHttpRequest request) {
+        String path = request.getPath().value();
+        if (matchesExempt(path)) {
+            return true;
+        }
+        // Derrière Traefik (stripprefix /accounting-api + SERVER_FORWARD_HEADERS_STRATEGY=framework),
+        // le chemin vu ici réintègre le préfixe d'UN segment (/accounting-api) et l'en-tête
+        // X-Forwarded-Prefix est déjà consommé par le framework. On retire donc le 1er segment de
+        // chemin et on re-teste, afin que /accounting-api/actuator/health matche bien /actuator.
+        int secondSlash = path.indexOf('/', 1);
+        if (secondSlash > 0 && matchesExempt(path.substring(secondSlash))) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean matchesExempt(String path) {
         return EXEMPT_PREFIXES.stream().anyMatch(path::startsWith);
     }
 
