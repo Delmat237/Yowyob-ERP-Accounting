@@ -1,0 +1,929 @@
+
+> accounting-yowyob-erp@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.127.191.11:3000
+- Environments: .env.local
+✓ Ready in 8.2s
+⚠ Slow filesystem detected. The benchmark took 575ms. If /home/delmat/Stage/Yowyob/KSM-ERP-YOWYOB/FRONTEND/.next/dev is a network drive, consider moving it to a local folder.
+See more: https://nextjs.org/docs/app/guides/local-development
+
+○ Compiling / ...
+ GET / 200 in 35.1s (next.js: 33.0s, application-code: 2.2s)
+ GET / 200 in 35.6s (next.js: 32.4s, application-code: 3.2s)
+○ Compiling /accounting/dashboard ...
+ GET /accounting/dashboard 200 in 7.7s (next.js: 7.5s, application-code: 207ms)
+ GET / 200 in 146ms (next.js: 14ms, application-code: 132ms)
+ GET /accounting/dashboard 200 in 529ms (next.js: 125ms, application-code: 404ms)
+ GET /accounting/chart-of-accounts 200 in 1948ms (next.js: 1763ms, application-code: 185ms)
+ GET /settings/profile 200 in 851ms (next.js: 476ms, application-code: 375ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:266:15)
+    at <unknown> (src/lib/core/request.ts:314:17)
+  264 |     const error = errors[result.status];
+  265 |     if (error) {
+> 266 |         throw new ApiError(options, result, error);
+      |               ^
+  267 |     }
+  268 |
+  269 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:266:15)
+    at <unknown> (src/lib/core/request.ts:314:17)
+  264 |     const error = errors[result.status];
+  265 |     if (error) {
+> 266 |         throw new ApiError(options, result, error);
+      |               ^
+  267 |     }
+  268 |
+  269 |     if (!result.ok) { (app/(dashboard)
+ GET /accounting/entries 200 in 1056ms (next.js: 569ms, application-code: 487ms)
+✓ Compiled in 3.1s
+ GET / 200 in 211ms (next.js: 23ms, application-code: 189ms)
+ GET / 200 in 336ms (next.js: 12ms, application-code: 323ms)
+ GET /accounting/dashboard 200 in 201ms (next.js: 24ms, application-code: 177ms)
+ GET /accounting/chart-of-accounts 200 in 187ms (next.js: 18ms, application-code: 169ms)
+[browser] [API Error] HTTP 409 on http://localhost:8081/api/accounting/plan-comptable/admin/organizations/f9ab9d23-334b-468d-97ca-0e8b7489fc02/plan-comptable/init-ohada-2025 ApiError: Generic Error: status: 409; status text: Conflict; body: {
+  "success": false,
+  "message": "Database error: insert or update on table \"plans_comptables\" violates foreign key constraint \"fk_plans_comptables_tenant\"",
+  "timestamp": "2026-06-16T08:55:28.733507682Z",
+  "traceId": "7a130c89-4088-4e53-adcf-0e8ece416e6b",
+  "code": 400
+}
+    at catchErrorCodes (src/lib2/core/request.ts:281:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  279 |         })();
+  280 |
+> 281 |         throw new ApiError(options, result,
+      |               ^
+  282 |             `Generic Error: status: ${errorStatus}; status text: ${errorStatusText}; body...
+  283 |         );
+  284 |     } (src/lib2/core/request.ts:333:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/plan-comptable/import ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+○ Compiling /accounting/semi-auto-entries ...
+ GET /accounting/semi-auto-entries 200 in 16.3s (next.js: 14.9s, application-code: 1376ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:46:30)
+  44 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  45 |
+> 46 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  47 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  48 |       );
+  49 | (app/(dashboard)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:46:30)
+  44 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  45 |
+> 46 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  47 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  48 |       );
+  49 | (app/(dashboard)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/invoices/upload ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] OCR Upload failed: Error: Unauthorized
+    at AccountingSemiAutoEntryPage.useCallback[onDrop] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:104:15)
+  102 |         await fetchDrafts();
+  103 |       } else {
+> 104 |         throw new Error(response?.message || "Erreur inconnue");
+      |               ^
+  105 |       }
+  106 |     } catch (error: any) {
+  107 |       console.error("OCR Upload failed:", error); (app/(dashboard)
+✓ Finished filesystem cache database compaction in 6.2min
+ GET /accounting/semi-auto-entries 200 in 3.2s (next.js: 1307ms, application-code: 1922ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:46:30)
+  44 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  45 |
+> 46 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  47 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  48 |       );
+  49 | (app/(dashboard)
+ GET /accounting/chart-of-accounts 200 in 708ms (next.js: 124ms, application-code: 584ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/plan-comptable ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/plan-comptable ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+[browser] Failed to fetch accounts: Error: Unauthorized
+    at ChartOfAccountsPage.useCallback[fetchAccounts] (app/(dashboard)/accounting/chart-of-accounts/page.tsx:40:15)
+  38 |       const response = await AccountingPlanComptableService.getAllPlanComptables();
+  39 |       if (response?.success === false) {
+> 40 |         throw new Error(response.message || "Impossible de charger le plan comptable.");
+     |               ^
+  41 |       }
+  42 |       if (response?.data) {
+  43 |         setAccounts(response.data); (app/(dashboard)
+[browser] Failed to fetch accounts: Error: Unauthorized
+    at ChartOfAccountsPage.useCallback[fetchAccounts] (app/(dashboard)/accounting/chart-of-accounts/page.tsx:40:15)
+  38 |       const response = await AccountingPlanComptableService.getAllPlanComptables();
+  39 |       if (response?.success === false) {
+> 40 |         throw new Error(response.message || "Impossible de charger le plan comptable.");
+     |               ^
+  41 |       }
+  42 |       if (response?.data) {
+  43 |         setAccounts(response.data); (app/(dashboard)
+ GET / 200 in 365ms (next.js: 145ms, application-code: 220ms)
+ GET /accounting/dashboard 200 in 1633ms (next.js: 429ms, application-code: 1205ms)
+ GET /accounting/accounts 200 in 1904ms (next.js: 1682ms, application-code: 222ms)
+ GET /accounting/chart-of-accounts 200 in 273ms (next.js: 60ms, application-code: 214ms)
+[browser] [API Error] HTTP 409 on http://localhost:8081/api/accounting/plan-comptable/admin/organizations/f9ab9d23-334b-468d-97ca-0e8b7489fc02/plan-comptable/init-ohada-2025 ApiError: Generic Error: status: 409; status text: Conflict; body: {
+  "success": false,
+  "message": "Database error: null value in column \"code\" of relation \"organizations\" violates not-null constraint",
+  "timestamp": "2026-06-16T09:51:37.024900885Z",
+  "traceId": "e4c89d36-29f4-4a04-9232-abb654d04b1a",
+  "code": 400
+}
+    at catchErrorCodes (src/lib2/core/request.ts:281:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  279 |         })();
+  280 |
+> 281 |         throw new ApiError(options, result,
+      |               ^
+  282 |             `Generic Error: status: ${errorStatus}; status text: ${errorStatusText}; body...
+  283 |         );
+  284 |     } (src/lib2/core/request.ts:333:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/plan-comptable/import ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+✓ Compiled in 23.3s
+✓ Compiled in 7.6s
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/plan-comptable/import ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:267:15)
+    at <unknown> (src/lib2/core/request.ts:330:21)
+  265 |     if (error) {
+  266 |         const message = result.body?.message || error;
+> 267 |         throw new ApiError(options, result, message);
+      |               ^
+  268 |     }
+  269 |
+  270 |     if (!result.ok) { (src/lib2/core/request.ts:333:29)
+ GET / 200 in 216ms (next.js: 77ms, application-code: 139ms)
+ GET /accounting/dashboard 200 in 366ms (next.js: 195ms, application-code: 171ms)
+ GET /settings/profile 200 in 394ms (next.js: 113ms, application-code: 280ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:270:15)
+    at eval (src/lib/core/request.ts:318:17)
+  268 |     const error = errors[result.status];
+  269 |     if (error) {
+> 270 |         throw new ApiError(options, result, error);
+      |               ^
+  271 |     }
+  272 |
+  273 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:270:15)
+    at eval (src/lib/core/request.ts:318:17)
+  268 |     const error = errors[result.status];
+  269 |     if (error) {
+> 270 |         throw new ApiError(options, result, error);
+      |               ^
+  271 |     }
+  272 |
+  273 |     if (!result.ok) { (app/(dashboard)
+ GET / 200 in 471ms (next.js: 14ms, application-code: 457ms)
+ GET /accounting/dashboard 200 in 239ms (next.js: 20ms, application-code: 219ms)
+ GET /accounting/chart-of-accounts 200 in 329ms (next.js: 164ms, application-code: 165ms)
+ GET /accounting/semi-auto-entries 200 in 356ms (next.js: 138ms, application-code: 218ms)
+ GET /accounting/journals 200 in 2.2s (next.js: 1735ms, application-code: 491ms)
+○ Compiling /accounting/fiscal-years ...
+ GET /accounting/fiscal-years 200 in 2.3min (next.js: 2.3min, application-code: 625ms)
+ GET /accounting/fiscal-years 200 in 3.5min (next.js: 3.5min, application-code: 288ms)
+ GET /accounting/fiscal-years 200 in 78s (next.js: 77s, application-code: 1169ms)
+○ Compiling /accounting/periods ...
+✓ Finished filesystem cache database compaction in 2.4min
+✓ Finished writing to filesystem cache in 14.9s
+ GET /accounting/periods 200 in 14.5s (next.js: 14.2s, application-code: 358ms)
+ GET /accounting/periods 200 in 3.1min (next.js: 3.1min, application-code: 185ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/exercices ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/periodes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/periodes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/exercices ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/exercices ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/exercices ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+ GET / 200 in 1914ms (next.js: 870ms, application-code: 1044ms)
+ GET /accounting/dashboard 200 in 1046ms (next.js: 571ms, application-code: 475ms)
+✓ Finished filesystem cache database compaction in 2.2min
+ GET /accounting/entries 200 in 484ms (next.js: 139ms, application-code: 344ms)
+○ Compiling /customers ...
+ GET /customers 200 in 73s (next.js: 73s, application-code: 630ms)
+ GET /customers 200 in 447ms (next.js: 50ms, application-code: 396ms)
+✓ Finished writing to filesystem cache in 15.3s
+[browser] [API Error] HTTP 409 on http://localhost:8081/api/accounting/comptes ApiError: Generic Error: status: 409; status text: Conflict; body: {
+  "success": false,
+  "message": "Database error: null value in column \"classe\" of relation \"comptes\" violates not-null constraint",
+  "timestamp": "2026-06-16T10:50:48.103363423Z",
+  "traceId": "c0223814-e681-489e-86b2-c874234bc0ff",
+  "code": 400
+}
+    at catchErrorCodes (src/lib2/core/request.ts:285:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  283 |         })();
+  284 |
+> 285 |         throw new ApiError(options, result,
+      |               ^
+  286 |             `Generic Error: status: ${errorStatus}; status text: ${errorStatusText}; body...
+  287 |         );
+  288 |     } (src/lib2/core/request.ts:337:29)
+ GET /accounting/accounts 200 in 3.8s (next.js: 2.0s, application-code: 1703ms)
+✓ Finished filesystem cache database compaction in 66s
+ GET /accounting/fiscal-years 200 in 713ms (next.js: 164ms, application-code: 549ms)
+ GET /accounting/entries 200 in 428ms (next.js: 86ms, application-code: 342ms)
+ GET /accounting/entries/355eb9de-4a21-4071-94a7-3abade07366c 200 in 17.7s (next.js: 17.5s, application-code: 197ms)
+ GET /accounting/validation 200 in 1200ms (next.js: 732ms, application-code: 468ms)
+ GET /accounting/entries 200 in 360ms (next.js: 45ms, application-code: 315ms)
+ GET /accounting/entries/355eb9de-4a21-4071-94a7-3abade07366c 200 in 59s (next.js: 58s, application-code: 661ms)
+✓ Compiled in 1ms
+ GET /accounting/entries 200 in 172ms (next.js: 21ms, application-code: 150ms)
+ GET /accounting/semi-auto-entries 200 in 339ms (next.js: 109ms, application-code: 230ms)
+[browser] [API Error] HTTP 400 on http://localhost:8081/api/accounting/brouillards/upload ApiError: Erreur OCR: executeMany; SQL [INSERT INTO brouillards_comptables (id, organization_id, type, statut, source_id, source_type, numero_piece, date_piece, libelle, montant_total, devise, data_json, attachment_ids, created_at, updated_at, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)]; duplicate key value violates unique constraint "pk_brouillards_comptables"
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at eval (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] OCR Upload failed: Error: Erreur OCR: executeMany; SQL [INSERT INTO brouillards_comptables (id, organization_id, type, statut, source_id, source_type, numero_piece, date_piece, libelle, montant_total, devise, data_json, attachment_ids, created_at, updated_at, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)]; duplicate key value violates unique constraint "pk_brouillards_comptables"
+    at AccountingSemiAutoEntryPage.useCallback[onDrop] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:103:15)
+  101 |         await fetchDrafts();
+  102 |       } else {
+> 103 |         throw new Error(response?.message || "Erreur inconnue");
+      |               ^
+  104 |       }
+  105 |     } catch (error: any) {
+  106 |       console.error("OCR Upload failed:", error); (app/(dashboard)
+ GET /accounting/semi-auto-entries 200 in 1130ms (next.js: 92ms, application-code: 1038ms)
+[browser] [API Error] HTTP 400 on http://localhost:8081/api/accounting/brouillards/upload ApiError: Erreur OCR: executeMany; SQL [INSERT INTO brouillards_comptables (id, organization_id, type, statut, source_id, source_type, numero_piece, date_piece, libelle, montant_total, devise, data_json, attachment_ids, created_at, updated_at, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)]; duplicate key value violates unique constraint "pk_brouillards_comptables"
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] OCR Upload failed: Error: Erreur OCR: executeMany; SQL [INSERT INTO brouillards_comptables (id, organization_id, type, statut, source_id, source_type, numero_piece, date_piece, libelle, montant_total, devise, data_json, attachment_ids, created_at, updated_at, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)]; duplicate key value violates unique constraint "pk_brouillards_comptables"
+    at AccountingSemiAutoEntryPage.useCallback[onDrop] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:103:15)
+  101 |         await fetchDrafts();
+  102 |       } else {
+> 103 |         throw new Error(response?.message || "Erreur inconnue");
+      |               ^
+  104 |       }
+  105 |     } catch (error: any) {
+  106 |       console.error("OCR Upload failed:", error); (app/(dashboard)
+ GET /accounting/semi-auto-entries 200 in 615ms (next.js: 31ms, application-code: 584ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:45:30)
+  43 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  44 |
+> 45 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  46 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  47 |       );
+  48 | (app/(dashboard)
+ GET / 200 in 206ms (next.js: 44ms, application-code: 162ms)
+ GET /accounting/dashboard 200 in 350ms (next.js: 160ms, application-code: 190ms)
+ GET /accounting/semi-auto-entries 200 in 181ms (next.js: 14ms, application-code: 167ms)
+ GET /accounting/validation 200 in 287ms (next.js: 73ms, application-code: 213ms)
+ GET /accounting/entries 200 in 151ms (next.js: 8ms, application-code: 143ms)
+○ Compiling /accounting/devises ...
+ GET /accounting/devises 200 in 16.3s (next.js: 15.6s, application-code: 671ms)
+ GET /accounting/devises 200 in 55s (next.js: 54s, application-code: 558ms)
+✓ Finished filesystem cache database compaction in 24.6s
+○ Compiling /accounting/role-assignment ...
+ GET /accounting/role-assignment 200 in 23.5s (next.js: 21.6s, application-code: 1980ms)
+ GET /accounting/role-assignment 200 in 970ms (next.js: 79ms, application-code: 891ms)
+✓ Finished writing to filesystem cache in 15.7s
+ GET /accounting/entries 200 in 909ms (next.js: 201ms, application-code: 708ms)
+ GET /accounting/dashboard 200 in 2.0s (next.js: 480ms, application-code: 1521ms)
+○ Compiling /settings/accounting ...
+✓ Finished filesystem cache database compaction in 7.1min
+ GET /settings/accounting 200 in 7.7min (next.js: 7.6min, application-code: 2.8s)
+ GET /settings/accounting 200 in 6.4min (next.js: 6.4min, application-code: 321ms)
+ GET /accounting/reports 200 in 5.6min (next.js: 5.5min, application-code: 759ms)
+ GET /accounting/reports 200 in 5.0min (next.js: 5.0min, application-code: 163ms)
+✓ Finished writing to filesystem cache in 14.5s
+✓ Compiled in 50.8s
+○ Compiling /analyse/balance-sheet ...
+ GET /analyse/balance-sheet 200 in 12.7s (next.js: 12.2s, application-code: 406ms)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/currencies?onlyActive=true TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/periodes TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/currencies?onlyActive=true TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/periodes TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+○ Compiling /analyse/cache-flow ...
+ GET /analyse/cache-flow 200 in 8.1s (next.js: 7.8s, application-code: 224ms)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/currencies?onlyActive=true TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/periodes TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/currencies?onlyActive=true TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/periodes TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+ GET /accounting/chart-of-accounts 200 in 1681ms (next.js: 1343ms, application-code: 338ms)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/plan-comptable TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] Failed to fetch accounts: Error: Erreur de connexion au serveur
+    at ChartOfAccountsPage.useCallback[fetchAccounts] (app/(dashboard)/accounting/chart-of-accounts/page.tsx:40:15)
+  38 |       const response = await AccountingPlanComptableService.getAllPlanComptables();
+  39 |       if (response?.success === false) {
+> 40 |         throw new Error(response.message || "Impossible de charger le plan comptable.");
+     |               ^
+  41 |       }
+  42 |       if (response?.data) {
+  43 |         setAccounts(response.data); (app/(dashboard)
+[browser] [Network Error] Failed to fetch: http://localhost:8081/api/accounting/plan-comptable TypeError: Failed to fetch
+    at sendRequest (src/lib2/core/request.ts:192:16)
+    at <unknown> (src/lib2/core/request.ts:279:38)
+  190 |         } else if (isString(options.body) || isBlob(options.body) || isFormData(options.b...
+  191 |             return options.body;
+> 192 |         } else {
+      |                ^
+  193 |             return JSON.stringify(options.body);
+  194 |         }
+  195 |     } (src/lib2/core/request.ts:282:13)
+[browser] Failed to fetch accounts: Error: Erreur de connexion au serveur
+    at ChartOfAccountsPage.useCallback[fetchAccounts] (app/(dashboard)/accounting/chart-of-accounts/page.tsx:40:15)
+  38 |       const response = await AccountingPlanComptableService.getAllPlanComptables();
+  39 |       if (response?.success === false) {
+> 40 |         throw new Error(response.message || "Impossible de charger le plan comptable.");
+     |               ^
+  41 |       }
+  42 |       if (response?.data) {
+  43 |         setAccounts(response.data); (app/(dashboard)
+✓ Finished filesystem cache database compaction in 12.8s
+ GET /accounting/chart-of-accounts 200 in 1042ms (next.js: 12ms, application-code: 1030ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/plan-comptable ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] Failed to fetch accounts: Error: Unauthorized
+    at ChartOfAccountsPage.useCallback[fetchAccounts] (app/(dashboard)/accounting/chart-of-accounts/page.tsx:40:15)
+  38 |       const response = await AccountingPlanComptableService.getAllPlanComptables();
+  39 |       if (response?.success === false) {
+> 40 |         throw new Error(response.message || "Impossible de charger le plan comptable.");
+     |               ^
+  41 |       }
+  42 |       if (response?.data) {
+  43 |         setAccounts(response.data); (app/(dashboard)
+ GET /accounting/accounts 200 in 1931ms (next.js: 1172ms, application-code: 759ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/comptes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/comptes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+ GET / 200 in 303ms (next.js: 157ms, application-code: 147ms)
+ GET / 200 in 625ms (next.js: 13ms, application-code: 612ms)
+✓ Finished filesystem cache database compaction in 56s
+ GET /accounting/dashboard 200 in 788ms (next.js: 474ms, application-code: 313ms)
+ GET /accounting/journals 200 in 582ms (next.js: 388ms, application-code: 194ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/journals ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+ GET /accounting/dashboard 200 in 1741ms (next.js: 997ms, application-code: 745ms)
+✓ Finished filesystem cache database compaction in 70s
+○ Compiling /analyse/generale-ledger ...
+ GET /analyse/generale-ledger 200 in 19.1s (next.js: 18.7s, application-code: 397ms)
+○ Compiling /analyse/generale-balance ...
+ GET /analyse/generale-balance 200 in 6.7s (next.js: 6.5s, application-code: 204ms)
+ GET /accounting/semi-auto-entries 200 in 1786ms (next.js: 1529ms, application-code: 257ms)
+✓ Finished writing to filesystem cache in 11.3s
+✓ Finished filesystem cache database compaction in 55s
+ GET /accounting/validation 200 in 1538ms (next.js: 233ms, application-code: 1305ms)
+ GET /accounting/semi-auto-entries 200 in 1035ms (next.js: 607ms, application-code: 429ms)
+✓ Compiled in 44.9s
+✓ Compiled in 2.4s
+✓ Compiled in 10.9s
+✓ Compiled in 16.5s
+✓ Compiled in 1296ms
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:45:30)
+  43 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  44 |
+> 45 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  46 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  47 |       );
+  48 | (app/(dashboard)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:45:30)
+  43 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  44 |
+> 45 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  46 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  47 |       );
+  48 | (app/(dashboard)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:45:30)
+  43 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  44 |
+> 45 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  46 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  47 |       );
+  48 | (app/(dashboard)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:45:30)
+  43 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  44 |
+> 45 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  46 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  47 |       );
+  48 | (app/(dashboard)
+ GET /accounting/semi-auto-entries 200 in 2.0s (next.js: 561ms, application-code: 1440ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=EN_ATTENTE_VALIDATION&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/brouillards?statut=BROUILLON&size=20 ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] Failed to fetch drafts: TypeError: (response || []) is not iterable
+    at AccountingSemiAutoEntryPage.useCallback[fetchDrafts] (app/(dashboard)/accounting/semi-auto-entries/page.tsx:45:30)
+  43 |       const draftsDraft = await DraftAccountingService.getAllBrouillards(BrouillardComptab...
+  44 |
+> 45 |       const allDrafts = [...(response || []), ...(draftsDraft || [])].sort(
+     |                              ^
+  46 |         (a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()
+  47 |       );
+  48 | (app/(dashboard)
+ GET / 200 in 306ms (next.js: 105ms, application-code: 200ms)
+ GET /accounting/dashboard 200 in 465ms (next.js: 204ms, application-code: 261ms)
+ GET /accounting/semi-auto-entries 200 in 208ms (next.js: 10ms, application-code: 198ms)
+ GET /accounting/dashboard 200 in 313ms (next.js: 14ms, application-code: 299ms)
+ GET /accounting/journals 200 in 689ms (next.js: 47ms, application-code: 642ms)
+ GET /accounting/entries 200 in 503ms (next.js: 176ms, application-code: 327ms)
+ GET /accounting/semi-auto-entries 200 in 216ms (next.js: 11ms, application-code: 205ms)
+ GET /accounting/entries 200 in 276ms (next.js: 11ms, application-code: 265ms)
+ GET /accounting/budget-validation 200 in 1899ms (next.js: 1491ms, application-code: 408ms)
+ GET /accounting/semi-auto-entries 200 in 246ms (next.js: 15ms, application-code: 231ms)
+ GET /accounting/accounts 200 in 582ms (next.js: 102ms, application-code: 480ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/comptes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/comptes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+ GET / 200 in 164ms (next.js: 20ms, application-code: 145ms)
+ GET /accounting/dashboard 200 in 162ms (next.js: 10ms, application-code: 153ms)
+ GET /accounting/accounts 200 in 156ms (next.js: 8ms, application-code: 148ms)
+ GET /accounting/taxes 200 in 3.1s (next.js: 2.4s, application-code: 694ms)
+○ Compiling /accounting/ohada-pack ...
+ GET /accounting/ohada-pack 200 in 56s (next.js: 55s, application-code: 689ms)
+ GET /accounting/ohada-pack 200 in 12.5s (next.js: 12.2s, application-code: 259ms)
+ GET /accounting/taxes 200 in 2.4s (next.js: 134ms, application-code: 2.3s)
+ GET /accounting/ohada-pack 200 in 5.7s (next.js: 4.3s, application-code: 1436ms)
+✓ Finished writing to filesystem cache in 29.7s
+ GET /accounting/periods 200 in 814ms (next.js: 540ms, application-code: 274ms)
+✓ Finished filesystem cache database compaction in 35.4s
+○ Compiling /_not-found/page ...
+ GET /accounting/settings 404 in 5.7s (next.js: 5.2s, application-code: 434ms)
+ GET /accounting/settings 404 in 313ms (next.js: 34ms, application-code: 279ms)
+ GET / 200 in 236ms (next.js: 79ms, application-code: 157ms)
+ GET /accounting/dashboard 200 in 418ms (next.js: 174ms, application-code: 244ms)
+ GET /settings/company 404 in 166ms (next.js: 15ms, application-code: 151ms)
+ GET /settings/company 404 in 375ms (next.js: 31ms, application-code: 344ms)
+ GET / 200 in 93ms (next.js: 10ms, application-code: 83ms)
+ GET /accounting/dashboard 200 in 175ms (next.js: 17ms, application-code: 158ms)
+ GET /accounting/accounts 200 in 458ms (next.js: 95ms, application-code: 364ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/comptes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/comptes ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+ GET /accounting/journals 200 in 1000ms (next.js: 547ms, application-code: 452ms)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/journals ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+[browser] [API Error] HTTP 401 on http://localhost:8081/api/accounting/journals ApiError: Unauthorized
+    at catchErrorCodes (src/lib2/core/request.ts:271:15)
+    at <unknown> (src/lib2/core/request.ts:334:21)
+  269 |     if (error) {
+  270 |         const message = result.body?.message || error;
+> 271 |         throw new ApiError(options, result, message);
+      |               ^
+  272 |     }
+  273 |
+  274 |     if (!result.ok) { (src/lib2/core/request.ts:337:29)
+ GET / 200 in 326ms (next.js: 99ms, application-code: 227ms)
+ GET /accounting/dashboard 200 in 784ms (next.js: 173ms, application-code: 612ms)
+ GET / 200 in 1490ms (next.js: 1028ms, application-code: 462ms)
+ GET /accounting/dashboard 200 in 667ms (next.js: 281ms, application-code: 386ms)
+ GET /accounting/entries 200 in 447ms (next.js: 113ms, application-code: 334ms)

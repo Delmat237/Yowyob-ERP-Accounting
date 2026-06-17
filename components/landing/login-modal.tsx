@@ -38,17 +38,79 @@ interface RegisterFormData {
     role: string;
 }
 
+type AuthUser = {
+    id?: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    organizationId?: string;
+    roles?: string[];
+};
+
 type AuthLoginResponse = {
     token: string;
-    user: {
-        id?: string;
-        email?: string;
-        firstName?: string;
-        lastName?: string;
-        organizationId?: string;
-        roles?: string[];
-    };
+    user: AuthUser;
+    // Présent sur /select-context : tenant retenu pour le contexte choisi.
+    tenantId?: string;
 };
+
+// Organisation accessible dans un contexte (cf Kernel UserOrganizationAccessResponse).
+type LoginOrg = {
+    organizationId: string;
+    organizationCode?: string;
+    shortName?: string;
+    longName?: string;
+    displayName?: string;
+    legalName?: string;
+};
+
+// Contexte de connexion = un tenant auquel le compte appartient + ses organisations.
+type LoginContext = {
+    contextId: string;
+    tenantId: string;
+    organizations?: LoginOrg[];
+};
+
+type DiscoverContextsResponse = {
+    selectionToken: string;
+    expiresInSeconds?: number;
+    contexts: LoginContext[];
+};
+
+// Option « plate » présentée à l'utilisateur : un (contexte, organisation?) à choisir.
+type SelectOption = {
+    contextId: string;
+    tenantId: string;
+    organizationId?: string;
+    label: string;
+};
+
+function orgLabel(org: LoginOrg): string {
+    return org.displayName || org.shortName || org.longName || org.legalName
+        || org.organizationCode || org.organizationId;
+}
+
+// Aplatit les contextes en options sélectionnables (un par organisation, ou un par
+// contexte sans organisation). Sert à décider d'un auto-login (1 seule option).
+function buildOptions(contexts: LoginContext[]): SelectOption[] {
+    const options: SelectOption[] = [];
+    for (const ctx of contexts) {
+        const orgs = ctx.organizations ?? [];
+        if (orgs.length === 0) {
+            options.push({ contextId: ctx.contextId, tenantId: ctx.tenantId, label: 'Espace personnel' });
+        } else {
+            for (const org of orgs) {
+                options.push({
+                    contextId: ctx.contextId,
+                    tenantId: ctx.tenantId,
+                    organizationId: org.organizationId,
+                    label: orgLabel(org),
+                });
+            }
+        }
+    }
+    return options;
+}
 
 // ─── Composant de feedback inline ────────────────────────────────────────────
 function FeedbackBanner({ type, message }: { type: 'success' | 'error'; message: string }) {
@@ -87,6 +149,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('login');
+    // Sélection de contexte/organisation quand le compte en a plusieurs (multi-tenant / multi-org).
+    const [pendingSelection, setPendingSelection] = useState<{ selectionToken: string; options: SelectOption[] } | null>(null);
 
     // Feedback inline — remplace alert() et console.log()
     const [loginFeedback, setLoginFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -96,20 +160,21 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     const registerForm = useForm<RegisterFormData>({ mode: 'onChange' });
     const { setUser } = useAuth();
 
+    const apiBase = () => OpenAPI.BASE.replace(/\/$/, '');
+
+    // Étape 1 : découverte des contextes (tenants + organisations) du compte.
+    // Tout passe par le backend accounting (OpenAPI[src/lib2].BASE), qui détient
+    // les clés Kernel côté serveur. Le navigateur n'envoie NI tenant NI clé : le
+    // Kernel résout lui-même les tenants du principal → vrai multi-tenant.
     const handleLogin = async (data: LoginData) => {
         setIsLoading(true);
         setLoginFeedback(null);
+        setPendingSelection(null);
         try {
-            // Le login passe par l'endpoint d'auth PROPRE au backend accounting
-            // (OpenAPI[src/lib2].BASE = :8081), qui encapsule le Kernel (+ fallback mock)
-            // et renvoie un contrat simple { token, user }. Ce n'est PAS le proxy Kernel
-            // (/api/kernel) : celui-ci ne sert qu'aux appels ressources du client src/lib.
-            const apiBase = OpenAPI.BASE.replace(/\/$/, '');
-            const tenantId = process.env.NEXT_PUBLIC_TENANT_ID ?? '11111111-1111-1111-1111-111111111111';
-            const res = await fetch(`${apiBase}/api/auth/login`, {
+            const res = await fetch(`${apiBase()}/api/auth/discover-contexts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: data.email, password: data.password, tenantId }),
+                body: JSON.stringify({ email: data.email, password: data.password }),
             });
 
             if (!res.ok) {
@@ -117,20 +182,65 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 throw new Error(body?.message || 'Identifiants incorrects.');
             }
 
+            const discovered = await res.json() as DiscoverContextsResponse;
+            const contexts = discovered.contexts ?? [];
+            if (contexts.length === 0) {
+                throw new Error("Aucun espace n'est associé à ce compte.");
+            }
+
+            const options = buildOptions(contexts);
+            if (options.length === 1) {
+                // Un seul contexte/organisation → on finalise directement.
+                await completeSelection(discovered.selectionToken, options[0]);
+            } else {
+                // Plusieurs tenants/organisations → l'utilisateur choisit.
+                setPendingSelection({ selectionToken: discovered.selectionToken, options });
+                setIsLoading(false);
+            }
+        } catch (error: unknown) {
+            setLoginFeedback({
+                type: 'error',
+                message: getErrorMessage(error, 'Identifiants incorrects. Veuillez réessayer.')
+            });
+            setIsLoading(false);
+        }
+    };
+
+    // Étape 2 : sélection d'un contexte (et organisation) → login finalisé.
+    const completeSelection = async (selectionToken: string, option: SelectOption) => {
+        setIsLoading(true);
+        setLoginFeedback(null);
+        try {
+            const res = await fetch(`${apiBase()}/api/auth/select-context`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    selectionToken,
+                    contextId: option.contextId,
+                    organizationId: option.organizationId,
+                }),
+            });
+
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body?.message || 'Connexion impossible pour cet espace.');
+            }
+
             const response = await res.json() as AuthLoginResponse;
 
             localStorage.setItem('auth_token', response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
-            // L'org de l'utilisateur peut etre vide (owner pas "membre" au sens kernel) :
-            // on retombe sur NEXT_PUBLIC_ORGANIZATION_ID pour avoir un contexte org valide.
-            localStorage.setItem('organization_id',
-                response.user?.organizationId || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
-            // Stocker le tenant (sinon les clients retombent sur l'env) pour X-Tenant-Id.
+            // Tenant/organisation issus du CONTEXTE choisi (multi-tenant/multi-org),
+            // avec repli sur l'env uniquement en dernier recours (déploiement mono-client).
             localStorage.setItem('tenant_id',
-                (response.user as { tenantId?: string })?.tenantId || tenantId || '');
+                response.tenantId || option.tenantId || process.env.NEXT_PUBLIC_TENANT_ID || '');
+            localStorage.setItem('organization_id',
+                option.organizationId || response.user?.organizationId
+                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
             OpenAPI.TOKEN = response.token;
             setUser(response.user);
 
+            setPendingSelection(null);
             setLoginFeedback({ type: 'success', message: `Bienvenue, ${response.user?.firstName ?? ''} !` });
             await new Promise(resolve => setTimeout(resolve, 600));
             router.push('/accounting/dashboard');
@@ -138,7 +248,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         } catch (error: unknown) {
             setLoginFeedback({
                 type: 'error',
-                message: getErrorMessage(error, 'Identifiants incorrects. Veuillez réessayer.')
+                message: getErrorMessage(error, 'Connexion impossible. Veuillez réessayer.')
             });
         } finally {
             setIsLoading(false);
@@ -191,6 +301,35 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         {loginFeedback && (
                             <FeedbackBanner type={loginFeedback.type} message={loginFeedback.message} />
                         )}
+                        {pendingSelection ? (
+                            <div className="space-y-3">
+                                <p className="text-sm text-gray-600">
+                                    Plusieurs espaces sont associés à ce compte. Choisissez celui auquel vous connecter :
+                                </p>
+                                <div className="space-y-2">
+                                    {pendingSelection.options.map((opt, i) => (
+                                        <button
+                                            key={`${opt.contextId}-${opt.organizationId ?? 'none'}-${i}`}
+                                            type="button"
+                                            disabled={isLoading}
+                                            onClick={() => completeSelection(pendingSelection.selectionToken, opt)}
+                                            className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 text-left hover:border-blue-400 hover:bg-blue-50 transition disabled:opacity-50"
+                                        >
+                                            <Building2 className="h-4 w-4 text-blue-600 shrink-0" />
+                                            <span className="text-sm font-medium text-gray-800">{opt.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="link"
+                                    className="text-sm p-0 h-auto text-gray-500"
+                                    onClick={() => { setPendingSelection(null); setLoginFeedback(null); }}
+                                >
+                                    ← Revenir
+                                </Button>
+                            </div>
+                        ) : (
                         <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
@@ -256,6 +395,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 ) : "Se connecter"}
                             </Button>
                         </form>
+                        )}
                     </TabsContent>
 
                     {/* ── Onglet Inscription ── */}
