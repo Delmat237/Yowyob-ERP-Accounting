@@ -253,6 +253,23 @@ export const getResponseBody = async (response: Response): Promise<any> => {
     return undefined;
 };
 
+/** Clés de session purgées à l'expiration (cf lib/auth-session.ts, dupliqué ici pour éviter un import circulaire dans lib). */
+const SESSION_KEYS = ['auth_token', 'user', 'organization_id', 'tenant_id'];
+
+/**
+ * Token expiré / session invalide côté serveur (401) : purge la session locale
+ * et renvoie immédiatement vers la page de login (la landing `/`), au lieu de
+ * laisser la page tourner indéfiniment sur un spinner.
+ */
+const handleUnauthorized = (): void => {
+    if (typeof window === 'undefined') return;
+    SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
+    // Évite une boucle de redirection si on est déjà sur la landing/login.
+    if (window.location.pathname !== '/') {
+        window.location.assign('/');
+    }
+};
+
 export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): void => {
     const errors: Record<number, string> = {
         400: 'Bad Request',
@@ -263,6 +280,10 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
         502: 'Bad Gateway',
         503: 'Service Unavailable',
         ...options.errors,
+    }
+
+    if (result.status === 401) {
+        handleUnauthorized();
     }
 
     const error = errors[result.status];
