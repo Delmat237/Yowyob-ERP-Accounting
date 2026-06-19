@@ -202,7 +202,7 @@ export const CompteComptableListView: React.FC<CompteComptableListViewProps> = (
                 </Select>
             </div>
 
-            <div className="border rounded-lg overflow-hidden bg-white">
+            <div className="border rounded-lg overflow-hidden overflow-x-auto bg-white">
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-gray-50">

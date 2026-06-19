@@ -131,7 +131,7 @@ export const PeriodeComptableListView: React.FC<PeriodeComptableListViewProps> =
       </div>
 
       {/* Table */}
-      <div className="rounded-md border">
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader className="bg-gray-50/50">
             <TableRow>

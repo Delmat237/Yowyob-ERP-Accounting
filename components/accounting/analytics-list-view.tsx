@@ -124,7 +124,7 @@ export function AnalyticsListView({
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 mb-4">
                 <h3 className="text-lg font-medium text-slate-800">Axes et Comptes Analytiques</h3>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={onRefresh}>
@@ -136,7 +136,7 @@ export function AnalyticsListView({
                 </div>
             </div>
 
-            <div className="rounded-md border border-slate-200 overflow-hidden shadow-sm">
+            <div className="rounded-md border border-slate-200 overflow-hidden overflow-x-auto shadow-sm">
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow>

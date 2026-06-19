@@ -90,7 +90,7 @@ export function SemiAutoEntryListView({
                 </Badge>
             </div>
 
-            <div className="border rounded-lg overflow-hidden bg-white">
+            <div className="border rounded-lg overflow-hidden bg-white overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-gray-50">

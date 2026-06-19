@@ -225,7 +225,7 @@ export default function BudgetValidationPage() {
                     </div>
 
                     {/* Table */}
-                    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
                         {filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
                                 <CheckCircle className="h-12 w-12 text-green-300 mb-4" />

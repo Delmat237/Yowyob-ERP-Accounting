@@ -338,7 +338,7 @@ function DetailPanel({ budget, allBudgets, onClose, onValidate, onActivate, onDe
     const children = allBudgets.filter(b => b.parentId === budget.id);
 
     return (
-        <div className="w-[460px] shrink-0 bg-white border-l border-slate-200 flex flex-col overflow-hidden">
+        <div className="w-full md:w-[460px] shrink-0 bg-white border-t md:border-t-0 md:border-l border-slate-200 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
                 <div className="min-w-0">
@@ -532,11 +532,11 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
                     }
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
 
         AccountingPeriodsService.getAllPeriodeComptables()
             .then(res => { if (res?.data) setAllPeriodesComptables(res.data); })
-            .catch(() => {});
+            .catch(() => { });
     }, [initialBudget]);
 
     // Périodes comptables pour le select (type PERIODE)
@@ -665,315 +665,315 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
         <form onSubmit={handleSubmit} className="flex flex-col h-full">
             {/* Contenu scrollable */}
             <div className="flex-1 overflow-y-auto p-6 space-y-5">
-            <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">Type de budget <span className="text-red-500">*</span></Label>
-                <Select value={type} onValueChange={(v) => {
-                    setType(v as BudgetType);
-                    setParentId('');
-                    setSelectedPeriodeComptableId('');
-                    setDateDebut('');
-                    setDateFin('');
-                    setCompteLines([{ id: '1', compteComptableId: '', montantAlloue: 0, description: '' }]);
-                    // Re-remplir les dates si on revient sur EXERCICE
-                    if (v === 'EXERCICE' && selectedExerciceComptableId) {
-                        const ex = exercicesComptables.find(e => e.id === selectedExerciceComptableId);
-                        if (ex) { setDateDebut(ex.date_debut || ''); setDateFin(ex.date_fin || ''); }
-                    }
-                }}>
-                    <SelectTrigger className="border-slate-300">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="EXERCICE">Budget Exercice (niveau 1)</SelectItem>
-                        <SelectItem value="PERIODE">Budget Période (niveau 2)</SelectItem>
-                        <SelectItem value="ANALYTIQUE">Budget Analytique (niveau 3)</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-
-            {/* EXERCICE : auto-complétion depuis les exercices comptables ouverts */}
-            {type === 'EXERCICE' && (
                 <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">
-                        Exercice comptable <span className="text-red-500">*</span>
-                        <span className="ml-2 text-xs font-normal text-slate-400">(exercices ouverts)</span>
-                    </Label>
-                    {exercicesComptables.length === 0 ? (
-                        <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
-                            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                            Aucun exercice comptable ouvert. Veuillez d'abord ouvrir un exercice comptable dans la configuration.
-                        </div>
-                    ) : (
-                        <>
-                            <Select value={selectedExerciceComptableId} onValueChange={handleExerciceComptableChange}>
+                    <Label className="text-sm font-semibold text-slate-700">Type de budget <span className="text-red-500">*</span></Label>
+                    <Select value={type} onValueChange={(v) => {
+                        setType(v as BudgetType);
+                        setParentId('');
+                        setSelectedPeriodeComptableId('');
+                        setDateDebut('');
+                        setDateFin('');
+                        setCompteLines([{ id: '1', compteComptableId: '', montantAlloue: 0, description: '' }]);
+                        // Re-remplir les dates si on revient sur EXERCICE
+                        if (v === 'EXERCICE' && selectedExerciceComptableId) {
+                            const ex = exercicesComptables.find(e => e.id === selectedExerciceComptableId);
+                            if (ex) { setDateDebut(ex.date_debut || ''); setDateFin(ex.date_fin || ''); }
+                        }
+                    }}>
+                        <SelectTrigger className="border-slate-300">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="EXERCICE">Budget Exercice (niveau 1)</SelectItem>
+                            <SelectItem value="PERIODE">Budget Période (niveau 2)</SelectItem>
+                            <SelectItem value="ANALYTIQUE">Budget Analytique (niveau 3)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* EXERCICE : auto-complétion depuis les exercices comptables ouverts */}
+                {type === 'EXERCICE' && (
+                    <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700">
+                            Exercice comptable <span className="text-red-500">*</span>
+                            <span className="ml-2 text-xs font-normal text-slate-400">(exercices ouverts)</span>
+                        </Label>
+                        {exercicesComptables.length === 0 ? (
+                            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                                Aucun exercice comptable ouvert. Veuillez d'abord ouvrir un exercice comptable dans la configuration.
+                            </div>
+                        ) : (
+                            <>
+                                <Select value={selectedExerciceComptableId} onValueChange={handleExerciceComptableChange}>
+                                    <SelectTrigger className="border-slate-300">
+                                        <SelectValue placeholder="Sélectionner l'exercice comptable..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {exercicesComptables.map(ex => (
+                                            <SelectItem key={ex.id} value={ex.id!}>
+                                                {ex.libelle || ex.code}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {dateDebut && dateFin && (
+                                    <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700">
+                                        <Calendar className="h-3.5 w-3.5 shrink-0" />
+                                        <span>Période de l'exercice :</span>
+                                        <span className="font-mono font-bold">{dateDebut}</span>
+                                        <span>→</span>
+                                        <span className="font-mono font-bold">{dateFin}</span>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* PERIODE : sélection de l'exercice budget parent + période comptable ouverte */}
+                {type === 'PERIODE' && (
+                    <>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-slate-700">Exercice parent <span className="text-red-500">*</span></Label>
+                            <Select value={parentId} onValueChange={(v) => { setParentId(v); setSelectedPeriodeComptableId(''); setDateDebut(''); setDateFin(''); }}>
                                 <SelectTrigger className="border-slate-300">
-                                    <SelectValue placeholder="Sélectionner l'exercice comptable..." />
+                                    <SelectValue placeholder="Sélectionner un exercice..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {exercicesComptables.map(ex => (
-                                        <SelectItem key={ex.id} value={ex.id!}>
-                                            {ex.libelle || ex.code}
-                                        </SelectItem>
+                                    {exercices.map(ex => (
+                                        <SelectItem key={ex.id} value={ex.id}>{ex.nom} — {ex.montantAlloue.toLocaleString('fr-FR')} XAF</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        {/* Select période comptable — toujours visible dès que le type est PERIODE */}
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-slate-700">
+                                Période comptable <span className="text-red-500">*</span>
+                                <span className="ml-2 text-xs font-normal text-slate-400">(périodes ouvertes de l'exercice en cours)</span>
+                            </Label>
+                            <Select value={selectedPeriodeComptableId} onValueChange={handlePeriodeComptableChange}>
+                                <SelectTrigger className="border-slate-300">
+                                    <SelectValue placeholder="Sélectionner une période comptable..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {periodesComptablesFiltrees.length === 0 ? (
+                                        <div className="px-3 py-4 text-xs text-slate-400 italic text-center">
+                                            Aucune période comptable ouverte disponible
+                                        </div>
+                                    ) : (
+                                        periodesComptablesFiltrees.map(p => (
+                                            <SelectItem key={p.id} value={p.id!}>
+                                                {p.code} — {p.dateDebut} → {p.dateFin}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                            {periodesComptablesFiltrees.length === 0 && (
+                                <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                                    Aucune période comptable ouverte disponible. Veuillez en créer une dans la configuration.
+                                </div>
+                            )}
                             {dateDebut && dateFin && (
                                 <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700">
                                     <Calendar className="h-3.5 w-3.5 shrink-0" />
-                                    <span>Période de l'exercice :</span>
+                                    <span>Période sélectionnée :</span>
                                     <span className="font-mono font-bold">{dateDebut}</span>
                                     <span>→</span>
                                     <span className="font-mono font-bold">{dateFin}</span>
                                 </div>
                             )}
-                        </>
-                    )}
-                </div>
-            )}
+                        </div>
+                    </>
+                )}
 
-            {/* PERIODE : sélection de l'exercice budget parent + période comptable ouverte */}
-            {type === 'PERIODE' && (
-                <>
+                {type === 'ANALYTIQUE' && (
                     <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Exercice parent <span className="text-red-500">*</span></Label>
-                        <Select value={parentId} onValueChange={(v) => { setParentId(v); setSelectedPeriodeComptableId(''); setDateDebut(''); setDateFin(''); }}>
+                        <Label className="text-sm font-semibold text-slate-700">Période parente <span className="text-red-500">*</span></Label>
+                        <Select value={parentId} onValueChange={(v) => {
+                            setParentId(v);
+                            const p = periodes.find(x => x.id === v);
+                            if (p) { setDateDebut(p.dateDebut); setDateFin(p.dateFin); }
+                        }}>
                             <SelectTrigger className="border-slate-300">
-                                <SelectValue placeholder="Sélectionner un exercice..." />
+                                <SelectValue placeholder="Sélectionner une période..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {exercices.map(ex => (
-                                    <SelectItem key={ex.id} value={ex.id}>{ex.nom} — {ex.montantAlloue.toLocaleString('fr-FR')} XAF</SelectItem>
+                                {periodes.map(p => (
+                                    <SelectItem key={p.id} value={p.id}>{p.nom} — {p.montantAlloue.toLocaleString('fr-FR')} XAF</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                    </div>
-
-                    {/* Select période comptable — toujours visible dès que le type est PERIODE */}
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">
-                            Période comptable <span className="text-red-500">*</span>
-                            <span className="ml-2 text-xs font-normal text-slate-400">(périodes ouvertes de l'exercice en cours)</span>
-                        </Label>
-                        <Select value={selectedPeriodeComptableId} onValueChange={handlePeriodeComptableChange}>
-                            <SelectTrigger className="border-slate-300">
-                                <SelectValue placeholder="Sélectionner une période comptable..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {periodesComptablesFiltrees.length === 0 ? (
-                                    <div className="px-3 py-4 text-xs text-slate-400 italic text-center">
-                                        Aucune période comptable ouverte disponible
-                                    </div>
-                                ) : (
-                                    periodesComptablesFiltrees.map(p => (
-                                        <SelectItem key={p.id} value={p.id!}>
-                                            {p.code} — {p.dateDebut} → {p.dateFin}
-                                        </SelectItem>
-                                    ))
-                                )}
-                            </SelectContent>
-                        </Select>
-                        {periodesComptablesFiltrees.length === 0 && (
-                            <div className="flex items-center gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                                Aucune période comptable ouverte disponible. Veuillez en créer une dans la configuration.
-                            </div>
-                        )}
                         {dateDebut && dateFin && (
-                            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-100 rounded-lg text-xs text-blue-700">
+                            <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-700">
                                 <Calendar className="h-3.5 w-3.5 shrink-0" />
-                                <span>Période sélectionnée :</span>
-                                <span className="font-mono font-bold">{dateDebut}</span>
-                                <span>→</span>
-                                <span className="font-mono font-bold">{dateFin}</span>
+                                Période héritée : <span className="font-mono font-semibold">{dateDebut}</span> → <span className="font-mono font-semibold">{dateFin}</span>
                             </div>
                         )}
                     </div>
-                </>
-            )}
+                )}
 
-            {type === 'ANALYTIQUE' && (
                 <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">Période parente <span className="text-red-500">*</span></Label>
-                    <Select value={parentId} onValueChange={(v) => {
-                        setParentId(v);
-                        const p = periodes.find(x => x.id === v);
-                        if (p) { setDateDebut(p.dateDebut); setDateFin(p.dateFin); }
-                    }}>
-                        <SelectTrigger className="border-slate-300">
-                            <SelectValue placeholder="Sélectionner une période..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {periodes.map(p => (
-                                <SelectItem key={p.id} value={p.id}>{p.nom} — {p.montantAlloue.toLocaleString('fr-FR')} XAF</SelectItem>
+                    <Label className="text-sm font-semibold text-slate-700">Nom du budget <span className="text-red-500">*</span></Label>
+                    <Input placeholder="Ex: Budget Q1 2026" value={nom} onChange={e => setNom(e.target.value)} className="border-slate-300" />
+                </div>
+
+                {/* Montant — uniquement pour EXERCICE et PERIODE */}
+                {type !== 'ANALYTIQUE' && (
+                    <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700">Montant alloué (XAF) <span className="text-red-500">*</span></Label>
+                        <Input type="number" placeholder="Ex: 5000000" value={montant} onChange={e => setMontant(e.target.value)} className="border-slate-300 font-mono" />
+                        {warning && (
+                            <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                {warning}
+                            </div>
+                        )}
+                        {parentBudget && (
+                            <p className="text-xs text-slate-400">
+                                Budget parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
+                                déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
+                            </p>
+                        )}
+                    </div>
+                )}
+
+                {/* Axes analytiques — uniquement pour ANALYTIQUE */}
+                {type === 'ANALYTIQUE' && activeAxes.length > 0 && (
+                    <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-slate-700">Axes analytiques</Label>
+                        <div className="border border-slate-200 rounded-lg max-h-36 overflow-y-auto divide-y divide-slate-100">
+                            {activeAxes.map(axe => (
+                                <label key={axe.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                                    <input type="checkbox" checked={selectedAxeIds.includes(axe.id)}
+                                        onChange={() => setSelectedAxeIds(prev => prev.includes(axe.id) ? prev.filter(x => x !== axe.id) : [...prev, axe.id])}
+                                        className="rounded" />
+                                    <span className="text-sm text-slate-700">{axe.libelle}</span>
+                                    {(axe.comptes?.length ?? 0) > 0 && (
+                                        <span className="text-xs text-emerald-600 ml-auto">{axe.comptes?.length} compte(s)</span>
+                                    )}
+                                </label>
                             ))}
-                        </SelectContent>
-                    </Select>
-                    {dateDebut && dateFin && (
-                        <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-700">
-                            <Calendar className="h-3.5 w-3.5 shrink-0" />
-                            Période héritée : <span className="font-mono font-semibold">{dateDebut}</span> → <span className="font-mono font-semibold">{dateFin}</span>
                         </div>
-                    )}
-                </div>
-            )}
-
-            <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">Nom du budget <span className="text-red-500">*</span></Label>
-                <Input placeholder="Ex: Budget Q1 2026" value={nom} onChange={e => setNom(e.target.value)} className="border-slate-300" />
-            </div>
-
-            {/* Montant — uniquement pour EXERCICE et PERIODE */}
-            {type !== 'ANALYTIQUE' && (
-                <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">Montant alloué (XAF) <span className="text-red-500">*</span></Label>
-                    <Input type="number" placeholder="Ex: 5000000" value={montant} onChange={e => setMontant(e.target.value)} className="border-slate-300 font-mono" />
-                    {warning && (
-                        <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                            {warning}
-                        </div>
-                    )}
-                    {parentBudget && (
-                        <p className="text-xs text-slate-400">
-                            Budget parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
-                            déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
-                        </p>
-                    )}
-                </div>
-            )}
-
-            {/* Axes analytiques — uniquement pour ANALYTIQUE */}
-            {type === 'ANALYTIQUE' && activeAxes.length > 0 && (
-                <div className="space-y-2">
-                    <Label className="text-sm font-semibold text-slate-700">Axes analytiques</Label>
-                    <div className="border border-slate-200 rounded-lg max-h-36 overflow-y-auto divide-y divide-slate-100">
-                        {activeAxes.map(axe => (
-                            <label key={axe.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                                <input type="checkbox" checked={selectedAxeIds.includes(axe.id)}
-                                    onChange={() => setSelectedAxeIds(prev => prev.includes(axe.id) ? prev.filter(x => x !== axe.id) : [...prev, axe.id])}
-                                    className="rounded" />
-                                <span className="text-sm text-slate-700">{axe.libelle}</span>
-                                {(axe.comptes?.length ?? 0) > 0 && (
-                                    <span className="text-xs text-emerald-600 ml-auto">{axe.comptes?.length} compte(s)</span>
-                                )}
-                            </label>
-                        ))}
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Lignes de comptes comptables — uniquement pour ANALYTIQUE */}
-            {type === 'ANALYTIQUE' && (
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                        <Label className="text-sm font-semibold text-slate-700">
-                            Allocation par compte comptable <span className="text-red-500">*</span>
-                        </Label>
-                        <span className="text-xs font-mono font-bold text-blue-700">
-                            Total : {montantDepuisLignes.toLocaleString('fr-FR')} XAF
-                        </span>
-                    </div>
-                    {warning && (
-                        <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                            {warning}
+                {/* Lignes de comptes comptables — uniquement pour ANALYTIQUE */}
+                {type === 'ANALYTIQUE' && (
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold text-slate-700">
+                                Allocation par compte comptable <span className="text-red-500">*</span>
+                            </Label>
+                            <span className="text-xs font-mono font-bold text-blue-700">
+                                Total : {montantDepuisLignes.toLocaleString('fr-FR')} XAF
+                            </span>
                         </div>
-                    )}
-                    {parentBudget && (
-                        <p className="text-xs text-slate-400">
-                            Budget parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
-                            déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
-                        </p>
-                    )}
-                    <div className="border border-slate-200 rounded-lg overflow-hidden">
-                        <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200">
-                                <tr>
-                                    <th className="px-3 py-2">Compte comptable</th>
-                                    <th className="px-3 py-2">Description</th>
-                                    <th className="px-3 py-2 text-right w-36">Montant (XAF)</th>
-                                    <th className="px-3 py-2 w-10"></th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {compteLines.map(line => (
-                                    <tr key={line.id} className="hover:bg-slate-50/50">
-                                        <td className="px-3 py-2 w-48">
-                                            {allComptes.length > 0 ? (
-                                                <Select value={line.compteComptableId} onValueChange={val => updateCompteLine(line.id, 'compteComptableId', val)}>
-                                                    <SelectTrigger className="h-8 border-slate-300 text-xs">
-                                                        <SelectValue placeholder="Choisir..." />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {allComptes.map((c) => (
-                                                            <SelectItem key={c.id} value={c.id}>{c.libelle}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            ) : (
+                        {warning && (
+                            <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                {warning}
+                            </div>
+                        )}
+                        {parentBudget && (
+                            <p className="text-xs text-slate-400">
+                                Budget parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
+                                déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
+                            </p>
+                        )}
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th className="px-3 py-2">Compte comptable</th>
+                                        <th className="px-3 py-2">Description</th>
+                                        <th className="px-3 py-2 text-right w-36">Montant (XAF)</th>
+                                        <th className="px-3 py-2 w-10"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {compteLines.map(line => (
+                                        <tr key={line.id} className="hover:bg-slate-50/50">
+                                            <td className="px-3 py-2 w-48">
+                                                {allComptes.length > 0 ? (
+                                                    <Select value={line.compteComptableId} onValueChange={val => updateCompteLine(line.id, 'compteComptableId', val)}>
+                                                        <SelectTrigger className="h-8 border-slate-300 text-xs">
+                                                            <SelectValue placeholder="Choisir..." />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {allComptes.map((c) => (
+                                                                <SelectItem key={c.id} value={c.id}>{c.libelle}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                ) : (
+                                                    <Input
+                                                        placeholder={selectedAxeIds.length === 0 ? "Sélectionnez un axe..." : "Saisir le compte"}
+                                                        value={line.compteComptableId}
+                                                        onChange={e => updateCompteLine(line.id, 'compteComptableId', e.target.value)}
+                                                        className="h-8 border-slate-300 text-xs"
+                                                    />
+                                                )}
+                                            </td>
+                                            <td className="px-3 py-2">
                                                 <Input
-                                                    placeholder={selectedAxeIds.length === 0 ? "Sélectionnez un axe..." : "Saisir le compte"}
-                                                    value={line.compteComptableId}
-                                                    onChange={e => updateCompteLine(line.id, 'compteComptableId', e.target.value)}
+                                                    placeholder="Détail..."
+                                                    value={line.description}
+                                                    onChange={e => updateCompteLine(line.id, 'description', e.target.value)}
                                                     className="h-8 border-slate-300 text-xs"
                                                 />
-                                            )}
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <Input
-                                                placeholder="Détail..."
-                                                value={line.description}
-                                                onChange={e => updateCompteLine(line.id, 'description', e.target.value)}
-                                                className="h-8 border-slate-300 text-xs"
-                                            />
-                                        </td>
-                                        <td className="px-3 py-2">
-                                            <Input
-                                                type="number"
-                                                value={line.montantAlloue || ''}
-                                                onChange={e => updateCompteLine(line.id, 'montantAlloue', parseFloat(e.target.value) || 0)}
-                                                className="h-8 border-slate-300 text-xs text-right font-mono"
-                                            />
-                                        </td>
-                                        <td className="px-3 py-2 text-center">
-                                            <Button
-                                                type="button" variant="ghost" size="icon"
-                                                className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                                onClick={() => removeCompteLine(line.id)}
-                                                disabled={compteLines.length === 1}
-                                            >
-                                                <Trash2 className="h-3.5 w-3.5" />
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <div className="px-3 py-2 border-t border-slate-100 bg-slate-50/30">
-                            <Button
-                                type="button" variant="outline" size="sm"
-                                onClick={addCompteLine}
-                                className="text-blue-600 border-blue-200 hover:bg-blue-50 border-dashed text-xs h-7"
-                            >
-                                <PlusCircle className="h-3.5 w-3.5 mr-1.5" /> Ajouter une ligne
-                            </Button>
+                                            </td>
+                                            <td className="px-3 py-2">
+                                                <Input
+                                                    type="number"
+                                                    value={line.montantAlloue || ''}
+                                                    onChange={e => updateCompteLine(line.id, 'montantAlloue', parseFloat(e.target.value) || 0)}
+                                                    className="h-8 border-slate-300 text-xs text-right font-mono"
+                                                />
+                                            </td>
+                                            <td className="px-3 py-2 text-center">
+                                                <Button
+                                                    type="button" variant="ghost" size="icon"
+                                                    className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                                    onClick={() => removeCompteLine(line.id)}
+                                                    disabled={compteLines.length === 1}
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <div className="px-3 py-2 border-t border-slate-100 bg-slate-50/30">
+                                <Button
+                                    type="button" variant="outline" size="sm"
+                                    onClick={addCompteLine}
+                                    className="text-blue-600 border-blue-200 hover:bg-blue-50 border-dashed text-xs h-7"
+                                >
+                                    <PlusCircle className="h-3.5 w-3.5 mr-1.5" /> Ajouter une ligne
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            <div className="space-y-2">
-                <Label className="text-sm font-semibold text-slate-700">Seuil d'alerte (%)</Label>
-                <Select value={seuilAlerte} onValueChange={setSeuilAlerte}>
-                    <SelectTrigger className="border-slate-300"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="50">50%</SelectItem>
-                        <SelectItem value="80">80%</SelectItem>
-                        <SelectItem value="90">90%</SelectItem>
-                        <SelectItem value="100">100%</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+                <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-slate-700">Seuil d'alerte (%)</Label>
+                    <Select value={seuilAlerte} onValueChange={setSeuilAlerte}>
+                        <SelectTrigger className="border-slate-300"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="50">50%</SelectItem>
+                            <SelectItem value="80">80%</SelectItem>
+                            <SelectItem value="90">90%</SelectItem>
+                            <SelectItem value="100">100%</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
             </div>{/* fin du contenu scrollable */}
 
@@ -1176,7 +1176,7 @@ export default function BudgetsPage() {
                     </p>
                 </div>
 
-                <div className="flex" style={{ minHeight: '600px' }}>
+                <div className="flex flex-col lg:flex-row" style={{ minHeight: '600px' }}>
                     {/* Contenu principal */}
                     <div className="flex-1 p-6 overflow-auto min-w-0">
                         <Tabs defaultValue="hierarchie" className="w-full">

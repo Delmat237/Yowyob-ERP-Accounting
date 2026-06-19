@@ -109,7 +109,7 @@ export const TaxeListView: React.FC<TaxeListViewProps> = ({
         </div>
       </div>
 
-      <div className="rounded-md border border-gray-200 overflow-hidden">
+      <div className="rounded-md border border-gray-200 overflow-hidden overflow-x-auto">
         <Table>
           <TableHeader className="bg-gray-50/50">
             <TableRow>

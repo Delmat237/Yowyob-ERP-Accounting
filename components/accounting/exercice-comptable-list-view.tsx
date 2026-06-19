@@ -123,7 +123,7 @@ export const ExerciceComptableListView: React.FC<ExerciceComptableListViewProps>
             </div>
 
             {/* Table */}
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-gray-50/50">
                         <TableRow>

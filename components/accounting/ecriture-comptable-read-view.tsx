@@ -182,7 +182,7 @@ export const EcritureComptableReadView: React.FC<EcritureComptableReadViewProps>
                     <h3 className="text-xl font-bold text-gray-800">Lignes d'Écritures</h3>
                 </div>
 
-                <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+                <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">

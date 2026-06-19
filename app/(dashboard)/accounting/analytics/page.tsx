@@ -70,7 +70,7 @@ interface AxeDetailPanelProps {
 
 function AxeDetailPanel({ axe, onEdit, onClose, onToggleActif, canToggleActif }: AxeDetailPanelProps) {
     return (
-        <div className="w-[440px] shrink-0 bg-white border-l border-slate-200 flex flex-col h-full overflow-hidden">
+        <div className="w-full md:w-[440px] shrink-0 bg-white border-t md:border-t-0 md:border-l border-slate-200 flex flex-col h-full overflow-hidden">
             {/* Header du panneau */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                 <div>
@@ -300,9 +300,9 @@ export default function AnalyticsPage() {
                 </div>
 
                 {/* Layout deux colonnes quand un axe est sélectionné */}
-                <div className="flex" style={{ minHeight: '500px' }}>
+                <div className="flex flex-col lg:flex-row" style={{ minHeight: '500px' }}>
                     {/* Liste */}
-                    <div className="flex-1 p-6 overflow-auto">
+                    <div className="flex-1 p-4 md:p-6 overflow-auto">
                         <AnalyticsListView
                             axes={axes}
                             isLoading={isLoading}

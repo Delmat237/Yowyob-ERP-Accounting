@@ -143,7 +143,7 @@ export const RoleAssignmentView: React.FC = () => {
             </div>
 
             {/* Table */}
-            <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden">
+            <div className="rounded-lg border border-gray-200 bg-white shadow-sm overflow-hidden overflow-x-auto">
                 <Table>
                     <TableHeader className="bg-gray-50">
                         <TableRow>
