@@ -19,15 +19,17 @@ export type OpenAPIConfig = {
     ENCODE_PATH?: ((path: string) => string) | undefined;
 };
 
-// Ce client cible le KERNEL (services users/actors/organizations/agencies/...),
-// distinct du backend accounting (src/lib2 → NEXT_PUBLIC_API_URL). Les chemins
-// générés sont sans préfixe /api, on le porte donc dans la base URL du kernel.
-const KERNEL_BASE = process.env.NEXT_PUBLIC_KERNEL_URL ?? 'http://localhost:8080/api';
+// Ce client cible le KERNEL (services users/actors/organizations/agencies/...) mais
+// NE l'appelle PLUS en direct : il passe par le reverse-proxy du backend accounting
+// (/api/kernel/**), qui détient seul les credentials de la ClientApplication du Kernel
+// (X-Client-Id / X-Api-Key) et les injecte côté serveur. Ces secrets ne doivent jamais
+// être exposés dans le bundle navigateur. Les chemins générés sont sans préfixe /api ;
+// le préfixe vers le Kernel est reconstruit par le proxy backend.
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
+const KERNEL_PROXY_BASE = `${BACKEND_BASE}/api/kernel`;
 
 export const OpenAPI: OpenAPIConfig = {
-    BASE: typeof window !== 'undefined'
-        ? (window as any).__NEXT_PUBLIC_API_URL__ ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081'
-        : process.env.NEXT_PUBLIC_API_URL ?? 'http://172.30.135.11:8081',
+    BASE: KERNEL_PROXY_BASE,
     VERSION: '1.0.0',
     WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',
@@ -37,8 +39,19 @@ export const OpenAPI: OpenAPIConfig = {
     HEADERS: () => Promise.resolve(
         typeof window !== 'undefined'
             ? {
-                'X-Tenant-ID': localStorage.getItem('organization_id') ?? '',
-            }
+                // X-Tenant-ID = le TENANT (≠ organisation). Au login, le
+                // localStorage est vide → on retombe sur NEXT_PUBLIC_TENANT_ID
+                // (configurable dans .env.local), sinon ''.
+                'X-Tenant-ID': localStorage.getItem('tenant_id')
+                    || process.env.NEXT_PUBLIC_TENANT_ID
+                    || '',
+                // X-Organization-Id : organisation courante (relayée par le proxy au Kernel).
+                'X-Organization-Id': localStorage.getItem('organization_id')
+                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID
+                    || '',
+                // NB : X-Client-Id / X-Api-Key NE sont plus envoyés par le navigateur.
+                // Le proxy backend (/api/kernel) les injecte côté serveur.
+              }
             : {}
     ),
     ENCODE_PATH: undefined,

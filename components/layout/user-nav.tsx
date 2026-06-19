@@ -15,8 +15,7 @@ import {
 import { LogOut, User, Settings, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getRoleLabel } from "@/src/lib/auth/roles";
-import { OpenAPI as CoreOpenAPI } from "@/src/lib";
-import { OpenAPI as AccountingOpenAPI } from "@/src/lib2";
+import { clearSession } from "@/lib/auth-session";
 import Link from "next/link";
 
 export function UserNav() {
@@ -26,15 +25,11 @@ export function UserNav() {
   const handleLogout = () => {
     // Vider le store Zustand
     clear();
-    // Supprimer les données de session du localStorage
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("organization_id");
-    // Réinitialiser le token OpenAPI
-    CoreOpenAPI.TOKEN = undefined;
-    AccountingOpenAPI.TOKEN = undefined;
-    // Rediriger vers la page de connexion
-    router.push("/");
+    // Purger la session (localStorage + tokens OpenAPI des deux clients)
+    clearSession();
+    // Rediriger vers la page de connexion (replace : pas de retour arrière
+    // possible vers le dashboard via le bouton précédent).
+    router.replace("/");
   };
 
   // Initiales pour l'avatar

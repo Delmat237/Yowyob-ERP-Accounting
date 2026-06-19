@@ -16,10 +16,24 @@ import {
   Calculator
 } from 'lucide-react';
 import { LoginModal } from './login-modal';
+import { useRedirectIfAuthenticated } from '@/hooks/use-auth-redirect';
 
 export function LandingPage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Si l'utilisateur est déjà connecté, il ne doit pas voir la landing :
+  // redirection immédiate vers le dashboard.
+  const guestStatus = useRedirectIfAuthenticated();
+
+  // Vérification en cours ou redirection : on n'affiche pas la landing
+  // (évite un flash de la page publique pour un utilisateur connecté).
+  if (guestStatus !== 'allowed') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+      </div>
+    );
+  }
 
   const features = [
     {

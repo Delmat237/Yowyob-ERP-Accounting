@@ -34,11 +34,22 @@ export const OpenAPI: OpenAPIConfig = {
     TOKEN: () => Promise.resolve(typeof window !== 'undefined' ? localStorage.getItem('auth_token') ?? '' : ''),
     USERNAME: undefined,
     PASSWORD: undefined,
+    // Tenant and organization are DISTINCT (aligned with the kernel):
+    //   - X-Organization-Id: the business unit owning the data (localStorage 'organization_id',
+    //     falling back to NEXT_PUBLIC_ORGANIZATION_ID then the seeded default org). The backend has
+    //     app.organization.require-explicit=true and rejects requests with an empty header, so we
+    //     must never send '' — otherwise GETs fail with "no organization context".
+    //   - X-Tenant-Id: the platform customer (localStorage 'tenant_id', defaulting to the platform tenant)
     HEADERS: () => Promise.resolve(
         typeof window !== 'undefined'
             ? {
-                'X-Tenant-ID': localStorage.getItem('organization_id') ?? '',
-            }
+                'X-Organization-Id': localStorage.getItem('organization_id')
+                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID
+                    || '4e177ff2-89b8-4d24-926a-5763dfa1b19a',
+                'X-Tenant-Id': localStorage.getItem('tenant_id')
+                    || process.env.NEXT_PUBLIC_TENANT_ID
+                    || '11111111-1111-1111-1111-111111111111',
+              }
             : {}
     ),
     ENCODE_PATH: undefined,

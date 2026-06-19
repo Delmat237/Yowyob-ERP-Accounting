@@ -8,6 +8,7 @@ import type { ApiResult } from './ApiResult';
 import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
+import { toast } from 'sonner';
 
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
@@ -165,7 +166,11 @@ export const getHeaders = async (config: OpenAPIConfig, options: ApiRequestOptio
     }
 
     if (options.body !== undefined) {
-        if (options.mediaType) {
+        if (isFormData(options.body)) {
+            // Ne pas fixer Content-Type pour un FormData : le navigateur doit
+            // générer lui-même `multipart/form-data; boundary=...`. Le poser à la
+            // main (via mediaType) produit un en-tête sans boundary → 500 côté backend.
+        } else if (options.mediaType) {
             headers['Content-Type'] = options.mediaType;
         } else if (isBlob(options.body)) {
             headers['Content-Type'] = options.body.type || 'application/octet-stream';
@@ -249,6 +254,38 @@ export const getResponseBody = async (response: Response): Promise<any> => {
     return undefined;
 };
 
+/** Clés de session purgées à l'expiration (cf lib/auth-session.ts, dupliqué ici pour éviter un import circulaire dans lib2). */
+const SESSION_KEYS = ['auth_token', 'user', 'organization_id', 'tenant_id'];
+
+/**
+ * Token expiré / session invalide côté serveur (401) : purge la session locale
+ * et renvoie immédiatement vers la page de login (la landing `/`), au lieu de
+ * laisser la page tourner indéfiniment sur un spinner.
+ */
+const handleUnauthorized = (): void => {
+    if (typeof window === 'undefined') return;
+    SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
+    // Évite une boucle de redirection si on est déjà sur la landing/login.
+    if (window.location.pathname !== '/') {
+        window.location.assign('/');
+    }
+};
+
+/**
+ * Droits insuffisants côté serveur (403) : l'utilisateur est authentifié mais son
+ * rôle comptable ne couvre pas l'action. Contrairement au 401, on ne purge pas la
+ * session ; on affiche un message clair (au lieu du « Forbidden » générique) pour
+ * les actions qui passent le garde de rôle de page mais sont refusées plus finement
+ * par le backend (@PreAuthorize). Message du backend privilégié s'il est présent.
+ */
+const handleForbidden = (result: ApiResult): void => {
+    if (typeof window === 'undefined') return;
+    const message =
+        result.body?.message ||
+        "Accès refusé : vous n'avez pas les droits nécessaires pour cette action.";
+    toast.error(message);
+};
+
 export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): void => {
     const errors: Record<number, string> = {
         400: 'Bad Request',
@@ -259,6 +296,14 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
         502: 'Bad Gateway',
         503: 'Service Unavailable',
         ...options.errors,
+    }
+
+    if (result.status === 401) {
+        handleUnauthorized();
+    }
+
+    if (result.status === 403) {
+        handleForbidden(result);
     }
 
     const error = errors[result.status];

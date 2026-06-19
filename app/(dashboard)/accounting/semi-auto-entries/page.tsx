@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { DraftAccountingService } from '@/src/lib2/services/DraftAccountingService';
-import { AccountingInvoiceUploadService } from '@/src/lib2/services/AccountingInvoiceUploadService';
 import { BrouillardComptableDto } from '@/src/lib2/models/BrouillardComptableDto';
 import { format } from 'date-fns';
 import {
@@ -66,6 +65,14 @@ export default function AccountingSemiAutoEntryPage() {
 
     setIsValidating(true);
     try {
+      // Persist any edits (e.g. corrected VAT) before generating the accounting entry,
+      // so the écriture reflects the values shown in the preview.
+      await DraftAccountingService.updateBrouillard(selectedDraft.id, {
+        dataJson: selectedDraft.dataJson,
+        montantTotal: selectedDraft.montantTotal,
+        libelle: selectedDraft.libelle,
+      } as BrouillardComptableDto);
+
       const response = await DraftAccountingService.validateBrouillard(selectedDraft.id, {
         notes: "Validé depuis l'interface semi-automatique",
         forceValidation: false
@@ -85,6 +92,20 @@ export default function AccountingSemiAutoEntryPage() {
     }
   };
 
+  // Recompute amounts when the user edits the HT base or the VAT rate, reflecting it
+  // live in the preview lines and the list. Persisted on validation (updateBrouillard).
+  const applyFinancials = (montantHT: number, tauxTVA: number) => {
+    if (!selectedDraft) return;
+    const ht = Number.isFinite(montantHT) ? montantHT : 0;
+    const taux = Number.isFinite(tauxTVA) ? tauxTVA : 0;
+    const tva = Math.round(ht * (taux / 100) * 100) / 100;
+    const ttc = Math.round((ht + tva) * 100) / 100;
+    const newDataJson = { ...(selectedDraft.dataJson as any), montantHT: ht, montantTVA: tva, montantTTC: ttc, tauxTVA: taux };
+    const updated = { ...selectedDraft, dataJson: newDataJson, montantTotal: ttc } as BrouillardComptableDto;
+    setSelectedDraft(updated);
+    setDrafts(prev => prev.map(d => (d.id === updated.id ? updated : d)));
+  };
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
@@ -93,7 +114,7 @@ export default function AccountingSemiAutoEntryPage() {
     const loadingToastId = toast.loading("Analyse du document en cours par l'OCR...");
 
     try {
-      const response = await AccountingInvoiceUploadService.upload({ file: file as any });
+      const response = await DraftAccountingService.uploadDraftFromInvoice({ file: file as any });
       if (response && response.success) {
         toast.success("Facture importée", {
           id: loadingToastId,
@@ -156,6 +177,12 @@ export default function AccountingSemiAutoEntryPage() {
   const previewLines = currentPreviewLines();
   const totalDebit = previewLines.reduce((acc, l) => acc + l.debit, 0);
   const totalCredit = previewLines.reduce((acc, l) => acc + l.credit, 0);
+
+  const currentData: any = selectedDraft?.dataJson || {};
+  const currentHT = Number(currentData.montantHT) || 0;
+  const currentTaux = currentData.tauxTVA != null
+    ? Number(currentData.tauxTVA)
+    : (currentHT > 0 && currentData.montantTVA ? Math.round((Number(currentData.montantTVA) / currentHT) * 100) : 18);
 
   return (
     <div className="p-4 space-y-4 max-w-[1400px] mx-auto min-h-[calc(100vh-100px)] flex flex-col bg-gray-50/50">
@@ -296,6 +323,19 @@ export default function AccountingSemiAutoEntryPage() {
               <div className="col-span-4 flex flex-col gap-1.5">
                 <label className="text-[11px] font-semibold text-gray-500 uppercase">Journal</label>
                 <Input readOnly value={`${selectedDraft.journalCode || 'JV'} - ${selectedDraft.journalLibelle || 'Journal non spécifié'}`} className="bg-gray-50 text-xs h-8 border-gray-300" />
+              </div>
+
+              <div className="col-span-4 flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase">Montant HT</label>
+                <Input type="number" step="0.01" value={currentHT} onChange={(e) => applyFinancials(parseFloat(e.target.value), currentTaux)} className="text-xs h-8 border-gray-300 text-right font-mono" />
+              </div>
+              <div className="col-span-4 flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase">Taux TVA (%)</label>
+                <Input type="number" step="0.1" value={currentTaux} onChange={(e) => applyFinancials(currentHT, parseFloat(e.target.value))} className="text-xs h-8 border-gray-300 text-right font-mono" />
+              </div>
+              <div className="col-span-4 flex flex-col gap-1.5">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase">Montant TTC</label>
+                <Input readOnly value={(Number(currentData.montantTTC) || 0).toLocaleString()} className="bg-gray-50 text-xs h-8 border-gray-300 text-right font-mono font-semibold text-blue-900" />
               </div>
 
               <div className="col-span-12 flex flex-col gap-1.5 mt-1">

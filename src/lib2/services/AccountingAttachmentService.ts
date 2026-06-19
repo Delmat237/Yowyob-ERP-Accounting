@@ -54,11 +54,16 @@ export class AccountingAttachmentService {
             typeof window !== 'undefined'
                 ? localStorage.getItem('organization_id')
                 : null;
+        const tenantId =
+            typeof window !== 'undefined'
+                ? localStorage.getItem('tenant_id') ?? '11111111-1111-1111-1111-111111111111'
+                : null;
 
         const response = await fetch(this.getDownloadUrl(fileName), {
             headers: {
                 ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                ...(organizationId ? { 'X-Tenant-ID': organizationId } : {}),
+                ...(organizationId ? { 'X-Organization-Id': organizationId } : {}),
+                ...(tenantId ? { 'X-Tenant-Id': tenantId } : {}),
             },
         });
 
