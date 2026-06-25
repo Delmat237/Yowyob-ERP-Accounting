@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Building2,
   BookOpen,
   Users,
   TrendingUp,
@@ -18,6 +17,7 @@ import {
   Minus
 } from 'lucide-react';
 import { LoginModal } from './login-modal';
+import { SiteFooter } from '@/components/marketing/site-footer';
 import { useRedirectIfAuthenticated } from '@/hooks/use-auth-redirect';
 
 export function LandingPage() {
@@ -174,10 +174,10 @@ export function LandingPage() {
               <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Solutions
               </a>
-              <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <a href="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Tarifs
               </a>
-              <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <a href="/contact" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Contact
               </a>
               <Button
@@ -210,10 +210,10 @@ export function LandingPage() {
                 <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
                   Solutions
                 </a>
-                <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
+                <a href="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
                   Tarifs
                 </a>
-                <a href="#contact" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
+                <a href="/contact" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
                   Contact
                 </a>
                 <Button
@@ -430,50 +430,7 @@ export function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <Building2 className="h-5 w-5 text-white" />
-                </div>
-                <span className="text-lg font-bold">KSM</span>
-              </div>
-              <p className="text-gray-400 text-sm">
-                Solution complète pour maîtriser votre gestion comptable.
-              </p>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Produit</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Fonctionnalités</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Tarifs</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Centre d&apos;aide</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-4">Entreprise</h3>
-              <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">À propos</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Carrières</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Presse</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2025 KSM. Tous droits réservés.</p>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
 
       {/* Login Modal */}
       <LoginModal 
