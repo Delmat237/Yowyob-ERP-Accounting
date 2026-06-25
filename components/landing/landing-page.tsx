@@ -13,7 +13,9 @@ import {
   ArrowRight,
   Menu,
   X,
-  Calculator
+  Calculator,
+  Check,
+  Minus
 } from 'lucide-react';
 import { LoginModal } from './login-modal';
 import { useRedirectIfAuthenticated } from '@/hooks/use-auth-redirect';
@@ -75,6 +77,81 @@ export function LandingPage() {
     { number: "24/7", label: "Support" }
   ];
 
+  // Comparaison KSM vs solutions existantes du marché.
+  // valeur possible : true (inclus), false (absent), 'partial' (limité / payant)
+  const comparison = [
+    {
+      feature: "Plan comptable OHADA / SYSCOHADA natif",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Comptabilisation automatique (OCR de factures)",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Multi-tenant & multi-organisation natif",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Intégration caisse / facturation temps réel",
+      ksm: true,
+      odoo: true,
+      classic: false,
+    },
+    {
+      feature: "Rôles comptables granulaires (SUPERVISE / MANAGE)",
+      ksm: true,
+      odoo: 'partial',
+      classic: 'partial',
+    },
+    {
+      feature: "Déploiement local ou cloud, sans licence par module",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Onboarding comptable en self-service",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Coût total adapté au marché africain",
+      ksm: true,
+      odoo: false,
+      classic: 'partial',
+    },
+  ];
+
+  const ComparisonCell = ({ value }: { value: boolean | string }) => {
+    if (value === true) {
+      return (
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-green-100">
+          <Check className="h-4 w-4 text-green-600" />
+        </span>
+      );
+    }
+    if (value === 'partial') {
+      return (
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-amber-100">
+          <Minus className="h-4 w-4 text-amber-600" />
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-red-100">
+        <X className="h-4 w-4 text-red-500" />
+      </span>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}
@@ -94,7 +171,7 @@ export function LandingPage() {
               <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Fonctionnalités
               </a>
-              <a href="#solutions" className="text-gray-600 hover:text-blue-600 transition-colors">
+              <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Solutions
               </a>
               <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
@@ -130,7 +207,7 @@ export function LandingPage() {
                 <a href="#features" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
                   Fonctionnalités
                 </a>
-                <a href="#solutions" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
+                <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
                   Solutions
                 </a>
                 <a href="#pricing" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
@@ -260,6 +337,94 @@ export function LandingPage() {
             >
               Contacter l&apos;équipe
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Comparison Section */}
+      <section id="comparison" className="py-20 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Pourquoi choisir KSM&nbsp;?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Comparé aux solutions existantes comme Odoo ou les logiciels comptables
+              classiques, KSM est pensé pour le contexte et la réglementation OHADA.
+            </p>
+          </div>
+
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+            <table className="w-full min-w-[640px] text-left">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="py-5 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+                    Fonctionnalité
+                  </th>
+                  <th className="py-5 px-6 text-center">
+                    <div className="inline-flex flex-col items-center">
+                      <span className="text-lg font-bold text-blue-600">KSM</span>
+                      <span className="text-xs text-gray-500">Notre solution</span>
+                    </div>
+                  </th>
+                  <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
+                    Odoo
+                  </th>
+                  <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
+                    Solutions classiques
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.map((row, index) => (
+                  <tr
+                    key={index}
+                    className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                  >
+                    <td className="py-4 px-6 text-sm text-gray-800 font-medium">
+                      {row.feature}
+                    </td>
+                    <td className="py-4 px-6 text-center bg-blue-50/50">
+                      <div className="flex justify-center">
+                        <ComparisonCell value={row.ksm} />
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <div className="flex justify-center">
+                        <ComparisonCell value={row.odoo} />
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <div className="flex justify-center">
+                        <ComparisonCell value={row.classic} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Légende */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100">
+                <Check className="h-3 w-3 text-green-600" />
+              </span>
+              Inclus
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100">
+                <Minus className="h-3 w-3 text-amber-600" />
+              </span>
+              Limité / payant en option
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100">
+                <X className="h-3 w-3 text-red-500" />
+              </span>
+              Non disponible
+            </span>
           </div>
         </div>
       </section>
