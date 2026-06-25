@@ -13,10 +13,12 @@ import {
 import { useNavigationStore } from '@/hooks/use-navigation-store';
 import { ModuleKey } from '@/config/navigation';
 import { useLoadingStore } from '@/hooks/use-loading-store';
+import { useAccountingSubscription } from '@/hooks/use-accounting-subscription';
 
-// Drapeau posé par le login : déclenche le modal de choix au prochain montage
-// du dashboard, puis est consommé une seule fois.
-export const ACCOUNTING_CHOICE_FLAG = 'ksm.accountingChoicePending';
+// Marqueur de session : posé une fois que l'utilisateur a choisi son espace.
+// Tant qu'il est absent, le modal s'affiche (à l'ouverture de l'app ou après un
+// login, où la clé est réinitialisée). Effacé au logout.
+export const ACCOUNTING_CHOICE_KEY = 'ksm.accountingChoiceMade';
 
 type Choice = {
   key: Extract<ModuleKey, 'generale' | 'analytique'>;
@@ -51,17 +53,40 @@ export function AccountingChoiceModal() {
   const router = useRouter();
   const { setActiveModule } = useNavigationStore();
   const { startLoading } = useLoadingStore();
+  const { generale, analytique, loaded, load } = useAccountingSubscription();
+
+  // Charge l'abonnement de l'organisation courante (si pas déjà fait par la sidebar).
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Ne propose que les espaces auxquels l'organisation est abonnée.
+  const availableChoices = choices.filter(
+    (c) => (c.key === 'generale' ? generale : analytique),
+  );
 
   useEffect(() => {
-    if (sessionStorage.getItem(ACCOUNTING_CHOICE_FLAG) === '1') {
+    // On attend la réponse du backend avant de décider quoi afficher.
+    if (!loaded) return;
+    if (sessionStorage.getItem(ACCOUNTING_CHOICE_KEY) === '1') return;
+
+    // Un seul espace actif : pas de choix à faire, on bascule directement dessus.
+    if (availableChoices.length === 1) {
+      setActiveModule(availableChoices[0].key);
+      sessionStorage.setItem(ACCOUNTING_CHOICE_KEY, '1');
+      return;
+    }
+    // Plusieurs espaces actifs : on affiche le modal de choix.
+    if (availableChoices.length > 1) {
       setOpen(true);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loaded, generale, analytique]);
 
-  const consumeFlag = () => sessionStorage.removeItem(ACCOUNTING_CHOICE_FLAG);
+  const markChosen = () => sessionStorage.setItem(ACCOUNTING_CHOICE_KEY, '1');
 
   const handleSelect = (choice: Choice) => {
-    consumeFlag();
+    markChosen();
     setActiveModule(choice.key);
     setOpen(false);
     startLoading();
@@ -69,7 +94,7 @@ export function AccountingChoiceModal() {
   };
 
   const handleDismiss = (next: boolean) => {
-    if (!next) consumeFlag();
+    if (!next) markChosen();
     setOpen(next);
   };
 
@@ -86,7 +111,7 @@ export function AccountingChoiceModal() {
         </DialogHeader>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-          {choices.map((choice) => (
+          {availableChoices.map((choice) => (
             <button
               key={choice.key}
               type="button"
