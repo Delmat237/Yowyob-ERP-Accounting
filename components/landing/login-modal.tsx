@@ -241,6 +241,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             setUser(response.user);
 
             setPendingSelection(null);
+            // Demande, au prochain affichage du dashboard, quelle comptabilité
+            // l'utilisateur souhaite faire (générale vs analytique).
+            sessionStorage.setItem('ksm.accountingChoicePending', '1');
             setLoginFeedback({ type: 'success', message: `Bienvenue, ${response.user?.firstName ?? ''} !` });
             await new Promise(resolve => setTimeout(resolve, 600));
             router.push('/accounting/dashboard');

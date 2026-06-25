@@ -24,7 +24,8 @@ import {
     ListChecks,
     Layers,
     ClipboardCheck,
-    Rocket
+    Rocket,
+    PieChart
 } from "lucide-react";
 
 export type SidebarLink = {
@@ -48,7 +49,8 @@ export const moduleKeys = [
     "clients",
     "fournisseurs",
     "analyse",
-    "comptabilite",
+    "generale",
+    "analytique",
     "configuration"
 ] as const;
 export type ModuleKey = typeof moduleKeys[number];
@@ -99,13 +101,11 @@ export const modules: Record<ModuleKey, Module> = {
             { title: "Résumé Général", icon: Notebook, href: "/analyse/executive-summary" },
             { title: "Grand Livre", icon: BookOpen, href: "/analyse/generale-ledger" },
             { title: "Balance Générale", icon: Landmark, href: "/analyse/generale-balance" },
-            { title: "Axes Analytiques", icon: Layers, href: "/accounting/analytics", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
-            { title: "Grand Livre Anal.", icon: BookOpen, href: "/accounting/analytics/ledger", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Journal Audit", icon: History, href: "/analyse/audits", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE'] },
         ],
     },
-    comptabilite: {
-        name: "Comptabilité",
+    generale: {
+        name: "Comptabilité Générale",
         icon: BookOpen,
         composeActionLabel: "",
         sidebarLinks: [
@@ -114,6 +114,17 @@ export const modules: Record<ModuleKey, Module> = {
             { title: "Saisie semi-automatique", icon: ListChecks, href: "/accounting/semi-auto-entries", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Validation Écritures", icon: ShieldCheck, href: "/accounting/validation", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE'] },
             { title: "Paramètre général", icon: Settings, href: "/settings/accounting", allowedRoles: ['RESPONSABLE_COMPTABLE'] },
+        ],
+    },
+    analytique: {
+        name: "Comptabilité Analytique",
+        icon: PieChart,
+        composeActionLabel: "",
+        allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'],
+        sidebarLinks: [
+            { title: "Axes Analytiques", icon: Layers, href: "/accounting/analytics", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
+            { title: "Grand Livre Analytique", icon: BookOpen, href: "/accounting/analytics/ledger", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
+            { title: "Rapports Analytiques", icon: BarChart3, href: "/accounting/analytics/reports", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Budgets", icon: BarChart3, href: "/accounting/budgets", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE'] },
             { title: "Validation Budgets", icon: ClipboardCheck, href: "/accounting/budget-validation", allowedRoles: ['RESPONSABLE_COMPTABLE'] },
         ],
