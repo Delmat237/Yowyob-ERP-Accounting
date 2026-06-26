@@ -1,0 +1,141 @@
+
+> accounting-yowyob-erp@0.1.0 dev
+> next dev --webpack
+
+▲ Next.js 16.2.7 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://10.2.34.254:3000
+- Environments: .env.local
+✓ Ready in 17.5s
+
+○ Compiling / ...
+ GET / 200 in 20.5s (next.js: 18.3s, application-code: 2.2s)
+○ Compiling /accounting/dashboard ...
+ GET /accounting/dashboard 200 in 24.8s (next.js: 24.4s, application-code: 413ms)
+○ Compiling /accounting/subscription ...
+ GET /accounting/subscription 200 in 14.2s (next.js: 13.3s, application-code: 867ms)
+○ Compiling /accounting/analytics ...
+ GET /accounting/analytics 200 in 13.4s (next.js: 13.1s, application-code: 356ms)
+ GET /accounting/dashboard 200 in 1814ms (next.js: 1628ms, application-code: 186ms)
+○ Compiling /_not-found ...
+ GET /settings/company 404 in 11.0s (next.js: 10.6s, application-code: 403ms)
+ GET /settings/company 404 in 755ms (next.js: 11ms, application-code: 743ms)
+ GET / 200 in 285ms (next.js: 134ms, application-code: 151ms)
+ GET /accounting/dashboard 200 in 540ms (next.js: 126ms, application-code: 414ms)
+ GET /accounting/dashboard 200 in 255ms (next.js: 16ms, application-code: 240ms)
+ GET / 200 in 87ms (next.js: 5ms, application-code: 82ms)
+ GET /accounting/dashboard 200 in 471ms (next.js: 128ms, application-code: 343ms)
+ GET /accounting/subscription 200 in 363ms (next.js: 142ms, application-code: 220ms)
+ GET / 200 in 167ms (next.js: 27ms, application-code: 140ms)
+ GET /accounting/dashboard 200 in 321ms (next.js: 14ms, application-code: 308ms)
+ GET /accounting/analytics 200 in 286ms (next.js: 88ms, application-code: 198ms)
+○ Compiling /analyse/generale-ledger ...
+ GET /analyse/generale-ledger 200 in 15.1s (next.js: 14.8s, application-code: 251ms)
+○ Compiling /analyse/cache-flow ...
+ GET /analyse/cache-flow 200 in 8.5s (next.js: 8.3s, application-code: 193ms)
+○ Compiling /analyse/profit-and-loss ...
+ GET /analyse/profit-and-loss 200 in 6.0s (next.js: 5.7s, application-code: 259ms)
+○ Compiling /analyse/audits ...
+ GET /analyse/audits 200 in 13.5s (next.js: 13.3s, application-code: 166ms)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=12&debut=1&fin=2026&fin=12&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=12&debut=1&fin=2026&fin=12&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=6&debut=16&fin=2026&fin=6&fin=30 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=6&debut=16&fin=2026&fin=6&fin=30 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=5&debut=1&fin=2026&fin=5&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=5&debut=1&fin=2026&fin=5&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=7&debut=1&fin=2026&fin=7&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=7&debut=1&fin=2026&fin=7&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=6&debut=16&fin=2026&fin=6&fin=30 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=6&debut=16&fin=2026&fin=6&fin=30 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+○ Compiling /accounting/reports ...
+ GET /accounting/reports 200 in 23.7s (next.js: 23.2s, application-code: 442ms)
