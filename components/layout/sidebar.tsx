@@ -10,12 +10,28 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 
 export function Sidebar() {
   const { isCollapsed } = useSidebar();
   const { activeModule, setActiveModule } = useNavigationStore();
   const pathname = usePathname();
   const { accountingRole } = useAuth();
+  const { generale, analytique, load } = useAccountingSubscription();
+
+  // Charge l'abonnement de l'organisation courante au montage afin de savoir
+  // quelles activités comptables (générale / analytique) sont actives.
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Un module comptable est désactivé (grisé) si l'organisation n'est pas
+  // abonnée à l'activité correspondante.
+  const isModuleDisabled = (key: ModuleKey): boolean => {
+    if (key === "generale") return !generale;
+    if (key === "analytique") return !analytique;
+    return false;
+  };
 
   useEffect(() => {
     const currentModuleKey = Object.entries(modules).find(([key, module]) =>
@@ -29,11 +45,15 @@ export function Sidebar() {
 
   const currentModuleData = modules[activeModule];
 
-  const filteredLinks: SidebarLink[] = currentModuleData.sidebarLinks.filter((link) => {
-    if (!link.allowedRoles) return true;
-    if (!accountingRole) return false;
-    return link.allowedRoles.includes(accountingRole);
-  });
+  // Si le module actif est désactivé (abonnement coupé), on n'affiche aucune de
+  // ses options dans la barre secondaire.
+  const filteredLinks: SidebarLink[] = isModuleDisabled(activeModule)
+    ? []
+    : currentModuleData.sidebarLinks.filter((link) => {
+        if (!link.allowedRoles) return true;
+        if (!accountingRole) return false;
+        return link.allowedRoles.includes(accountingRole);
+      });
 
   const visibleModules = Object.entries(modules).filter(([, module]) => {
     if (!module.allowedRoles) return true;
@@ -52,20 +72,32 @@ export function Sidebar() {
         <TooltipProvider delayDuration={0}>
           {visibleModules.map(([key, module]) => {
             const Icon = module.icon;
+            const disabled = isModuleDisabled(key as ModuleKey);
             return (
               <Tooltip key={key}>
                 <TooltipTrigger asChild>
                   <Button
                     variant={activeModule === key ? "secondary" : "ghost"}
                     size="icon"
-                    className="h-12 w-12 flex-col gap-3 text-xs"
-                    onClick={() => setActiveModule(key as ModuleKey)}
+                    disabled={disabled}
+                    aria-disabled={disabled}
+                    className={cn(
+                      "h-12 w-12 flex-col gap-3 text-xs",
+                      disabled && "opacity-40 cursor-not-allowed"
+                    )}
+                    onClick={() => {
+                      if (disabled) return;
+                      setActiveModule(key as ModuleKey);
+                    }}
                   >
                     <Icon className="h-5 w-5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  <p>{module.name}</p>
+                  <p>
+                    {module.name}
+                    {disabled && " — activité non abonnée"}
+                  </p>
                 </TooltipContent>
               </Tooltip>
             );

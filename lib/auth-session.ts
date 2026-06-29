@@ -42,10 +42,14 @@ export function isAuthenticated(): boolean {
     return isTokenValid(getStoredToken());
 }
 
-/** Purge la session : localStorage + tokens OpenAPI des deux clients. */
+/** Purge la session : localStorage + sessionStorage + tokens OpenAPI des deux clients. */
 export function clearSession(): void {
     if (typeof window !== 'undefined') {
         SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
+        // Choix d'espace comptable (générale/analytique) lié à la session courante :
+        // purgé au logout pour que le modal de choix réapparaisse à la prochaine connexion.
+        // Clé alignée sur ACCOUNTING_CHOICE_KEY de accounting-choice-modal.tsx.
+        sessionStorage.removeItem('ksm.accountingChoiceMade');
     }
     CoreOpenAPI.TOKEN = undefined;
     AccountingOpenAPI.TOKEN = undefined;

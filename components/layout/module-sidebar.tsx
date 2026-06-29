@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useModuleSidebar } from "@/hooks/useModuleSidebar";
 import { useNavigationStore } from "@/hooks/use-navigation-store";
+import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 import { modules } from "@/config/navigation";
 import { Button } from "../ui/button";
 import { Menu } from "lucide-react";
@@ -11,6 +13,19 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/
 export function ModuleSidebar() {
   const { isCollapsed, toggle } = useModuleSidebar();
   const { activeModule, setActiveModule } = useNavigationStore();
+  const { generale, analytique, load } = useAccountingSubscription();
+
+  // Charge l'abonnement de l'organisation courante une fois au montage.
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // N'affiche que les modules comptables auxquels l'organisation est abonnée.
+  const visibleModules = Object.entries(modules).filter(([key]) => {
+    if (key === "generale") return generale;
+    if (key === "analytique") return analytique;
+    return true;
+  });
 
   return (
     <aside
@@ -32,7 +47,7 @@ export function ModuleSidebar() {
       
       <div className="flex-1 flex flex-col items-center py-4 gap-2">
         <TooltipProvider delayDuration={0}>
-          {Object.entries(modules).map(([key, module]) => {
+          {visibleModules.map(([key, module]) => {
             const Icon = module.icon;
             const isActive = activeModule === key;
             return isCollapsed ? (

@@ -241,6 +241,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             setUser(response.user);
 
             setPendingSelection(null);
+            // Réinitialise le choix d'espace comptable pour CETTE session : le modal de
+            // choix (générale vs analytique) réapparaîtra au prochain montage du dashboard.
+            // Clé alignée sur ACCOUNTING_CHOICE_KEY de accounting-choice-modal.tsx.
+            sessionStorage.removeItem('ksm.accountingChoiceMade');
             setLoginFeedback({ type: 'success', message: `Bienvenue, ${response.user?.firstName ?? ''} !` });
             await new Promise(resolve => setTimeout(resolve, 600));
             router.push('/accounting/dashboard');

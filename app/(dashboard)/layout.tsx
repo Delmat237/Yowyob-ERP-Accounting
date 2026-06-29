@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
 import React, { useEffect } from "react";
 import { ComposeWindow } from "@/components/ui/compose-window";
+import { AccountingChoiceModal } from "@/components/accounting/accounting-choice-modal";
 import { useLoadingStore } from "@/hooks/use-loading-store";
 import { usePathname } from "next/navigation";
 import { useRequireAuth } from "@/hooks/use-auth-redirect";
@@ -46,6 +47,7 @@ export default function DashboardLayout({
         </main>
       </div>
       <ComposeWindow />
+      <AccountingChoiceModal />
     </div>
   );
 }
