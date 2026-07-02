@@ -142,7 +142,6 @@ export const modules: Record<ModuleKey, Module> = {
             { title: "Charges Analytiques", icon: FileText, href: "/analytique/charges", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Ventilation Analytique", icon: SplitSquareHorizontal, href: "/analytique/ventilation", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Tableau de Répartition", icon: ArrowRightLeft, href: "/analytique/repartition", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
-            { title: "Budget Analytique", icon: Wallet, href: "/accounting/budgets", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE'] },
             { title: "Coûts Complets", icon: Target, href: "/analytique/couts-complets", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Coûts Partiels", icon: TrendingDown, href: "/analytique/couts-partiels", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Imputation Rationnelle", icon: Scale, href: "/analytique/imputation-rationnelle", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
