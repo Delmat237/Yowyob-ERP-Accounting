@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { AuthRequest } from '../models/AuthRequest';
 import type { AuthResponse } from '../models/AuthResponse';
+import type { ChangePasswordRequest } from '../models/ChangePasswordRequest';
 import type { RegisterRequest } from '../models/RegisterRequest';
 import type { User } from '../models/User';
 import type { CancelablePromise } from '../core/CancelablePromise';
@@ -47,6 +48,23 @@ export class AuthenticationService {
             mediaType: 'application/json',
             errors: {
                 401: `Identifiants invalides`,
+            },
+        });
+    }
+    /**
+     * Changer le mot de passe de l'utilisateur connecté
+     */
+    public static changePassword(
+        requestBody: ChangePasswordRequest,
+    ): CancelablePromise<void> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/users/me/password',
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Mot de passe actuel incorrect`,
+                401: `Non authentifié`,
             },
         });
     }

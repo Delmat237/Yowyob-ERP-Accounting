@@ -9,6 +9,9 @@ import { AccountingChoiceModal } from "@/components/accounting/accounting-choice
 import { useLoadingStore } from "@/hooks/use-loading-store";
 import { usePathname } from "next/navigation";
 import { useRequireAuth } from "@/hooks/use-auth-redirect";
+import { useAccountingAccessGuard } from "@/hooks/use-accounting-access-guard";
+import { canShowDashboardRouteContent } from "@/lib/accounting-workspace-routes";
+import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
 
 export default function DashboardLayout({
   children,
@@ -20,9 +23,10 @@ export default function DashboardLayout({
   // Garde d'authentification : sans token valide (ou token expiré), la session
   // est purgée et l'utilisateur est renvoyé sur la page de login.
   const authStatus = useRequireAuth();
+  const { choice, generale, analytique, subscriptionLoaded } = useEffectiveAccountingChoice();
+  useAccountingAccessGuard();
 
   useEffect(() => {
-    // When the layout mounts or route changes, stop the global loader
     stopLoading();
   }, [pathname, stopLoading]);
 
@@ -36,6 +40,13 @@ export default function DashboardLayout({
     );
   }
 
+  const showContent = canShowDashboardRouteContent(pathname, {
+    subscriptionLoaded,
+    generale,
+    analytique,
+    choice,
+  });
+
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-[#f6f8fc]">
       <Sidebar />
@@ -43,7 +54,11 @@ export default function DashboardLayout({
       <div className="flex-1 flex flex-col min-w-0">
         <Header />
         <main className="flex-1 overflow-y-auto p-4 pt-2">
-          {children}
+          {showContent ? children : (
+            <div className="h-full flex items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
+            </div>
+          )}
         </main>
       </div>
       <ComposeWindow />

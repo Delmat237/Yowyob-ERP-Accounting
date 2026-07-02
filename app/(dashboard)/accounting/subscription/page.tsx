@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { BookOpen, PieChart, Loader2, Save } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 import { useAuth } from "@/hooks/use-auth";
+import { GENERALE_DASHBOARD_PATH } from "@/lib/accounting-dashboard-routes";
 
 /**
  * Gestion de l'abonnement de l'organisation aux activités comptables
@@ -16,6 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
  * Les modules désactivés disparaissent de la barre latérale.
  */
 export default function AccountingSubscriptionPage() {
+    const router = useRouter();
     const { generale, analytique, loaded, loading, load, update } = useAccountingSubscription();
     const { accountingRole } = useAuth();
     const canManage = accountingRole === "RESPONSABLE_COMPTABLE";
@@ -45,7 +48,11 @@ export default function AccountingSubscriptionPage() {
         }
         setIsSaving(true);
         try {
+            const hadAnalytique = analytique;
             await update(localGenerale, localAnalytique);
+            if (hadAnalytique && !localAnalytique) {
+                router.replace(GENERALE_DASHBOARD_PATH);
+            }
             toast.success("Abonnement mis à jour. La barre latérale reflète les activités actives.");
         } catch {
             toast.error("Échec de la mise à jour de l'abonnement.");
@@ -68,8 +75,8 @@ export default function AccountingSubscriptionPage() {
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Activités comptables</h1>
                     <p className="text-muted-foreground mt-1 text-sm">
-                        Choisissez les activités auxquelles votre organisation est abonnée. Seules les
-                        activités actives apparaissent dans la barre latérale.
+                        Choisissez les activités auxquelles votre organisation est abonnée. Désactiver
+                        la comptabilité analytique retire l&apos;accès à ce module pour tous les utilisateurs.
                     </p>
                 </div>
                 {canManage && (

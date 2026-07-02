@@ -12,18 +12,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Layers, User, Save, Plus, Trash2, Tag, ToggleLeft } from 'lucide-react';
+import { Layers, User, Save, ToggleLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
 import { hasPermission } from '@/src/lib/auth/roles';
-
-export interface AnalyticalAccount {
-    id: string;
-    libelle: string;
-    dateDebut?: string;
-    dateFin?: string;
-}
 
 export interface AxeFormProps {
     initialData?: any;
@@ -39,7 +31,6 @@ export function AxeForm({ initialData, onCancel, onSubmit }: AxeFormProps) {
     const [type, setType] = useState(initialData?.type || 'PROJET');
     const [responsable, setResponsable] = useState(initialData?.responsable || '');
     const [actif, setActif] = useState<boolean>(initialData?.actif ?? true);
-    const [comptes, setComptes] = useState<AnalyticalAccount[]>(initialData?.comptes || []);
 
     // Autocomplétion responsable
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -75,26 +66,10 @@ export function AxeForm({ initialData, onCancel, onSubmit }: AxeFormProps) {
         }
     };
 
-    const handleAddCompte = () => {
-        setComptes([...comptes, { id: Date.now().toString(), libelle: '' }]);
-    };
-
-    const handleUpdateCompte = (id: string, newLibelle: string) => {
-        setComptes(comptes.map(c => c.id === id ? { ...c, libelle: newLibelle } : c));
-    };
-
-    const handleRemoveCompte = (id: string) => {
-        setComptes(comptes.filter(c => c.id !== id));
-    };
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!libelle) {
             toast.error('Veuillez remplir les champs obligatoires');
-            return;
-        }
-        if (comptes.some(c => !c.libelle.trim())) {
-            toast.error('Veuillez donner un libellé à tous les comptes analytiques, ou supprimez les lignes vides.');
             return;
         }
 
@@ -104,7 +79,7 @@ export function AxeForm({ initialData, onCancel, onSubmit }: AxeFormProps) {
             type,
             responsable,
             actif,
-            comptes,
+            comptes: initialData?.comptes ?? [],
         };
 
         if (initialData?.code) {
@@ -210,57 +185,6 @@ export function AxeForm({ initialData, onCancel, onSubmit }: AxeFormProps) {
                         </div>
                     </div>
                 )}
-
-                {/* Comptes analytiques */}
-                <div className="space-y-4 pt-6 border-t border-slate-200">
-                    <div className="flex justify-between items-center">
-                        <Label className="text-slate-800 font-bold flex items-center gap-2 text-sm uppercase tracking-wider">
-                            <Tag className="h-4 w-4 text-emerald-600" /> Comptes Analytiques Liés
-                        </Label>
-                        <Button type="button" variant="outline" size="sm" onClick={handleAddCompte} className="text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100">
-                            <Plus className="h-4 w-4 mr-1" /> Ajouter un compte
-                        </Button>
-                    </div>
-
-                    {comptes.length > 0 ? (
-                        <div className="border border-slate-200 rounded-lg overflow-hidden">
-                            <Table>
-                                <TableHeader className="bg-slate-50">
-                                    <TableRow>
-                                        <TableHead>Libellé du compte</TableHead>
-                                        <TableHead className="w-[80px] text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {comptes.map((compte) => (
-                                        <TableRow key={compte.id} className="hover:bg-slate-50">
-                                            <TableCell className="p-2 pl-4">
-                                                <Input
-                                                    value={compte.libelle}
-                                                    onChange={(e) => handleUpdateCompte(compte.id, e.target.value)}
-                                                    placeholder="Ex: Frais de déplacement"
-                                                    className="h-9 border-slate-200"
-                                                />
-                                            </TableCell>
-                                            <TableCell className="p-2 pr-4 text-right">
-                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => handleRemoveCompte(compte.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : (
-                        <div className="text-center p-6 border border-dashed border-slate-300 rounded-lg bg-slate-50">
-                            <p className="text-sm text-slate-500 mb-3">Aucun compte analytique n'est encore lié à cet axe.</p>
-                            <Button type="button" variant="outline" onClick={handleAddCompte} className="border-slate-300">
-                                Créer le premier compte
-                            </Button>
-                        </div>
-                    )}
-                </div>
             </div>
 
             <div className="sticky bottom-0 bg-slate-50/90 backdrop-blur-sm p-6 border-t border-slate-200 flex justify-end gap-4 mt-auto">

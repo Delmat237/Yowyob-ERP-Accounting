@@ -4,6 +4,7 @@
 /* eslint-disable */
 import type { UpdateOnboardingRequest } from '../models/UpdateOnboardingRequest';
 import type { UpdatePlanRequest } from '../models/UpdatePlanRequest';
+import type { UpdateUserProfileRequest } from '../models/UpdateUserProfileRequest';
 import type { User } from '../models/User';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
@@ -53,6 +54,20 @@ export class UsersService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/users/me',
+        });
+    }
+    /**
+     * Mettre à jour mon profil
+     * Met à jour les informations personnelles de l'utilisateur connecté.
+     */
+    public static updateMe(
+        requestBody: UpdateUserProfileRequest,
+    ): CancelablePromise<User> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/users/me',
+            body: requestBody,
+            mediaType: 'application/json',
         });
     }
 }

@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { AccountingSubscriptionService } from "@/src/lib2/services/AccountingSubscriptionService";
+import { syncStoredAccountingChoiceWithSubscription } from "@/lib/accounting-choice-resolver";
+import { useAccountingChoiceStore } from "@/hooks/use-accounting-choice-store";
 
 interface AccountingSubscriptionState {
   /** Comptabilité générale active pour l'organisation courante. */
@@ -30,9 +32,11 @@ export const useAccountingSubscription = create<AccountingSubscriptionState>((se
     try {
       const res = await AccountingSubscriptionService.getSubscription();
       const data = res?.data;
+      const nextGenerale = data?.generale ?? true;
+      const nextAnalytique = data?.analytique ?? false;
       set({
-        generale: data?.generale ?? true,
-        analytique: data?.analytique ?? false,
+        generale: nextGenerale,
+        analytique: nextAnalytique,
         loaded: true,
         loading: false,
       });
@@ -46,10 +50,16 @@ export const useAccountingSubscription = create<AccountingSubscriptionState>((se
   update: async (generale: boolean, analytique: boolean) => {
     const res = await AccountingSubscriptionService.updateSubscription({ generale, analytique });
     const data = res?.data;
+    const nextGenerale = data?.generale ?? generale;
+    const nextAnalytique = data?.analytique ?? analytique;
     set({
-      generale: data?.generale ?? generale,
-      analytique: data?.analytique ?? analytique,
+      generale: nextGenerale,
+      analytique: nextAnalytique,
       loaded: true,
     });
+    const synced = syncStoredAccountingChoiceWithSubscription(nextGenerale, nextAnalytique);
+    const store = useAccountingChoiceStore.getState();
+    if (synced) store.setChoice(synced);
+    else store.clear();
   },
 }));

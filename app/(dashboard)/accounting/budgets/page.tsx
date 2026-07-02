@@ -3,7 +3,6 @@
 /* eslint-disable react/no-unescaped-entities */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BudgetListView, BudgetItem, BudgetStatut, BudgetType } from '@/components/accounting/budget-list-view';
-import { BudgetVsRealiseView } from '@/components/accounting/budget-vs-realise-view';
 import { useCompose } from '@/hooks/use-compose-store';
 import { toast } from 'sonner';
 import {
@@ -17,11 +16,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-    List, BarChart3, X, Pencil, CheckCircle, ToggleLeft, ToggleRight,
+    List, X, Pencil, CheckCircle, ToggleLeft, ToggleRight,
     AlertTriangle, ChevronRight, ChevronDown,
     Building2, Calendar, Layers, Save, Plus, Trash2, PlusCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { useIsMounted } from '@/hooks/use-is-mounted';
 import { hasPermission } from '@/src/lib/auth/roles';
 import { AxeAnalytique } from '@/components/accounting/analytics-list-view';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,11 @@ import { AccountingAnalyticsService } from '@/src/lib2/services/AccountingAnalyt
 import { AccountingBudgetsService } from '@/src/lib2/services/AccountingBudgetsService';
 import { BudgetDto } from '@/src/lib2/models/BudgetDto';
 import { AxeAnalytiqueDto } from '@/src/lib2/models/AxeAnalytiqueDto';
+import { mapBudgetDtoToItem } from '@/lib/accounting/budget-mappers';
+import { mockCentres, mockAxes } from '@/lib/analytique/mock-data';
+import type { CentreAnalyse } from '@/lib/analytique/mock-data';
+import { AccountingComptesService } from '@/src/lib2/services/AccountingComptesService';
+import type { CompteDto } from '@/src/lib2/models/CompteDto';
 
 
 const statutColors: Record<BudgetStatut, string> = {
@@ -67,32 +72,22 @@ function mapAxeDto(dto: AxeAnalytiqueDto): AxeAnalytique {
     };
 }
 
+/** Résout l'axe analytique lié à un centre (id API ou correspondance par code). */
+function resolveAxeIdForCentre(centre: CentreAnalyse, activeAxes: AxeAnalytique[]): string | null {
+    const byId = activeAxes.find(a => a.id === centre.axeId);
+    if (byId) return byId.id;
+
+    const mockAxe = mockAxes.find(a => a.id === centre.axeId);
+    if (mockAxe) {
+        const byCode = activeAxes.find(a => a.code === mockAxe.code);
+        if (byCode) return byCode.id;
+    }
+
+    return null;
+}
+
 function mapBudgetDto(dto: BudgetDto): BudgetItem {
-    return {
-        id: dto.id ?? '',
-        code: dto.code ?? '',
-        nom: dto.nom ?? dto.libelle ?? 'Budget',
-        type: (dto.type ?? 'EXERCICE') as BudgetItem['type'],
-        statut: (dto.statut ?? 'BROUILLON') as BudgetItem['statut'],
-        montantAlloue: dto.montantAlloue ?? 0,
-        montantConsomme: dto.montantConsomme ?? 0,
-        parentId: dto.parentId,
-        parentNom: dto.parentNom,
-        exerciceId: dto.exerciceId,
-        periodeId: dto.periodeId,
-        axeIds: dto.axeIds,
-        axeLibelles: dto.axeLibelles,
-        dateDebut: dto.dateDebut ?? '',
-        dateFin: dto.dateFin ?? '',
-        seuilAlerte: dto.seuilAlerte ?? 80,
-        compteComptableLines: dto.compteLines?.map(line => ({
-            compteId: line.compteId ?? '',
-            compteLibelle: line.libelleCompte ?? line.noCompte ?? '',
-            montant: line.montantAlloue ?? 0,
-            description: line.description ?? '',
-        })),
-        responsable: dto.createdBy,
-    };
+    return mapBudgetDtoToItem(dto);
 }
 
 interface BudgetFormData {
@@ -104,6 +99,7 @@ interface BudgetFormData {
     dateFin: string;
     seuilAlerte: number;
     axeIds: string[];
+    centreIds: string[];
     axes: AxeAnalytique[];
     compteLines: BudgetCompteLine[];
     exerciceComptableId?: string;
@@ -111,27 +107,36 @@ interface BudgetFormData {
 }
 
 function toBudgetDto(data: BudgetFormData, parentBudget?: BudgetItem): BudgetDto | null {
-    const compteLines = data.type === 'ANALYTIQUE'
-        ? (data.compteLines ?? [])
-            .filter(line => UUID_PATTERN.test(line.compteComptableId) && line.montantAlloue > 0)
-            .map(line => ({
-                compteId: line.compteComptableId,
-                montantAlloue: line.montantAlloue,
-                description: line.description,
-            }))
-        : [];
+    const compteLines = (data.compteLines ?? [])
+        .filter(line => line.compteComptableId && line.montantAlloue > 0)
+        .filter(line => UUID_PATTERN.test(line.compteComptableId))
+        .map(line => ({
+            compteId: line.compteComptableId,
+            montantAlloue: line.montantAlloue,
+            description: line.description,
+        }));
 
-    if (data.type === 'ANALYTIQUE' && compteLines.length === 0) {
-        toast.error('Sélectionnez au moins un compte comptable lié à un axe analytique.');
+    if (compteLines.length === 0) {
+        toast.error('Ajoutez au moins une ligne budgétaire avec un compte et un montant.');
         return null;
     }
+
+    const totalLignes = compteLines.reduce((s, l) => s + (l.montantAlloue ?? 0), 0);
+    if (totalLignes <= 0) {
+        toast.error('Le montant alloué doit être supérieur à 0 (somme des lignes budgétaires).');
+        return null;
+    }
+
+    const notes = data.centreIds.length > 0
+        ? JSON.stringify({ centreIds: data.centreIds })
+        : undefined;
 
     return {
         code: buildBudgetCode(data.type),
         nom: data.nom,
         type: data.type,
         statut: 'BROUILLON',
-        montantAlloue: data.montant,
+        montantAlloue: totalLignes,
         montantConsomme: 0,
         parentId: data.parentId || undefined,
         exerciceId: data.type === 'EXERCICE'
@@ -139,14 +144,13 @@ function toBudgetDto(data: BudgetFormData, parentBudget?: BudgetItem): BudgetDto
             : parentBudget?.exerciceId,
         periodeId: data.type === 'PERIODE'
             ? data.periodeComptableId
-            : data.type === 'ANALYTIQUE'
-                ? parentBudget?.periodeId
-                : undefined,
+            : undefined,
         dateDebut: data.dateDebut,
         dateFin: data.dateFin,
         seuilAlerte: data.seuilAlerte,
-        axeIds: data.type === 'ANALYTIQUE' ? data.axeIds : [],
+        axeIds: data.axeIds.length > 0 ? data.axeIds : undefined,
         compteLines,
+        notes,
     };
 }
 
@@ -490,14 +494,15 @@ interface BudgetCompteLine {
 }
 
 function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: SimpleBudgetFormProps) {
+    const mountedRef = useIsMounted();
     const [type, setType] = useState<BudgetType>(initialBudget?.type ?? 'EXERCICE');
     const [nom, setNom] = useState(initialBudget?.nom ?? '');
-    const [montant, setMontant] = useState(initialBudget?.montantAlloue ? String(initialBudget.montantAlloue) : '');
     const [parentId, setParentId] = useState(initialBudget?.parentId ?? '');
     const [dateDebut, setDateDebut] = useState(initialBudget?.dateDebut ?? '');
     const [dateFin, setDateFin] = useState(initialBudget?.dateFin ?? '');
     const [seuilAlerte, setSeuilAlerte] = useState(String(initialBudget?.seuilAlerte ?? 80));
-    const [selectedAxeIds, setSelectedAxeIds] = useState<string[]>(initialBudget?.axeIds ?? []);
+    const [selectedCentreIds, setSelectedCentreIds] = useState<string[]>([]);
+    const [compteClasse6, setCompteClasse6] = useState<CompteDto[]>([]);
     // Lignes de comptes comptables pour le type ANALYTIQUE
     const [compteLines, setCompteLines] = useState<BudgetCompteLine[]>(
         initialBudget?.compteComptableLines?.length
@@ -520,10 +525,10 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
     useEffect(() => {
         AccountingFiscalYearsService.getAllExercices()
             .then(res => {
+                if (!mountedRef.current) return;
                 if (res?.data) {
                     const ouverts = res.data.filter(e => !e.cloture && e.actif);
                     setExercicesComptables(ouverts);
-                    // Auto-sélectionner le premier exercice ouvert et verrouiller les dates
                     if (!initialBudget && ouverts.length > 0) {
                         const ex = ouverts[0];
                         setSelectedExerciceComptableId(ex.id || '');
@@ -535,9 +540,26 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
             .catch(() => { });
 
         AccountingPeriodsService.getAllPeriodeComptables()
-            .then(res => { if (res?.data) setAllPeriodesComptables(res.data); })
+            .then(res => {
+                if (!mountedRef.current) return;
+                if (res?.data) setAllPeriodesComptables(res.data);
+            })
             .catch(() => { });
-    }, [initialBudget]);
+
+        AccountingComptesService.getAllComptes()
+            .then(res => {
+                if (!mountedRef.current) return;
+                const comptes = (res?.data ?? [])
+                    .filter(c => c.actif !== false)
+                    .filter(c => {
+                        const classe = c.classe ?? Number.parseInt(c.noCompte?.charAt(0) ?? '', 10);
+                        return classe === 6;
+                    })
+                    .sort((a, b) => (a.noCompte ?? '').localeCompare(b.noCompte ?? '', undefined, { numeric: true }));
+                setCompteClasse6(comptes);
+            })
+            .catch(() => { });
+    }, [initialBudget, mountedRef]);
 
     // Périodes comptables pour le select (type PERIODE)
     // Stratégie : filtrer par exercice comptable lié si possible, sinon toutes les non clôturées
@@ -590,20 +612,64 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
     };
 
     const exercices = budgets.filter(b => b.type === 'EXERCICE');
-    const periodes = budgets.filter(b => b.type === 'PERIODE');
     const activeAxes = axes.filter(a => a.actif);
+    const activeCentres = mockCentres.filter(c => c.actif);
+
+    const selectedAxeIds = useMemo(() => {
+        const ids = new Set<string>();
+        for (const centreId of selectedCentreIds) {
+            const centre = activeCentres.find(c => c.id === centreId);
+            if (!centre) continue;
+            const axeId = resolveAxeIdForCentre(centre, activeAxes);
+            if (axeId) ids.add(axeId);
+        }
+        return Array.from(ids);
+    }, [selectedCentreIds, activeCentres, activeAxes]);
+
+    const axesFromCentres = useMemo(
+        () => selectedAxeIds
+            .map(id => activeAxes.find(a => a.id === id))
+            .filter((a): a is AxeAnalytique => Boolean(a)),
+        [selectedAxeIds, activeAxes],
+    );
+
+    const axeDisplayLabel = axesFromCentres.length > 0
+        ? axesFromCentres.map(a => `${a.code} — ${a.libelle}`).join(' · ')
+        : selectedCentreIds.length > 0
+            ? 'Axe(s) introuvable(s) pour le(s) centre(s) sélectionné(s)'
+            : '';
 
     const parentBudget = budgets.find(b => b.id === parentId);
 
-    // Comptes disponibles depuis les axes sélectionnés
-    const selectedAxes = activeAxes.filter(a => selectedAxeIds.includes(a.id));
-    const allComptes = useMemo(() =>
-        selectedAxes.flatMap(a => a.comptes || []),
-        [selectedAxes]
-    );
+    const toggleCentre = (centreId: string) => {
+        setSelectedCentreIds(prev =>
+            prev.includes(centreId)
+                ? prev.filter(id => id !== centreId)
+                : [...prev, centreId]
+        );
+    };
 
-    // Montant calculé depuis les lignes de comptes (pour ANALYTIQUE)
-    const montantDepuisLignes = compteLines.reduce((s, l) => s + (l.montantAlloue || 0), 0);
+    const getAxeLabelForCentre = (centre: CentreAnalyse) => {
+        const axeId = resolveAxeIdForCentre(centre, activeAxes);
+        const axe = activeAxes.find(a => a.id === axeId);
+        return axe ? `${axe.code} — ${axe.libelle}` : '—';
+    };
+
+    const comptesPourLignes = useMemo(() => {
+        const fromApi = compteClasse6.map(c => ({
+            id: c.id ?? '',
+            libelle: `${c.noCompte} — ${c.libelle}`,
+        })).filter(c => c.id);
+
+        if (fromApi.length > 0) return fromApi;
+
+        const fromAxes = activeAxes
+            .filter(a => selectedAxeIds.length === 0 || selectedAxeIds.includes(a.id))
+            .flatMap(a => a.comptes || []);
+        return fromAxes;
+    }, [compteClasse6, activeAxes, selectedAxeIds]);
+
+    const montantAlloue = compteLines.reduce((s, l) => s + (l.montantAlloue || 0), 0);
 
     const addCompteLine = () => {
         setCompteLines(prev => [...prev, { id: Math.random().toString(36).substr(2, 9), compteComptableId: '', montantAlloue: 0, description: '' }]);
@@ -619,7 +685,7 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
 
     // Validation plafond
     const getPlafondWarning = (): string | null => {
-        const montantEffectif = type === 'ANALYTIQUE' ? montantDepuisLignes : parseFloat(montant);
+        const montantEffectif = montantAlloue;
         if (!parentBudget || !montantEffectif) return null;
         if (isNaN(montantEffectif)) return null;
 
@@ -638,11 +704,16 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const montantFinal = type === 'ANALYTIQUE' ? montantDepuisLignes : parseFloat(montant);
         if (!nom) { toast.error('Le nom est obligatoire'); return; }
-        if (type !== 'ANALYTIQUE' && !montant) { toast.error('Le montant est obligatoire'); return; }
-        if (type === 'ANALYTIQUE' && montantDepuisLignes <= 0) { toast.error('Ajoutez au moins une ligne de compte avec un montant'); return; }
-        if (type !== 'EXERCICE' && !parentId) { toast.error('Sélectionnez un budget parent'); return; }
+        if (montantAlloue <= 0) {
+            toast.error('Ajoutez au moins une ligne budgétaire avec un compte et un montant');
+            return;
+        }
+        if (compteLines.some(l => l.montantAlloue > 0 && !l.compteComptableId)) {
+            toast.error('Chaque ligne avec un montant doit avoir un compte sélectionné');
+            return;
+        }
+        if (type === 'PERIODE' && !parentId) { toast.error('Sélectionnez le budget annuel parent'); return; }
         if (type === 'EXERCICE' && exercicesComptables.length === 0) { toast.error('Aucun exercice comptable ouvert disponible'); return; }
         if (type === 'EXERCICE' && !selectedExerciceComptableId) { toast.error('Sélectionnez un exercice comptable'); return; }
         if (type === 'PERIODE' && !selectedPeriodeComptableId) { toast.error('Sélectionnez une période comptable'); return; }
@@ -650,12 +721,13 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
 
         onSubmit({
             type, nom,
-            montant: montantFinal,
+            montant: montantAlloue,
             parentId, dateDebut, dateFin,
             seuilAlerte: parseInt(seuilAlerte),
             axeIds: selectedAxeIds,
+            centreIds: selectedCentreIds,
             axes: activeAxes,
-            compteLines: type === 'ANALYTIQUE' ? compteLines : [],
+            compteLines,
             exerciceComptableId: type === 'EXERCICE' ? selectedExerciceComptableId : undefined,
             periodeComptableId: type === 'PERIODE' ? selectedPeriodeComptableId : undefined,
         });
@@ -684,9 +756,8 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="EXERCICE">Budget Exercice (niveau 1)</SelectItem>
-                            <SelectItem value="PERIODE">Budget Période (niveau 2)</SelectItem>
-                            <SelectItem value="ANALYTIQUE">Budget Analytique (niveau 3)</SelectItem>
+                            <SelectItem value="EXERCICE">Budget annuel — rattaché à l&apos;exercice comptable</SelectItem>
+                            <SelectItem value="PERIODE">Budget mensuel — rattaché à la période comptable</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -735,7 +806,7 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
                 {type === 'PERIODE' && (
                     <>
                         <div className="space-y-2">
-                            <Label className="text-sm font-semibold text-slate-700">Exercice parent <span className="text-red-500">*</span></Label>
+                            <Label className="text-sm font-semibold text-slate-700">Budget annuel parent <span className="text-red-500">*</span></Label>
                             <Select value={parentId} onValueChange={(v) => { setParentId(v); setSelectedPeriodeComptableId(''); setDateDebut(''); setDateFin(''); }}>
                                 <SelectTrigger className="border-slate-300">
                                     <SelectValue placeholder="Sélectionner un exercice..." />
@@ -791,176 +862,204 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
                     </>
                 )}
 
-                {type === 'ANALYTIQUE' && (
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Période parente <span className="text-red-500">*</span></Label>
-                        <Select value={parentId} onValueChange={(v) => {
-                            setParentId(v);
-                            const p = periodes.find(x => x.id === v);
-                            if (p) { setDateDebut(p.dateDebut); setDateFin(p.dateFin); }
-                        }}>
-                            <SelectTrigger className="border-slate-300">
-                                <SelectValue placeholder="Sélectionner une période..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {periodes.map(p => (
-                                    <SelectItem key={p.id} value={p.id}>{p.nom} — {p.montantAlloue.toLocaleString('fr-FR')} XAF</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {dateDebut && dateFin && (
-                            <div className="flex items-center gap-2 p-2 bg-emerald-50 border border-emerald-100 rounded text-xs text-emerald-700">
-                                <Calendar className="h-3.5 w-3.5 shrink-0" />
-                                Période héritée : <span className="font-mono font-semibold">{dateDebut}</span> → <span className="font-mono font-semibold">{dateFin}</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 <div className="space-y-2">
                     <Label className="text-sm font-semibold text-slate-700">Nom du budget <span className="text-red-500">*</span></Label>
                     <Input placeholder="Ex: Budget Q1 2026" value={nom} onChange={e => setNom(e.target.value)} className="border-slate-300" />
                 </div>
 
-                {/* Montant — uniquement pour EXERCICE et PERIODE */}
-                {type !== 'ANALYTIQUE' && (
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Montant alloué (XAF) <span className="text-red-500">*</span></Label>
-                        <Input type="number" placeholder="Ex: 5000000" value={montant} onChange={e => setMontant(e.target.value)} className="border-slate-300 font-mono" />
-                        {warning && (
-                            <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                                {warning}
-                            </div>
-                        )}
-                        {parentBudget && (
-                            <p className="text-xs text-slate-400">
-                                Budget parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
-                                déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
-                            </p>
-                        )}
-                    </div>
-                )}
-
-                {/* Axes analytiques — uniquement pour ANALYTIQUE */}
-                {type === 'ANALYTIQUE' && activeAxes.length > 0 && (
-                    <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-slate-700">Axes analytiques</Label>
-                        <div className="border border-slate-200 rounded-lg max-h-36 overflow-y-auto divide-y divide-slate-100">
-                            {activeAxes.map(axe => (
-                                <label key={axe.id} className="flex items-center gap-3 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                                    <input type="checkbox" checked={selectedAxeIds.includes(axe.id)}
-                                        onChange={() => setSelectedAxeIds(prev => prev.includes(axe.id) ? prev.filter(x => x !== axe.id) : [...prev, axe.id])}
-                                        className="rounded" />
-                                    <span className="text-sm text-slate-700">{axe.libelle}</span>
-                                    {(axe.comptes?.length ?? 0) > 0 && (
-                                        <span className="text-xs text-emerald-600 ml-auto">{axe.comptes?.length} compte(s)</span>
-                                    )}
-                                </label>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {/* Lignes de comptes comptables — uniquement pour ANALYTIQUE */}
-                {type === 'ANALYTIQUE' && (
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
+                {/* Centres d'analyse (multi) & axes rattachés */}
+                {activeCentres.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
                             <Label className="text-sm font-semibold text-slate-700">
-                                Allocation par compte comptable <span className="text-red-500">*</span>
+                                Centres d&apos;analyse
+                                {selectedCentreIds.length > 0 && (
+                                    <span className="ml-2 text-xs font-normal text-slate-400">
+                                        ({selectedCentreIds.length} sélectionné{selectedCentreIds.length > 1 ? 's' : ''})
+                                    </span>
+                                )}
                             </Label>
-                            <span className="text-xs font-mono font-bold text-blue-700">
-                                Total : {montantDepuisLignes.toLocaleString('fr-FR')} XAF
-                            </span>
-                        </div>
-                        {warning && (
-                            <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
-                                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                                {warning}
+                            <div className="border border-slate-200 rounded-lg max-h-44 overflow-y-auto divide-y divide-slate-100">
+                                {activeCentres.map(centre => (
+                                    <label
+                                        key={centre.id}
+                                        className="flex items-start gap-3 px-3 py-2.5 hover:bg-slate-50 cursor-pointer"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            checked={selectedCentreIds.includes(centre.id)}
+                                            onChange={() => toggleCentre(centre.id)}
+                                            className="mt-0.5 rounded"
+                                        />
+                                        <div className="min-w-0 flex-1">
+                                            <span className="text-sm text-slate-700 block">
+                                                {centre.code} — {centre.libelle}
+                                            </span>
+                                            <span className="text-[10px] text-slate-400">
+                                                Axe : {getAxeLabelForCentre(centre)}
+                                            </span>
+                                        </div>
+                                    </label>
+                                ))}
                             </div>
-                        )}
-                        {parentBudget && (
-                            <p className="text-xs text-slate-400">
-                                Budget parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
-                                déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
+                            <p className="text-xs text-slate-500">
+                                Plusieurs centres peuvent être sélectionnés, même sur des axes analytiques différents.
                             </p>
-                        )}
-                        <div className="border border-slate-200 rounded-lg overflow-hidden">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200">
-                                    <tr>
-                                        <th className="px-3 py-2">Compte comptable</th>
-                                        <th className="px-3 py-2">Description</th>
-                                        <th className="px-3 py-2 text-right w-36">Montant (XAF)</th>
-                                        <th className="px-3 py-2 w-10"></th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {compteLines.map(line => (
-                                        <tr key={line.id} className="hover:bg-slate-50/50">
-                                            <td className="px-3 py-2 w-48">
-                                                {allComptes.length > 0 ? (
-                                                    <Select value={line.compteComptableId} onValueChange={val => updateCompteLine(line.id, 'compteComptableId', val)}>
-                                                        <SelectTrigger className="h-8 border-slate-300 text-xs">
-                                                            <SelectValue placeholder="Choisir..." />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {allComptes.map((c) => (
-                                                                <SelectItem key={c.id} value={c.id}>{c.libelle}</SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                ) : (
-                                                    <Input
-                                                        placeholder={selectedAxeIds.length === 0 ? "Sélectionnez un axe..." : "Saisir le compte"}
-                                                        value={line.compteComptableId}
-                                                        onChange={e => updateCompteLine(line.id, 'compteComptableId', e.target.value)}
-                                                        className="h-8 border-slate-300 text-xs"
-                                                    />
-                                                )}
-                                            </td>
-                                            <td className="px-3 py-2">
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-slate-700">Axes analytiques rattachés</Label>
+                            {axesFromCentres.length > 0 ? (
+                                <div className="border border-slate-200 rounded-lg bg-slate-50 divide-y divide-slate-100">
+                                    {axesFromCentres.map(axe => (
+                                        <div key={axe.id} className="px-3 py-2 text-sm text-slate-700">
+                                            <span className="font-mono text-xs text-slate-500">{axe.code}</span>
+                                            <span className="mx-1.5 text-slate-300">—</span>
+                                            {axe.libelle}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Input
+                                    readOnly
+                                    value={axeDisplayLabel}
+                                    placeholder="Sélectionnez un ou plusieurs centres"
+                                    className="border-slate-300 bg-slate-50 text-slate-700 cursor-default"
+                                />
+                            )}
+                            <p className="text-xs text-slate-500">
+                                Les axes sont déduits automatiquement des centres sélectionnés.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                {/* Détail des lignes budgétaires */}
+                <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold text-slate-700">
+                            Détail des lignes budgétaires <span className="text-red-500">*</span>
+                        </Label>
+                        <span className="text-xs font-mono font-bold text-blue-700">
+                            Total lignes : {montantAlloue.toLocaleString('fr-FR')} XAF
+                        </span>
+                    </div>
+                    {warning && type === 'PERIODE' && (
+                        <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                            {warning}
+                        </div>
+                    )}
+                    {parentBudget && type === 'PERIODE' && (
+                        <p className="text-xs text-slate-400">
+                            Budget parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
+                            déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
+                        </p>
+                    )}
+                    <div className="border border-slate-200 rounded-lg overflow-hidden">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th className="px-3 py-2">Compte Classe 6</th>
+                                    <th className="px-3 py-2 text-right w-36">Montant (XAF) *</th>
+                                    <th className="px-3 py-2">Commentaire</th>
+                                    <th className="px-3 py-2 w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {compteLines.map(line => (
+                                    <tr key={line.id} className="hover:bg-slate-50/50">
+                                        <td className="px-3 py-2 w-56">
+                                            {comptesPourLignes.length > 0 ? (
+                                                <Select value={line.compteComptableId} onValueChange={val => updateCompteLine(line.id, 'compteComptableId', val)}>
+                                                    <SelectTrigger className="h-8 border-slate-300 text-xs">
+                                                        <SelectValue placeholder="Choisir un compte..." />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {comptesPourLignes.map((c) => (
+                                                            <SelectItem key={c.id} value={c.id}>{c.libelle}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            ) : (
                                                 <Input
-                                                    placeholder="Détail..."
-                                                    value={line.description}
-                                                    onChange={e => updateCompteLine(line.id, 'description', e.target.value)}
+                                                    placeholder="Ex: 605100 - Électricité"
+                                                    value={line.compteComptableId}
+                                                    onChange={e => updateCompteLine(line.id, 'compteComptableId', e.target.value)}
                                                     className="h-8 border-slate-300 text-xs"
                                                 />
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <Input
-                                                    type="number"
-                                                    value={line.montantAlloue || ''}
-                                                    onChange={e => updateCompteLine(line.id, 'montantAlloue', parseFloat(e.target.value) || 0)}
-                                                    className="h-8 border-slate-300 text-xs text-right font-mono"
-                                                />
-                                            </td>
-                                            <td className="px-3 py-2 text-center">
-                                                <Button
-                                                    type="button" variant="ghost" size="icon"
-                                                    className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
-                                                    onClick={() => removeCompteLine(line.id)}
-                                                    disabled={compteLines.length === 1}
-                                                >
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            <div className="px-3 py-2 border-t border-slate-100 bg-slate-50/30">
-                                <Button
-                                    type="button" variant="outline" size="sm"
-                                    onClick={addCompteLine}
-                                    className="text-blue-600 border-blue-200 hover:bg-blue-50 border-dashed text-xs h-7"
-                                >
-                                    <PlusCircle className="h-3.5 w-3.5 mr-1.5" /> Ajouter une ligne
-                                </Button>
-                            </div>
+                                            )}
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <Input
+                                                type="number"
+                                                value={line.montantAlloue || ''}
+                                                onChange={e => updateCompteLine(line.id, 'montantAlloue', parseFloat(e.target.value) || 0)}
+                                                className="h-8 border-slate-300 text-xs text-right font-mono"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2">
+                                            <Input
+                                                placeholder="Ex: Consommation usine"
+                                                value={line.description}
+                                                onChange={e => updateCompteLine(line.id, 'description', e.target.value)}
+                                                className="h-8 border-slate-300 text-xs"
+                                            />
+                                        </td>
+                                        <td className="px-3 py-2 text-center">
+                                            <Button
+                                                type="button" variant="ghost" size="icon"
+                                                className="h-7 w-7 text-slate-400 hover:text-red-600 hover:bg-red-50"
+                                                onClick={() => removeCompteLine(line.id)}
+                                                disabled={compteLines.length === 1}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <div className="px-3 py-2 border-t border-slate-100 bg-slate-50/30 flex items-center justify-between">
+                            <Button
+                                type="button" variant="outline" size="sm"
+                                onClick={addCompteLine}
+                                className="text-blue-600 border-blue-200 hover:bg-blue-50 border-dashed text-xs h-7"
+                            >
+                                <PlusCircle className="h-3.5 w-3.5 mr-1.5" /> Ajouter une ligne
+                            </Button>
+                            <span className="text-xs font-bold text-slate-600">
+                                Somme des lignes : {montantAlloue.toLocaleString('fr-FR')} XAF
+                            </span>
                         </div>
                     </div>
-                )}
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-slate-700">
+                        Montant alloué (XAF) <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                        readOnly
+                        value={montantAlloue > 0 ? montantAlloue.toLocaleString('fr-FR') : ''}
+                        placeholder="Calculé automatiquement depuis les lignes"
+                        className="border-slate-300 bg-slate-50 font-mono text-slate-800 cursor-default"
+                    />
+                    <p className="text-xs text-slate-500">
+                        Le montant alloué correspond à la somme des lignes budgétaires.
+                    </p>
+                    {warning && (
+                        <div className="flex items-start gap-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700">
+                            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                            {warning}
+                        </div>
+                    )}
+                    {parentBudget && type === 'PERIODE' && (
+                        <p className="text-xs text-slate-400">
+                            Budget annuel parent : {parentBudget.montantAlloue.toLocaleString('fr-FR')} XAF alloués,
+                            déjà répartis : {budgets.filter(b => b.parentId === parentId).reduce((s, b) => s + b.montantAlloue, 0).toLocaleString('fr-FR')} XAF
+                        </p>
+                    )}
+                </div>
 
                 <div className="space-y-2">
                     <Label className="text-sm font-semibold text-slate-700">Seuil d'alerte (%)</Label>
@@ -992,6 +1091,7 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
 // ─── Page principale ──────────────────────────────────────────────────────────
 
 export default function BudgetsPage() {
+    const mountedRef = useIsMounted();
     const [budgets, setBudgets] = useState<BudgetItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [budgetToDelete, setBudgetToDelete] = useState<BudgetItem | null>(null);
@@ -1000,31 +1100,36 @@ export default function BudgetsPage() {
     const { onOpen, onClose: closeCompose } = useCompose();
     const { accountingRole } = useAuth();
     const canManage = hasPermission(accountingRole, 'budgets', 'lock');
+    const canCreate = hasPermission(accountingRole, 'budgets', 'create');
 
     const loadBudgets = useCallback(async () => {
         setIsLoading(true);
         try {
             const response = await AccountingBudgetsService.getAllBudgets();
+            if (!mountedRef.current) return;
             const nextBudgets = (response.data ?? []).map(mapBudgetDto);
             setBudgets(nextBudgets);
             setSelectedBudget(prev => prev ? nextBudgets.find(b => b.id === prev.id) ?? null : null);
         } catch (error) {
+            if (!mountedRef.current) return;
             console.error('Failed to load budgets:', error);
             toast.error('Impossible de charger les budgets depuis le backend.');
         } finally {
-            setIsLoading(false);
+            if (mountedRef.current) setIsLoading(false);
         }
-    }, []);
+    }, [mountedRef]);
 
     const loadAxes = useCallback(async () => {
         try {
             const response = await AccountingAnalyticsService.getActiveAxes();
+            if (!mountedRef.current) return;
             setAxes((response.data ?? []).map(mapAxeDto));
         } catch (error) {
+            if (!mountedRef.current) return;
             console.error('Failed to load analytical axes:', error);
             toast.error('Impossible de charger les axes analytiques actifs.');
         }
-    }, []);
+    }, [mountedRef]);
 
     useEffect(() => {
         loadBudgets();
@@ -1093,7 +1198,7 @@ export default function BudgetsPage() {
                         const dto = toBudgetDto(data, parentBudget);
                         if (!dto) return;
                         dto.code = budgetToEdit.code;
-                        dto.statut = budgetToEdit.statut;
+                        dto.statut = budgetToEdit.statut === 'BROUILLON' ? 'BROUILLON' : budgetToEdit.statut;
 
                         try {
                             const response = await AccountingBudgetsService.updateBudget(id, dto);
@@ -1157,22 +1262,13 @@ export default function BudgetsPage() {
         });
     };
 
-    // Adapter pour BudgetVsRealiseView (qui attend l'ancien type Budget)
-    const legacyBudgets = useMemo(() => budgets.map(b => ({
-        id: b.id, name: b.nom, code: b.code,
-        axeAnalytique: b.axeLibelles || b.type,
-        montantAlloue: b.montantAlloue, montantConsomme: b.montantConsomme,
-        dateDebut: b.dateDebut, dateFin: b.dateFin,
-        statut: (b.statut === 'ACTIF' ? 'ACTIF' : b.statut === 'CLOTURE' ? 'CLOTURE' : 'BROUILLON') as 'ACTIF' | 'CLOTURE' | 'BROUILLON',
-    })), [budgets]);
-
     return (
         <div className="min-h-screen flex flex-col p-4 bg-gray-100">
             <div className="w-full max-w-7xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
                 <div className="p-6 border-b border-slate-100">
                     <h2 className="text-xl font-semibold text-gray-700 mb-1">Gestion Budgétaire</h2>
                     <p className="text-sm text-gray-500">
-                        Hiérarchie : Exercice → Périodes → Budgets Analytiques. Seul le Responsable comptable peut valider et activer les budgets.
+                        Création et gestion des budgets annuels (exercice), mensuels (période) et analytiques. Chaque création démarre en <strong>brouillon</strong> ; seul le Responsable comptable peut valider.
                     </p>
                 </div>
 
@@ -1187,16 +1283,15 @@ export default function BudgetsPage() {
                                 <TabsTrigger value="liste" className="flex items-center gap-2 text-sm">
                                     <List className="h-4 w-4" /> Liste
                                 </TabsTrigger>
-                                <TabsTrigger value="vs-realise" className="flex items-center gap-2 text-sm">
-                                    <BarChart3 className="h-4 w-4" /> Budget vs Réalisé
-                                </TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="hierarchie">
                                 <div className="flex justify-end mb-4">
-                                    <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700 gap-2">
-                                        <Plus className="h-4 w-4" /> Nouveau Budget
-                                    </Button>
+                                    {canCreate && (
+                                        <Button onClick={handleAddNew} className="bg-blue-600 hover:bg-blue-700 gap-2">
+                                            <Plus className="h-4 w-4" /> Nouveau Budget (brouillon)
+                                        </Button>
+                                    )}
                                 </div>
                                 <HierarchyView budgets={budgets} onSelect={handleSelect} selectedId={selectedBudget?.id} />
                             </TabsContent>
@@ -1212,14 +1307,6 @@ export default function BudgetsPage() {
                                     onRefresh={handleRefresh}
                                     onLock={handleLock}
                                     onValidate={canManage ? handleValidate : undefined}
-                                />
-                            </TabsContent>
-
-                            <TabsContent value="vs-realise">
-                                <BudgetVsRealiseView
-                                    budgets={legacyBudgets}
-                                    isLoading={isLoading}
-                                    onRefresh={handleRefresh}
                                 />
                             </TabsContent>
                         </Tabs>

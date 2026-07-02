@@ -264,6 +264,8 @@ const SESSION_KEYS = ['auth_token', 'user', 'organization_id', 'tenant_id'];
 const handleUnauthorized = (): void => {
     if (typeof window === 'undefined') return;
     SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
+    // Fermer les modales Compose encore ouvertes en mémoire (store Zustand).
+    void import('@/lib/clear-ui-state').then(({ clearUiState }) => clearUiState());
     // Évite une boucle de redirection si on est déjà sur la landing/login.
     if (window.location.pathname !== '/') {
         window.location.assign('/');

@@ -7,16 +7,90 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { MainNav } from "./main-nav";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useNavigationStore } from "@/hooks/use-navigation-store";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
+import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 import { modules, ModuleKey, SidebarLink } from "@/config/navigation";
 import { cn } from "@/lib/utils";
+import { applyAccountingModuleSwitch } from "@/lib/accounting-module-switch";
+import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
+import {
+  getModuleNavigationTarget,
+  isPathInModule,
+  resolveDashboardSidebarLinks,
+} from "@/lib/accounting-dashboard-routes";
+import {
+  isModuleVisibleForChoice,
+  isWorkspaceChoiceRequired,
+  resolveActiveModuleForPath,
+} from "@/lib/accounting-workspace-routes";
 
 export function MobileSidebar() {
   const { isMobileOpen, setMobileOpen } = useSidebar();
   const { activeModule, setActiveModule } = useNavigationStore();
   const pathname = usePathname();
+  const router = useRouter();
   const { accountingRole } = useAuth();
+  const { generale, analytique, load } = useAccountingSubscription();
+  const { choice: effectiveChoice } = useEffectiveAccountingChoice();
+
+  useEffect(() => {
+    load();
+  }, [load]);
+  const workspaceChoiceRequired = isWorkspaceChoiceRequired(generale, analytique);
+
+  const isModuleDisabled = (key: ModuleKey): boolean => {
+    if (key === "generale") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "analytique") {
+      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
+    }
+    if (key === "configuration") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "configurationAnalytique") {
+      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
+    }
+    if (key === "analyse") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "clients" || key === "fournisseurs") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "analyseAnalytique") {
+      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
+    }
+    return false;
+  };
+
+  const navOptions = {
+    choice: effectiveChoice,
+    generale,
+    analytique,
+    accountingRole,
+  };
+
+  const handleModuleSwitch = (key: ModuleKey) => {
+    if (isModuleDisabled(key)) return;
+    applyAccountingModuleSwitch(key);
+
+    const target = getModuleNavigationTarget(key, navOptions);
+    if (!target) {
+      setActiveModule(key);
+      setMobileOpen(false);
+      return;
+    }
+
+    if (isPathInModule(pathname, key, navOptions)) {
+      setActiveModule(key);
+      setMobileOpen(false);
+      return;
+    }
+
+    router.push(target);
+    setMobileOpen(false);
+  };
 
   // Fermer le drawer lors d'un changement de route
   useEffect(() => {
@@ -25,6 +99,12 @@ export function MobileSidebar() {
 
   // Détecter le module actif selon la route
   useEffect(() => {
+    const resolved = resolveActiveModuleForPath(pathname);
+    if (resolved) {
+      setActiveModule(resolved);
+      return;
+    }
+
     const currentModuleKey = Object.entries(modules).find(([, module]) =>
       module.sidebarLinks.some(
         (link) => pathname === link.href || pathname.startsWith(`${link.href}/`)
@@ -35,13 +115,37 @@ export function MobileSidebar() {
 
   const currentModuleData = modules[activeModule];
 
-  const filteredLinks: SidebarLink[] = currentModuleData.sidebarLinks.filter((link) => {
-    if (!link.allowedRoles) return true;
-    if (!accountingRole) return false;
-    return link.allowedRoles.includes(accountingRole);
-  });
+  const filteredLinks: SidebarLink[] = isModuleDisabled(activeModule)
+    ? []
+    : (activeModule === "dashboard"
+        ? resolveDashboardSidebarLinks({ generale, analytique, choice: effectiveChoice })
+        : currentModuleData.sidebarLinks
+      ).filter((link) => {
+        if (activeModule === "analytique" && effectiveChoice !== "analytique") return false;
+        if (activeModule === "analyseAnalytique" && effectiveChoice !== "analytique") return false;
+        if (activeModule === "analyse" && effectiveChoice === "analytique") return false;
+        if (activeModule === "configurationAnalytique" && effectiveChoice !== "analytique") {
+          return false;
+        }
+        if (
+          (activeModule === "generale" ||
+            activeModule === "configuration" ||
+            activeModule === "analyse" ||
+            activeModule === "clients" ||
+            activeModule === "fournisseurs") &&
+          effectiveChoice === "analytique"
+        ) {
+          return false;
+        }
+        if (!link.allowedRoles) return true;
+        if (!accountingRole) return false;
+        return link.allowedRoles.includes(accountingRole);
+      });
 
-  const visibleModules = Object.entries(modules).filter(([, module]) => {
+  const visibleModules = Object.entries(modules).filter(([key, module]) => {
+    if (!isModuleVisibleForChoice(key, effectiveChoice, generale, analytique)) {
+      return false;
+    }
     if (!module.allowedRoles) return true;
     if (!accountingRole) return false;
     return module.allowedRoles.includes(accountingRole);
@@ -55,14 +159,20 @@ export function MobileSidebar() {
           <TooltipProvider delayDuration={0}>
             {visibleModules.map(([key, module]) => {
               const Icon = module.icon;
+              const disabled = isModuleDisabled(key as ModuleKey);
               return (
                 <Tooltip key={key}>
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeModule === key ? "secondary" : "ghost"}
                       size="icon"
-                      className="h-12 w-12 flex-col gap-3 text-xs"
-                      onClick={() => setActiveModule(key as ModuleKey)}
+                      disabled={disabled}
+                      aria-disabled={disabled}
+                      className={cn(
+                        "h-12 w-12 flex-col gap-3 text-xs",
+                        disabled && "opacity-40 cursor-not-allowed"
+                      )}
+                      onClick={() => handleModuleSwitch(key as ModuleKey)}
                     >
                       <Icon className="h-5 w-5" />
                     </Button>

@@ -32,7 +32,7 @@ const values = [
 const stats = [
   { number: '500+', label: 'Entreprises' },
   { number: '2M+', label: 'Transactions' },
-  { number: '99.9%', label: 'Disponibilité' },
+  { number: 'Garantie', label: 'Disponibilité & support' },
   { number: '24/7', label: 'Support' },
 ];
 

@@ -14,14 +14,16 @@ import {
     Lock,
     Building2,
     Loader2,
-    CheckCircle2,
     XCircle,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { OpenAPI } from '@/src/lib2/core/OpenAPI';
 import { LoginData } from '@/types/personnel';
 import { useAuth } from '@/hooks/use-auth';
-import { cn } from '@/lib/utils';
+import { clearAccountingChoice } from '@/lib/accounting-choice';
+import { clearUiState } from '@/lib/clear-ui-state';
+import { useAccountingChoiceStore } from '@/hooks/use-accounting-choice-store';
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -112,19 +114,11 @@ function buildOptions(contexts: LoginContext[]): SelectOption[] {
     return options;
 }
 
-// ─── Composant de feedback inline ────────────────────────────────────────────
-function FeedbackBanner({ type, message }: { type: 'success' | 'error'; message: string }) {
+// ─── Bandeau d'erreur inline ─────────────────────────────────────────────────
+function ErrorBanner({ message }: { message: string }) {
     return (
-        <div className={cn(
-            "flex items-start gap-3 p-3 rounded-lg text-sm border",
-            type === 'success'
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-red-50 border-red-200 text-red-800"
-        )}>
-            {type === 'success'
-                ? <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5 text-emerald-600" />
-                : <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
-            }
+        <div className="flex items-start gap-3 p-3 rounded-lg text-sm border bg-red-50 border-red-200 text-red-800">
+            <XCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600" />
             <span>{message}</span>
         </div>
     );
@@ -152,9 +146,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Sélection de contexte/organisation quand le compte en a plusieurs (multi-tenant / multi-org).
     const [pendingSelection, setPendingSelection] = useState<{ selectionToken: string; options: SelectOption[] } | null>(null);
 
-    // Feedback inline — remplace alert() et console.log()
-    const [loginFeedback, setLoginFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-    const [registerFeedback, setRegisterFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+    const [loginError, setLoginError] = useState<string | null>(null);
+    const [registerError, setRegisterError] = useState<string | null>(null);
 
     const loginForm = useForm<LoginData>({ mode: 'onChange' });
     const registerForm = useForm<RegisterFormData>({ mode: 'onChange' });
@@ -168,7 +161,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Kernel résout lui-même les tenants du principal → vrai multi-tenant.
     const handleLogin = async (data: LoginData) => {
         setIsLoading(true);
-        setLoginFeedback(null);
+        setLoginError(null);
         setPendingSelection(null);
         try {
             const res = await fetch(`${apiBase()}/api/auth/discover-contexts`, {
@@ -198,10 +191,9 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 setIsLoading(false);
             }
         } catch (error: unknown) {
-            setLoginFeedback({
-                type: 'error',
-                message: getErrorMessage(error, 'Identifiants incorrects. Veuillez réessayer.')
-            });
+            setLoginError(
+                getErrorMessage(error, 'Identifiants incorrects. Veuillez réessayer.')
+            );
             setIsLoading(false);
         }
     };
@@ -209,7 +201,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Étape 2 : sélection d'un contexte (et organisation) → login finalisé.
     const completeSelection = async (selectionToken: string, option: SelectOption) => {
         setIsLoading(true);
-        setLoginFeedback(null);
+        setLoginError(null);
         try {
             const res = await fetch(`${apiBase()}/api/auth/select-context`, {
                 method: 'POST',
@@ -241,19 +233,21 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             setUser(response.user);
 
             setPendingSelection(null);
-            // Réinitialise le choix d'espace comptable pour CETTE session : le modal de
-            // choix (générale vs analytique) réapparaîtra au prochain montage du dashboard.
-            // Clé alignée sur ACCOUNTING_CHOICE_KEY de accounting-choice-modal.tsx.
-            sessionStorage.removeItem('ksm.accountingChoiceMade');
-            setLoginFeedback({ type: 'success', message: `Bienvenue, ${response.user?.firstName ?? ''} !` });
-            await new Promise(resolve => setTimeout(resolve, 600));
-            router.push('/accounting/dashboard');
+            clearAccountingChoice();
+            useAccountingChoiceStore.getState().clear();
+            clearUiState();
+
+            const firstName = response.user?.firstName?.trim();
+            toast.success(
+                firstName ? `Bienvenue, ${firstName} !` : 'Connexion réussie',
+                { description: 'Redirection vers votre espace…' },
+            );
             onClose();
+            router.push('/accounting/dashboard');
         } catch (error: unknown) {
-            setLoginFeedback({
-                type: 'error',
-                message: getErrorMessage(error, 'Connexion impossible. Veuillez réessayer.')
-            });
+            setLoginError(
+                getErrorMessage(error, 'Connexion impossible. Veuillez réessayer.')
+            );
         } finally {
             setIsLoading(false);
         }
@@ -261,17 +255,13 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
     const handleRegister = async () => {
         setIsLoading(true);
-        setRegisterFeedback(null);
+        setRegisterError(null);
         try {
-            setRegisterFeedback({
-                type: 'error',
-                message: "L'inscription n'est pas encore exposée par le backend local. Utilisez un compte de test mock pour vous connecter.",
-            });
+            const message =
+                "L'inscription n'est pas encore exposée par le backend local. Utilisez un compte de test mock pour vous connecter.";
+            setRegisterError(message);
         } catch (error: unknown) {
-            setRegisterFeedback({
-                type: 'error',
-                message: getErrorMessage(error, "Une erreur est survenue lors de l'inscription.")
-            });
+            setRegisterError(getErrorMessage(error, "Une erreur est survenue lors de l'inscription."));
         } finally {
             setIsLoading(false);
         }
@@ -294,7 +284,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     </DialogDescription>
                 </DialogHeader>
 
-                <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setLoginFeedback(null); setRegisterFeedback(null); }} className="w-full mt-2">
+                <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setLoginError(null); setRegisterError(null); }} className="w-full mt-2">
                     <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-lg mb-2">
                         <TabsTrigger value="login">Connexion</TabsTrigger>
                         <TabsTrigger value="register">Inscription</TabsTrigger>
@@ -302,9 +292,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                     {/* ── Onglet Connexion ── */}
                     <TabsContent value="login" className="space-y-4 mt-6">
-                        {loginFeedback && (
-                            <FeedbackBanner type={loginFeedback.type} message={loginFeedback.message} />
-                        )}
+                        {loginError && <ErrorBanner message={loginError} />}
                         {pendingSelection ? (
                             <div className="space-y-3">
                                 <p className="text-sm text-gray-600">
@@ -328,7 +316,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     type="button"
                                     variant="link"
                                     className="text-sm p-0 h-auto text-gray-500"
-                                    onClick={() => { setPendingSelection(null); setLoginFeedback(null); }}
+                                    onClick={() => { setPendingSelection(null); setLoginError(null); }}
                                 >
                                     ← Revenir
                                 </Button>
@@ -404,9 +392,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                     {/* ── Onglet Inscription ── */}
                     <TabsContent value="register" className="space-y-4 mt-6">
-                        {registerFeedback && (
-                            <FeedbackBanner type={registerFeedback.type} message={registerFeedback.message} />
-                        )}
+                        {registerError && <ErrorBanner message={registerError} />}
                         <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">

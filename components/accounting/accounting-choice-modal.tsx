@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { BookOpen, PieChart, ArrowRight } from 'lucide-react';
 import {
   Dialog,
@@ -10,18 +10,22 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useNavigationStore } from '@/hooks/use-navigation-store';
-import { ModuleKey } from '@/config/navigation';
+import { isAnalytiqueRoute } from '@/config/navigation';
 import { useLoadingStore } from '@/hooks/use-loading-store';
 import { useAccountingSubscription } from '@/hooks/use-accounting-subscription';
-
-// Marqueur de session : posé une fois que l'utilisateur a choisi son espace.
-// Tant qu'il est absent, le modal s'affiche (à l'ouverture de l'app ou après un
-// login, où la clé est réinitialisée). Effacé au logout.
-export const ACCOUNTING_CHOICE_KEY = 'ksm.accountingChoiceMade';
+import { useEffectiveAccountingChoice } from '@/hooks/use-effective-accounting-choice';
+import { useAccountingChoiceModalStore } from '@/hooks/use-accounting-choice-modal-store';
+import { useAccountingChoiceStore } from '@/hooks/use-accounting-choice-store';
+import {
+  getDashboardPathForChoice,
+  GENERALE_DASHBOARD_PATH,
+} from '@/lib/accounting-dashboard-routes';
+import { getRedirectForWorkspaceViolation } from '@/lib/accounting-workspace-routes';
+import { AccountingChoiceIllustration } from '@/components/accounting/accounting-choice-illustration';
+import type { AccountingChoice } from '@/lib/accounting-choice';
 
 type Choice = {
-  key: Extract<ModuleKey, 'generale' | 'analytique'>;
+  key: AccountingChoice;
   title: string;
   description: string;
   href: string;
@@ -34,15 +38,15 @@ const choices: Choice[] = [
     key: 'generale',
     title: 'Comptabilité Générale',
     description: 'Plan comptable, écritures, journaux et validation des opérations.',
-    href: '/accounting/chart-of-accounts',
+    href: '/accounting/dashboard',
     icon: BookOpen,
     accent: 'from-blue-600 to-indigo-600',
   },
   {
     key: 'analytique',
     title: 'Comptabilité Analytique',
-    description: 'Axes analytiques, budgets, suivi budgétaire et rapports de gestion.',
-    href: '/accounting/analytics',
+    description: 'Plan analytique, centres de coût, budgets et états de gestion.',
+    href: '/analytique/dashboard',
     icon: PieChart,
     accent: 'from-indigo-600 to-violet-600',
   },
@@ -50,63 +54,107 @@ const choices: Choice[] = [
 
 export function AccountingChoiceModal() {
   const [open, setOpen] = useState(false);
+  const mountedRef = useRef(false);
   const router = useRouter();
-  const { setActiveModule } = useNavigationStore();
+  const pathname = usePathname();
   const { startLoading } = useLoadingStore();
   const { generale, analytique, loaded, load } = useAccountingSubscription();
+  const { choice: effectiveChoice } = useEffectiveAccountingChoice();
+  const { forceOpen, clearForceOpen } = useAccountingChoiceModalStore();
+  const { hydrate, setChoice } = useAccountingChoiceStore();
 
-  // Charge l'abonnement de l'organisation courante (si pas déjà fait par la sidebar).
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     load();
-  }, [load]);
+    hydrate();
+  }, [load, hydrate]);
 
-  // Ne propose que les espaces auxquels l'organisation est abonnée.
-  const availableChoices = choices.filter(
-    (c) => (c.key === 'generale' ? generale : analytique),
+  const availableChoices = useMemo(
+    () => choices.filter((c) => (c.key === 'generale' ? generale : analytique)),
+    [generale, analytique],
   );
+  const requiresExplicitChoice = availableChoices.length > 1;
 
   useEffect(() => {
-    // On attend la réponse du backend avant de décider quoi afficher.
-    if (!loaded) return;
-    if (sessionStorage.getItem(ACCOUNTING_CHOICE_KEY) === '1') return;
+    if (!loaded || !mountedRef.current) return;
 
-    // Un seul espace actif : pas de choix à faire, on bascule directement dessus.
     if (availableChoices.length === 1) {
-      setActiveModule(availableChoices[0].key);
-      sessionStorage.setItem(ACCOUNTING_CHOICE_KEY, '1');
+      const only = availableChoices[0];
+      setChoice(only.key);
+
+      const onWrongModule =
+        (only.key === 'analytique' && pathname === GENERALE_DASHBOARD_PATH) ||
+        (only.key === 'generale' && isAnalytiqueRoute(pathname));
+
+      if (onWrongModule) {
+        router.replace(getDashboardPathForChoice(only.key));
+      }
       return;
     }
-    // Plusieurs espaces actifs : on affiche le modal de choix.
+
+    if (effectiveChoice) {
+      const redirect = getRedirectForWorkspaceViolation(pathname, effectiveChoice);
+      if (redirect) {
+        router.replace(redirect);
+      }
+      return;
+    }
+
     if (availableChoices.length > 1) {
       setOpen(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, generale, analytique]);
+  }, [loaded, generale, analytique, availableChoices.length, effectiveChoice, setChoice, pathname, router]);
 
-  const markChosen = () => sessionStorage.setItem(ACCOUNTING_CHOICE_KEY, '1');
+  useEffect(() => {
+    if (forceOpen && loaded && availableChoices.length > 0 && mountedRef.current) {
+      setOpen(true);
+      clearForceOpen();
+    }
+  }, [forceOpen, loaded, availableChoices.length, clearForceOpen]);
 
-  const handleSelect = (choice: Choice) => {
-    markChosen();
-    setActiveModule(choice.key);
+  const handleSelect = (choiceItem: Choice) => {
+    setChoice(choiceItem.key);
     setOpen(false);
     startLoading();
-    router.push(choice.href);
+    router.push(choiceItem.href);
   };
 
-  const handleDismiss = (next: boolean) => {
-    if (!next) markChosen();
+  const handleOpenChange = (next: boolean) => {
+    if (!next && requiresExplicitChoice && !effectiveChoice) return;
     setOpen(next);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleDismiss}>
-      <DialogContent className="sm:max-w-lg w-full mx-4 bg-white rounded-xl shadow-xl border border-gray-200">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        className="sm:max-w-lg w-full mx-4 bg-background/95 backdrop-blur-sm rounded-xl shadow-2xl border border-sky-100 z-[101] animate-in fade-in zoom-in-95 duration-500"
+        overlayClassName="z-[100] bg-sky-50 animate-in fade-in duration-500 overflow-hidden"
+        overlayChildren={
+          <div className="absolute inset-0 pointer-events-none">
+            <AccountingChoiceIllustration className="opacity-55" />
+            <div className="absolute inset-0 bg-gradient-to-b from-sky-50/30 via-transparent to-sky-100/50" />
+          </div>
+        }
+        showCloseButton={!requiresExplicitChoice || !!effectiveChoice}
+        onPointerDownOutside={(e) => {
+          if (requiresExplicitChoice && !effectiveChoice) e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (requiresExplicitChoice && !effectiveChoice) e.preventDefault();
+        }}
+      >
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-gray-900">
+          <DialogTitle className="text-xl font-bold text-foreground">
             Quelle comptabilité souhaitez-vous faire ?
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
-            Choisissez votre espace de travail. Vous pourrez basculer à tout moment depuis le menu latéral.
+          <DialogDescription className="text-muted-foreground">
+            Choisissez votre espace de travail. Vous resterez dans cet espace pour toute la session.
           </DialogDescription>
         </DialogHeader>
 
@@ -116,18 +164,18 @@ export function AccountingChoiceModal() {
               key={choice.key}
               type="button"
               onClick={() => handleSelect(choice)}
-              className="group text-left rounded-xl border border-gray-200 p-5 hover:border-blue-400 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="group text-left rounded-xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition-all focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <div
                 className={`w-12 h-12 rounded-lg bg-gradient-to-br ${choice.accent} flex items-center justify-center mb-4`}
               >
                 <choice.icon className="h-6 w-6 text-white" />
               </div>
-              <h3 className="font-semibold text-gray-900 flex items-center gap-1">
+              <h3 className="font-semibold text-foreground flex items-center gap-1">
                 {choice.title}
-                <ArrowRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
               </h3>
-              <p className="text-sm text-gray-500 mt-1 leading-relaxed">{choice.description}</p>
+              <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{choice.description}</p>
             </button>
           ))}
         </div>

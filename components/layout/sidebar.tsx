@@ -7,34 +7,100 @@ import { useNavigationStore } from "@/hooks/use-navigation-store";
 import { modules, ModuleKey, SidebarLink } from "@/config/navigation";
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
+import { applyAccountingModuleSwitch } from "@/lib/accounting-module-switch";
+import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
+import {
+  getModuleNavigationTarget,
+  isPathInModule,
+  resolveDashboardSidebarLinks,
+} from "@/lib/accounting-dashboard-routes";
+import { useLoadingStore } from "@/hooks/use-loading-store";
+import {
+  isModuleVisibleForChoice,
+  isWorkspaceChoiceRequired,
+  resolveActiveModuleForPath,
+} from "@/lib/accounting-workspace-routes";
 
 export function Sidebar() {
   const { isCollapsed } = useSidebar();
   const { activeModule, setActiveModule } = useNavigationStore();
   const pathname = usePathname();
+  const router = useRouter();
+  const { startLoading } = useLoadingStore();
   const { accountingRole } = useAuth();
   const { generale, analytique, load } = useAccountingSubscription();
+  const { choice: effectiveChoice } = useEffectiveAccountingChoice();
+  const workspaceChoiceRequired = isWorkspaceChoiceRequired(generale, analytique);
 
-  // Charge l'abonnement de l'organisation courante au montage afin de savoir
-  // quelles activités comptables (générale / analytique) sont actives.
   useEffect(() => {
     load();
   }, [load]);
 
-  // Un module comptable est désactivé (grisé) si l'organisation n'est pas
-  // abonnée à l'activité correspondante.
+  // Un module comptable est désactivé si l'organisation n'est pas abonnée
+  // ou si l'autre espace comptable a été choisi après connexion.
   const isModuleDisabled = (key: ModuleKey): boolean => {
-    if (key === "generale") return !generale;
-    if (key === "analytique") return !analytique;
+    if (key === "generale") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "analytique") {
+      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
+    }
+    if (key === "configuration") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "configurationAnalytique") {
+      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
+    }
+    if (key === "analyse") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "clients" || key === "fournisseurs") {
+      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
+    }
+    if (key === "analyseAnalytique") {
+      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
+    }
     return false;
   };
 
+  const navOptions = {
+    choice: effectiveChoice,
+    generale,
+    analytique,
+    accountingRole,
+  };
+
+  const handleModuleSwitch = (key: ModuleKey) => {
+    if (isModuleDisabled(key)) return;
+    applyAccountingModuleSwitch(key);
+
+    const target = getModuleNavigationTarget(key, navOptions);
+    if (!target) {
+      setActiveModule(key);
+      return;
+    }
+
+    if (isPathInModule(pathname, key, navOptions)) {
+      setActiveModule(key);
+      return;
+    }
+
+    startLoading();
+    router.push(target);
+  };
+
   useEffect(() => {
-    const currentModuleKey = Object.entries(modules).find(([key, module]) =>
+    const resolved = resolveActiveModuleForPath(pathname);
+    if (resolved) {
+      setActiveModule(resolved);
+      return;
+    }
+
+    const currentModuleKey = Object.entries(modules).find(([, module]) =>
       module.sidebarLinks.some((link) => pathname === link.href || pathname.startsWith(`${link.href}/`))
     )?.[0] as ModuleKey;
 
@@ -49,13 +115,35 @@ export function Sidebar() {
   // ses options dans la barre secondaire.
   const filteredLinks: SidebarLink[] = isModuleDisabled(activeModule)
     ? []
-    : currentModuleData.sidebarLinks.filter((link) => {
+    : (activeModule === "dashboard"
+        ? resolveDashboardSidebarLinks({ generale, analytique, choice: effectiveChoice })
+        : currentModuleData.sidebarLinks
+      ).filter((link) => {
+        if (activeModule === "analytique" && effectiveChoice !== "analytique") return false;
+        if (activeModule === "analyseAnalytique" && effectiveChoice !== "analytique") return false;
+        if (activeModule === "analyse" && effectiveChoice === "analytique") return false;
+        if (activeModule === "configurationAnalytique" && effectiveChoice !== "analytique") {
+          return false;
+        }
+        if (
+          (activeModule === "generale" ||
+            activeModule === "configuration" ||
+            activeModule === "analyse" ||
+            activeModule === "clients" ||
+            activeModule === "fournisseurs") &&
+          effectiveChoice === "analytique"
+        ) {
+          return false;
+        }
         if (!link.allowedRoles) return true;
         if (!accountingRole) return false;
         return link.allowedRoles.includes(accountingRole);
       });
 
-  const visibleModules = Object.entries(modules).filter(([, module]) => {
+  const visibleModules = Object.entries(modules).filter(([key, module]) => {
+    if (!isModuleVisibleForChoice(key, effectiveChoice, generale, analytique)) {
+      return false;
+    }
     if (!module.allowedRoles) return true;
     if (!accountingRole) return false;
     return module.allowedRoles.includes(accountingRole);
@@ -85,10 +173,7 @@ export function Sidebar() {
                       "h-12 w-12 flex-col gap-3 text-xs",
                       disabled && "opacity-40 cursor-not-allowed"
                     )}
-                    onClick={() => {
-                      if (disabled) return;
-                      setActiveModule(key as ModuleKey);
-                    }}
+                    onClick={() => handleModuleSwitch(key as ModuleKey)}
                   >
                     <Icon className="h-5 w-5" />
                   </Button>

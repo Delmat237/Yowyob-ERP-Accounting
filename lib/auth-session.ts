@@ -1,5 +1,8 @@
 import { OpenAPI as CoreOpenAPI } from '@/src/lib';
 import { OpenAPI as AccountingOpenAPI } from '@/src/lib2';
+import { clearAccountingChoice } from '@/lib/accounting-choice';
+import { clearUiState } from '@/lib/clear-ui-state';
+import { useAccountingChoiceStore } from '@/hooks/use-accounting-choice-store';
 
 /** Clés de session purgées au logout / à l'expiration. */
 const SESSION_KEYS = ['auth_token', 'user', 'organization_id', 'tenant_id'];
@@ -46,10 +49,9 @@ export function isAuthenticated(): boolean {
 export function clearSession(): void {
     if (typeof window !== 'undefined') {
         SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
-        // Choix d'espace comptable (générale/analytique) lié à la session courante :
-        // purgé au logout pour que le modal de choix réapparaisse à la prochaine connexion.
-        // Clé alignée sur ACCOUNTING_CHOICE_KEY de accounting-choice-modal.tsx.
-        sessionStorage.removeItem('ksm.accountingChoiceMade');
+        clearAccountingChoice();
+        useAccountingChoiceStore.getState().clear();
+        clearUiState();
     }
     CoreOpenAPI.TOKEN = undefined;
     AccountingOpenAPI.TOKEN = undefined;
