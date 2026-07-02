@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -13,64 +13,14 @@ import {
 } from "@/components/ui/dialog";
 import {
     CheckCircle, XCircle, Search, RefreshCw, ShieldCheck,
-    Building2, Calendar, Layers, AlertTriangle, Eye, CheckCheck,
+    Building2, Calendar, Layers, AlertTriangle, Eye, CheckCheck, Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import { cn } from '@/lib/utils';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type BudgetType = 'EXERCICE' | 'PERIODE' | 'ANALYTIQUE';
-
-interface BudgetBrouillon {
-    id: string;
-    code: string;
-    nom: string;
-    type: BudgetType;
-    montantAlloue: number;
-    parentNom?: string;
-    axeLibelles?: string;
-    dateDebut: string;
-    dateFin: string;
-    responsable?: string;
-    createdBy: string;
-    createdAt: string;
-    seuilAlerte: number;
-}
-
-// ─── Mock data ────────────────────────────────────────────────────────────────
-
-const MOCK_BROUILLONS: BudgetBrouillon[] = [
-    {
-        id: 'p3', code: 'PER-2026-Q3', nom: 'Budget Q3 2026', type: 'PERIODE',
-        montantAlloue: 12500000, parentNom: 'Budget Exercice 2026',
-        dateDebut: '2026-07-01', dateFin: '2026-09-30', seuilAlerte: 80,
-        createdBy: 'Jean Comptable', createdAt: '2026-06-15',
-    },
-    {
-        id: 'an3', code: 'ANA-RH-Q1', nom: 'RH Formation Q1', type: 'ANALYTIQUE',
-        montantAlloue: 3000000, parentNom: 'Budget Q1 2026',
-        axeLibelles: 'Ressources Humaines',
-        dateDebut: '2026-01-01', dateFin: '2026-03-31', seuilAlerte: 80,
-        createdBy: 'Marie Aide-Comptable', createdAt: '2026-01-10',
-    },
-    {
-        id: 'ex2', code: 'EX-2027', nom: 'Budget Exercice 2027', type: 'EXERCICE',
-        montantAlloue: 60000000,
-        dateDebut: '2027-01-01', dateFin: '2027-12-31', seuilAlerte: 80,
-        createdBy: 'Jean Comptable', createdAt: '2026-11-20',
-    },
-    {
-        id: 'an4', code: 'ANA-MKT-Q2', nom: 'Marketing Digital Q2', type: 'ANALYTIQUE',
-        montantAlloue: 4500000, parentNom: 'Budget Q2 2026',
-        axeLibelles: 'Marketing Digital',
-        dateDebut: '2026-04-01', dateFin: '2026-06-30', seuilAlerte: 80,
-        createdBy: 'Marie Aide-Comptable', createdAt: '2026-03-28',
-    },
-];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+import type { BudgetItem, BudgetType } from '@/components/accounting/budget-list-view';
+import { AccountingBudgetsService } from '@/src/lib2/services/AccountingBudgetsService';
+import { isBudgetBrouillon, mapBudgetDtoToItem } from '@/lib/accounting/budget-mappers';
 
 const typeIcons: Record<BudgetType, React.ReactNode> = {
     EXERCICE: <Building2 className="h-4 w-4 text-indigo-500" />,
@@ -90,27 +40,51 @@ const typeLabels: Record<BudgetType, string> = {
     ANALYTIQUE: 'Analytique',
 };
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export default function BudgetValidationPage() {
-    const [brouillons, setBrouillons] = useState<BudgetBrouillon[]>(MOCK_BROUILLONS);
+    const [brouillons, setBrouillons] = useState<BudgetItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-    const [previewBudget, setPreviewBudget] = useState<BudgetBrouillon | null>(null);
-    const [rejectDialog, setRejectDialog] = useState<{ open: boolean; budget: BudgetBrouillon | null }>({ open: false, budget: null });
+    const [previewBudget, setPreviewBudget] = useState<BudgetItem | null>(null);
+    const [rejectDialog, setRejectDialog] = useState<{ open: boolean; budget: BudgetItem | null }>({
+        open: false,
+        budget: null,
+    });
     const [rejectReason, setRejectReason] = useState('');
+    const [validatingId, setValidatingId] = useState<string | null>(null);
 
-    const filtered = brouillons.filter(b =>
+    const loadBrouillons = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await AccountingBudgetsService.getAllBudgets();
+            const drafts = (response.data ?? [])
+                .filter(isBudgetBrouillon)
+                .map(mapBudgetDtoToItem);
+            setBrouillons(drafts);
+            setSelectedIds(new Set());
+        } catch (error) {
+            console.error('Failed to load draft budgets:', error);
+            toast.error('Impossible de charger les budgets en brouillon.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        loadBrouillons();
+    }, [loadBrouillons]);
+
+    const filtered = brouillons.filter((b) =>
         b.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         b.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b.createdBy.toLowerCase().includes(searchTerm.toLowerCase())
+        (b.responsable ?? '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const toggleSelect = (id: string) => {
-        setSelectedIds(prev => {
+        setSelectedIds((prev) => {
             const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
             return next;
         });
     };
@@ -119,39 +93,76 @@ export default function BudgetValidationPage() {
         if (selectedIds.size === filtered.length) {
             setSelectedIds(new Set());
         } else {
-            setSelectedIds(new Set(filtered.map(b => b.id)));
+            setSelectedIds(new Set(filtered.map((b) => b.id)));
         }
     };
 
-    const handleValidate = (id: string) => {
-        setBrouillons(prev => prev.filter(b => b.id !== id));
-        setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
-        toast.success('Budget validé', { description: `Le budget a été validé avec succès.` });
+    const removeFromList = (id: string) => {
+        setBrouillons((prev) => prev.filter((b) => b.id !== id));
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+        });
     };
 
-    const handleValidateSelected = () => {
-        const count = selectedIds.size;
-        setBrouillons(prev => prev.filter(b => !selectedIds.has(b.id)));
-        setSelectedIds(new Set());
-        toast.success(`${count} budget(s) validé(s)`, { description: 'Tous les budgets sélectionnés ont été validés.' });
+    const handleValidate = async (id: string) => {
+        setValidatingId(id);
+        try {
+            await AccountingBudgetsService.validateBudget(id);
+            removeFromList(id);
+            toast.success('Budget validé', {
+                description: 'Le budget n\'est plus en brouillon et peut être activé depuis le suivi budgétaire.',
+            });
+        } catch (error) {
+            console.error('Failed to validate budget:', error);
+            toast.error('Impossible de valider ce budget.');
+        } finally {
+            setValidatingId(null);
+        }
     };
 
-    const handleReject = () => {
+    const handleValidateSelected = async () => {
+        const ids = [...selectedIds];
+        if (ids.length === 0) return;
+
+        setIsLoading(true);
+        let success = 0;
+        for (const id of ids) {
+            try {
+                await AccountingBudgetsService.validateBudget(id);
+                success += 1;
+            } catch (error) {
+                console.error(`Failed to validate budget ${id}:`, error);
+            }
+        }
+        await loadBrouillons();
+        if (success > 0) {
+            toast.success(`${success} budget(s) validé(s)`);
+        }
+        if (success < ids.length) {
+            toast.error(`${ids.length - success} validation(s) ont échoué.`);
+        }
+    };
+
+    const handleReject = async () => {
         if (!rejectDialog.budget) return;
         if (!rejectReason.trim()) {
             toast.error('Veuillez saisir un motif de rejet');
             return;
         }
-        setBrouillons(prev => prev.filter(b => b.id !== rejectDialog.budget!.id));
-        setSelectedIds(prev => { const next = new Set(prev); next.delete(rejectDialog.budget!.id); return next; });
-        toast.info('Budget rejeté', { description: `Motif : ${rejectReason}` });
-        setRejectDialog({ open: false, budget: null });
-        setRejectReason('');
-    };
 
-    const handleRefresh = () => {
-        setIsLoading(true);
-        setTimeout(() => { setBrouillons([...MOCK_BROUILLONS]); setSelectedIds(new Set()); setIsLoading(false); }, 800);
+        const budget = rejectDialog.budget;
+        try {
+            await AccountingBudgetsService.deleteBudget(budget.id);
+            removeFromList(budget.id);
+            toast.info('Budget rejeté et supprimé', { description: `Motif : ${rejectReason}` });
+            setRejectDialog({ open: false, budget: null });
+            setRejectReason('');
+        } catch (error) {
+            console.error('Failed to reject budget:', error);
+            toast.error('Impossible de rejeter ce budget.');
+        }
     };
 
     return (
@@ -174,8 +185,6 @@ export default function BudgetValidationPage() {
         >
             <div className="min-h-screen p-6 bg-gray-50/50">
                 <div className="max-w-6xl mx-auto space-y-6">
-
-                    {/* Header */}
                     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
                         <div className="flex items-start gap-4">
                             <div className="p-3 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-100">
@@ -184,7 +193,7 @@ export default function BudgetValidationPage() {
                             <div className="flex-1">
                                 <h1 className="text-2xl font-black text-gray-900 tracking-tight">Validation des Budgets</h1>
                                 <p className="text-sm text-gray-500 mt-1">
-                                    Examinez et validez les budgets en attente soumis par les comptables et aides-comptables.
+                                    Validez les budgets créés en brouillon par les comptables (CU-B03). Toute création démarre à l&apos;état <strong>BROUILLON</strong>.
                                 </p>
                             </div>
                             <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-100 rounded-full">
@@ -194,7 +203,6 @@ export default function BudgetValidationPage() {
                         </div>
                     </div>
 
-                    {/* Toolbar */}
                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
                         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
                             <div className="relative flex-1 max-w-sm">
@@ -207,13 +215,14 @@ export default function BudgetValidationPage() {
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={handleRefresh} className="border-gray-200">
+                                <Button variant="outline" size="sm" onClick={loadBrouillons} className="border-gray-200">
                                     <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                                 </Button>
                                 {selectedIds.size > 0 && (
                                     <Button
                                         size="sm"
                                         onClick={handleValidateSelected}
+                                        disabled={isLoading}
                                         className="bg-green-600 hover:bg-green-700 text-white gap-2"
                                     >
                                         <CheckCheck className="h-4 w-4" />
@@ -224,13 +233,19 @@ export default function BudgetValidationPage() {
                         </div>
                     </div>
 
-                    {/* Table */}
                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
-                        {filtered.length === 0 ? (
+                        {isLoading && brouillons.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20">
+                                <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-3" />
+                                <p className="text-sm text-gray-500">Chargement des brouillons...</p>
+                            </div>
+                        ) : filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
                                 <CheckCircle className="h-12 w-12 text-green-300 mb-4" />
-                                <p className="text-lg font-semibold text-gray-600">Aucun budget en attente</p>
-                                <p className="text-sm text-gray-400 mt-1">Tous les budgets ont été traités.</p>
+                                <p className="text-lg font-semibold text-gray-600">Aucun budget en brouillon</p>
+                                <p className="text-sm text-gray-400 mt-1">
+                                    Les nouveaux budgets apparaissent ici jusqu&apos;à validation par le responsable.
+                                </p>
                             </div>
                         ) : (
                             <Table>
@@ -293,11 +308,8 @@ export default function BudgetValidationPage() {
                                             <TableCell className="py-3 px-4 text-xs text-gray-500">
                                                 {budget.dateDebut} → {budget.dateFin}
                                             </TableCell>
-                                            <TableCell className="py-3 px-4">
-                                                <div>
-                                                    <p className="text-sm text-gray-700">{budget.createdBy}</p>
-                                                    <p className="text-xs text-gray-400">{budget.createdAt}</p>
-                                                </div>
+                                            <TableCell className="py-3 px-4 text-sm text-gray-700">
+                                                {budget.responsable ?? '—'}
                                             </TableCell>
                                             <TableCell className="py-3 px-4">
                                                 <div className="flex justify-end gap-1">
@@ -312,14 +324,23 @@ export default function BudgetValidationPage() {
                                                     <Button
                                                         variant="outline" size="sm"
                                                         onClick={() => handleValidate(budget.id)}
+                                                        disabled={validatingId === budget.id}
                                                         className="h-7 px-2 border-green-200 bg-green-50 text-green-700 hover:bg-green-100 text-xs gap-1"
                                                         title="Valider"
                                                     >
-                                                        <CheckCircle className="h-3 w-3" /> Valider
+                                                        {validatingId === budget.id ? (
+                                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                                        ) : (
+                                                            <CheckCircle className="h-3 w-3" />
+                                                        )}
+                                                        Valider
                                                     </Button>
                                                     <Button
                                                         variant="outline" size="sm"
-                                                        onClick={() => { setRejectDialog({ open: true, budget }); setRejectReason(''); }}
+                                                        onClick={() => {
+                                                            setRejectDialog({ open: true, budget });
+                                                            setRejectReason('');
+                                                        }}
                                                         className="h-7 px-2 border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs gap-1"
                                                         title="Rejeter"
                                                     >
@@ -336,7 +357,6 @@ export default function BudgetValidationPage() {
                 </div>
             </div>
 
-            {/* Dialog aperçu */}
             <Dialog open={!!previewBudget} onOpenChange={() => setPreviewBudget(null)}>
                 <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
@@ -344,39 +364,51 @@ export default function BudgetValidationPage() {
                             {previewBudget && typeIcons[previewBudget.type]}
                             {previewBudget?.nom}
                         </DialogTitle>
-                        <DialogDescription>Détails du budget en attente de validation</DialogDescription>
+                        <DialogDescription>Budget en brouillon — en attente de validation</DialogDescription>
                     </DialogHeader>
                     {previewBudget && (
                         <div className="space-y-4 py-2">
                             <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><p className="text-xs text-gray-400 uppercase font-bold">Code</p><p className="font-mono font-bold">{previewBudget.code}</p></div>
-                                <div><p className="text-xs text-gray-400 uppercase font-bold">Type</p>
-                                    <Badge variant="outline" className={cn("text-xs", typeColors[previewBudget.type])}>{typeLabels[previewBudget.type]}</Badge>
+                                <div>
+                                    <p className="text-xs text-gray-400 uppercase font-bold">Code</p>
+                                    <p className="font-mono font-bold">{previewBudget.code}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 uppercase font-bold">Statut</p>
+                                    <Badge className="bg-yellow-100 text-yellow-800">BROUILLON</Badge>
                                 </div>
                                 {previewBudget.parentNom && (
-                                    <div className="col-span-2"><p className="text-xs text-gray-400 uppercase font-bold">Budget parent</p><p>{previewBudget.parentNom}</p></div>
-                                )}
-                                {previewBudget.axeLibelles && (
-                                    <div className="col-span-2"><p className="text-xs text-gray-400 uppercase font-bold">Axes analytiques</p><p className="text-emerald-700">{previewBudget.axeLibelles}</p></div>
+                                    <div className="col-span-2">
+                                        <p className="text-xs text-gray-400 uppercase font-bold">Budget parent</p>
+                                        <p>{previewBudget.parentNom}</p>
+                                    </div>
                                 )}
                                 <div className="col-span-2">
                                     <p className="text-xs text-gray-400 uppercase font-bold">Montant alloué</p>
-                                    <p className="text-2xl font-black text-blue-700 font-mono">{previewBudget.montantAlloue.toLocaleString('fr-FR')} XAF</p>
+                                    <p className="text-2xl font-black text-blue-700 font-mono">
+                                        {previewBudget.montantAlloue.toLocaleString('fr-FR')} XAF
+                                    </p>
                                 </div>
-                                <div><p className="text-xs text-gray-400 uppercase font-bold">Période</p><p>{previewBudget.dateDebut} → {previewBudget.dateFin}</p></div>
-                                <div><p className="text-xs text-gray-400 uppercase font-bold">Seuil alerte</p><p>{previewBudget.seuilAlerte}%</p></div>
-                                {previewBudget.responsable && (
-                                    <div><p className="text-xs text-gray-400 uppercase font-bold">Responsable</p><p>{previewBudget.responsable}</p></div>
-                                )}
-                                <div><p className="text-xs text-gray-400 uppercase font-bold">Créé par</p><p>{previewBudget.createdBy}</p></div>
-                                <div><p className="text-xs text-gray-400 uppercase font-bold">Date création</p><p>{previewBudget.createdAt}</p></div>
+                                <div>
+                                    <p className="text-xs text-gray-400 uppercase font-bold">Période</p>
+                                    <p>{previewBudget.dateDebut} → {previewBudget.dateFin}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400 uppercase font-bold">Seuil alerte</p>
+                                    <p>{previewBudget.seuilAlerte}%</p>
+                                </div>
                             </div>
                         </div>
                     )}
                     <DialogFooter className="gap-2">
                         <Button variant="outline" onClick={() => setPreviewBudget(null)}>Fermer</Button>
                         <Button
-                            onClick={() => { if (previewBudget) { handleValidate(previewBudget.id); setPreviewBudget(null); } }}
+                            onClick={() => {
+                                if (previewBudget) {
+                                    handleValidate(previewBudget.id);
+                                    setPreviewBudget(null);
+                                }
+                            }}
                             className="bg-green-600 hover:bg-green-700 text-white gap-2"
                         >
                             <CheckCircle className="h-4 w-4" /> Valider ce budget
@@ -385,7 +417,6 @@ export default function BudgetValidationPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Dialog rejet */}
             <Dialog open={rejectDialog.open} onOpenChange={(open) => !open && setRejectDialog({ open: false, budget: null })}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
@@ -393,13 +424,15 @@ export default function BudgetValidationPage() {
                             <XCircle className="h-5 w-5" /> Rejeter le budget
                         </DialogTitle>
                         <DialogDescription>
-                            Budget : <strong>{rejectDialog.budget?.nom}</strong>
+                            Budget : <strong>{rejectDialog.budget?.nom}</strong> — le brouillon sera supprimé.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-2 space-y-3">
-                        <p className="text-sm text-gray-600">Veuillez indiquer le motif du rejet. Ce motif sera communiqué au créateur du budget.</p>
+                        <p className="text-sm text-gray-600">
+                            Indiquez le motif du rejet. Le créateur devra soumettre un nouveau budget.
+                        </p>
                         <Textarea
-                            placeholder="Ex: Le montant alloué dépasse le plafond de la période parente. Veuillez revoir le montant."
+                            placeholder="Ex: Le montant dépasse le plafond de la période parente."
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                             rows={4}
@@ -407,7 +440,9 @@ export default function BudgetValidationPage() {
                         />
                     </div>
                     <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setRejectDialog({ open: false, budget: null })}>Annuler</Button>
+                        <Button variant="outline" onClick={() => setRejectDialog({ open: false, budget: null })}>
+                            Annuler
+                        </Button>
                         <Button onClick={handleReject} className="bg-red-600 hover:bg-red-700 text-white gap-2">
                             <XCircle className="h-4 w-4" /> Confirmer le rejet
                         </Button>

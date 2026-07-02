@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Animations ─────────────────────────────────────────── */
+@layer utilities {
+  @keyframes fade-in-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+}
+
+/* ── Light Theme ─────────────────────────────────────────── */
+:root {
+  --radius: 0.75rem;
+  --background: 220 14% 96%;
+  --foreground: 225 25% 15%;
+  --card: 0 0% 100%;
+  --card-foreground: 225 25% 15%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 225 25% 15%;
+  --primary: 232 67% 52%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 220 13% 92%;
+  --secondary-foreground: 225 25% 22%;
+  --muted: 220 13% 94%;
+  --muted-foreground: 220 10% 45%;
+  --accent: 232 67% 92%;
+  --accent-foreground: 232 67% 22%;
+  --destructive: 0 70% 55%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 220 13% 85%;
+  --input: 0 0% 98%;
+  --ring: 232 67% 65%;
+  --chart-1: 160 65% 45%;
+  --chart-2: 270 60% 55%;
+  --chart-3: 32 90% 55%;
+  --chart-4: 215 60% 55%;
+  --chart-5: 90 55% 50%;
+  --sidebar: 220 14% 95%;
+  --sidebar-foreground: 225 25% 15%;
+  --sidebar-border: 220 13% 85%;
+  --sidebar-accent: 232 67% 52% / 0.15;
+  --sidebar-accent-foreground: 232 67% 40%;
+  --sidebar-ring: 232 67% 65%;
+}
+
+/* ── Dark Theme ──────────────────────────────────────────── */
+.dark {
+  --radius: 0.75rem;
+  --background: 225 25% 10%;
+  --foreground: 220 14% 92%;
+  --card: 225 25% 13%;
+  --card-foreground: 220 14% 92%;
+  --popover: 225 25% 13%;
+  --popover-foreground: 220 14% 92%;
+  --primary: 232 80% 68%;
+  --primary-foreground: 225 25% 8%;
+  --secondary: 225 25% 20%;
+  --secondary-foreground: 220 14% 92%;
+  --muted: 225 25% 18%;
+  --muted-foreground: 220 10% 60%;
+  --accent: 225 25% 22%;
+  --accent-foreground: 220 14% 92%;
+  --destructive: 0 72% 60%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 225 25% 22%;
+  --input: 225 25% 16%;
+  --ring: 232 80% 70%;
+  --chart-1: 160 65% 58%;
+  --chart-2: 270 60% 68%;
+  --chart-3: 32 90% 62%;
+  --chart-4: 215 60% 65%;
+  --chart-5: 90 55% 62%;
+  --sidebar: 225 25% 10%;
+  --sidebar-foreground: 220 14% 92%;
+  --sidebar-border: 225 25% 22%;
+  --sidebar-accent: 232 80% 68% / 0.18;
+  --sidebar-accent-foreground: 232 80% 68%;
+  --sidebar-ring: 232 80% 70%;
+}
+
+/* ── Base Styles ─────────────────────────────────────────── */
+@layer base {
+  * { @apply border-border; }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    @apply transition-colors duration-200 ease-in-out;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  input, textarea, select {
+    @apply bg-input text-foreground border-border;
+    @apply focus:ring-2 focus:ring-ring focus:outline-none;
+    @apply placeholder:text-muted-foreground;
+    @apply rounded-md px-3 py-2;
+  }
+}
+
+/* ── Utilities ───────────────────────────────────────────── */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+@media print {
+  body * { visibility: hidden; }
+  .printable-area, .printable-area * { visibility: visible; box-shadow: none !important; }
+  .printable-area { position: absolute; left: 0; top: 0; width: 100%; }
+  header, aside, .no-print { display: none !important; }
+}

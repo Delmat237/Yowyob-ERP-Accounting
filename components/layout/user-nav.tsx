@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,11 +17,12 @@ import { LogOut, User, Settings, KeyRound } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { getRoleLabel } from "@/src/lib/auth/roles";
 import { clearSession } from "@/lib/auth-session";
-import Link from "next/link";
 
 export function UserNav() {
   const router = useRouter();
   const { user, accountingRole, clear } = useAuth();
+
+  const profileHref = "/settings/profile";
 
   const handleLogout = () => {
     // Vider le store Zustand
@@ -70,7 +72,7 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link href="/settings/profile" className="cursor-pointer">
+            <Link href={profileHref} className="cursor-pointer">
               <User className="mr-2 h-4 w-4" /> Mon profil
             </Link>
           </DropdownMenuItem>
@@ -80,7 +82,7 @@ export function UserNav() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link href="/forgot-password" className="cursor-pointer">
+            <Link href="/settings/password" className="cursor-pointer">
               <KeyRound className="mr-2 h-4 w-4" /> Changer le mot de passe
             </Link>
           </DropdownMenuItem>

@@ -35,3 +35,24 @@ export function formatDateForApi(date: any): string {
 
   return String(date);
 }
+
+/** Affichage utilisateur JJ/MM/AAAA (gère aussi les tableaux [année, mois, jour] de l'API). */
+export function formatDateDisplay(date: any): string {
+  const iso = formatDateForApi(date);
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+}
+
+export function formatCurrency(amount: number, currency = "XAF"): string {
+  return new Intl.NumberFormat("fr-CM", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+  }).format(amount);
+}
+
+export function formatNumber(n: number): string {
+  return new Intl.NumberFormat("fr-FR").format(n);
+}

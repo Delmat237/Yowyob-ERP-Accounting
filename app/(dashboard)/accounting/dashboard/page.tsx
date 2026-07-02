@@ -643,7 +643,7 @@ export default function AccountingDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[280px]">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={280} minWidth={0}>
                 <AreaChart data={incomeVsExpense} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
@@ -685,7 +685,7 @@ export default function AccountingDashboard() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="h-[160px] px-4">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={160} minWidth={0}>
                 <PieChart>
                   <Pie
                     data={journalActivity}
@@ -742,7 +742,7 @@ export default function AccountingDashboard() {
           <CardContent className="p-0">
             {balanceLines.length > 0 ? (
               <div className="h-[240px] px-4 pb-4 pt-2">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={240} minWidth={0}>
                   <BarChart
                     data={balanceLines}
                     layout="vertical"
@@ -776,7 +776,7 @@ export default function AccountingDashboard() {
             </CardHeader>
             <CardContent>
               <div className="h-[100px]">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={100} minWidth={0}>
                   <BarChart data={[
                     { name: 'Débit', total: kpis.totalDebit, fill: '#6366f1' },
                     { name: 'Crédit', total: kpis.totalCredit, fill: '#f43f5e' },

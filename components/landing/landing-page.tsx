@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -41,37 +42,37 @@ export function LandingPage() {
     {
       icon: BookOpen,
       title: "Comptabilité Générale",
-      description: "Gestion complète de votre plan comptable, écritures et journaux avec automatisation intelligente."
+      description: "Plan comptable, écritures, journaux, validation des pièces, exercices et périodes — avec saisie semi-automatique."
     },
     {
       icon: Calculator,
+      title: "Comptabilité Analytique",
+      description: "Axes, centres d'analyse, ventilation, coûts complets et partiels, budgets et concordance avec la comptabilité générale."
+    },
+    {
+      icon: TrendingUp,
       title: "États Financiers",
-      description: "Génération automatique de bilans, comptes de résultat et balances en temps réel."
+      description: "Bilan, compte de résultat, grand livre, balance générale, flux de trésorerie et rapports analytiques."
     },
     {
       icon: Users,
       title: "Gestion des Tiers",
-      description: "Suivi détaillé de vos comptes clients et fournisseurs pour une maîtrise parfaite de vos flux."
-    },
-    {
-      icon: TrendingUp,
-      title: "Croissance Business",
-      description: "Outils d'analyse pour identifier les opportunités de croissance et optimiser vos performances."
+      description: "Suivi des comptes clients et fournisseurs, factures, paiements et produits pour maîtriser vos flux."
     },
     {
       icon: Shield,
-      title: "Sécurité Avancée",
-      description: "Protection des données avec cryptage et contrôles d'accès multi-niveaux."
+      title: "Sécurité et Rôles",
+      description: "Aide-comptable, comptable et responsable comptable — avec journal d'audit et contrôles d'accès."
     },
     {
       icon: Zap,
-      title: "Performance Optimale",
-      description: "Interface rapide et réactive pour une productivité maximale de vos équipes."
+      title: "Multi-agence et Modularité",
+      description: "Plusieurs agences isolées, modules souscriptibles à la carte et ouverture aux autres applications."
     }
   ];
 
   const stats = [
-    { number: "99.9%", label: "Disponibilité" },
+    { number: "Garantie", label: "Disponibilité & support" },
     { number: "500+", label: "Entreprises" },
     { number: "2M+", label: "Transactions" },
     { number: "24/7", label: "Support" }
@@ -81,43 +82,115 @@ export function LandingPage() {
   // valeur possible : true (inclus), false (absent), 'partial' (limité / payant)
   const comparison = [
     {
-      feature: "Plan comptable OHADA / SYSCOHADA natif",
+      feature: "Plan comptable conforme OHADA et SYSCOHADA",
       ksm: true,
       odoo: 'partial',
       classic: false,
     },
     {
-      feature: "Comptabilisation automatique (OCR de factures)",
+      feature: "Multi-agence native (agences et succursales isolées)",
       ksm: true,
       odoo: 'partial',
       classic: false,
     },
     {
-      feature: "Multi-tenant & multi-organisation natif",
-      ksm: true,
-      odoo: 'partial',
-      classic: false,
-    },
-    {
-      feature: "Intégration caisse / facturation temps réel",
+      feature: "Écritures comptables, journaux et opérations",
       ksm: true,
       odoo: true,
+      classic: 'partial',
+    },
+    {
+      feature: "Saisie semi-automatique des écritures",
+      ksm: true,
+      odoo: 'partial',
       classic: false,
     },
     {
-      feature: "Rôles comptables granulaires (SUPERVISE / MANAGE)",
+      feature: "Validation des écritures par le responsable comptable",
       ksm: true,
       odoo: 'partial',
       classic: 'partial',
     },
     {
-      feature: "Déploiement local ou cloud, sans licence par module",
+      feature: "Exercices comptables et périodes de clôture",
+      ksm: true,
+      odoo: true,
+      classic: 'partial',
+    },
+    {
+      feature: "Bilan, compte de résultat et balance générale",
+      ksm: true,
+      odoo: true,
+      classic: 'partial',
+    },
+    {
+      feature: "Grand livre, flux de trésorerie et résumé exécutif",
+      ksm: true,
+      odoo: true,
+      classic: 'partial',
+    },
+    {
+      feature: "Journal d'audit des opérations comptables",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Pack fiscalité OHADA intégré",
       ksm: true,
       odoo: false,
       classic: false,
     },
     {
-      feature: "Onboarding comptable en self-service",
+      feature: "Gestion des clients, fournisseurs, factures et paiements",
+      ksm: true,
+      odoo: true,
+      classic: 'partial',
+    },
+    {
+      feature: "Comptabilisation assistée par reconnaissance de factures",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Plusieurs organisations sur une même plateforme",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Modules comptables souscriptibles à la carte (générale, analytique)",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Autres applications peuvent souscrire à la comptabilité comme service",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Intégration caisse et facturation en temps réel",
+      ksm: true,
+      odoo: true,
+      classic: false,
+    },
+    {
+      feature: "Rôles dédiés : aide-comptable, comptable, responsable comptable",
+      ksm: true,
+      odoo: 'partial',
+      classic: 'partial',
+    },
+    {
+      feature: "Initialisation comptable en autonomie",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Déploiement local ou cloud, sans licence par module",
       ksm: true,
       odoo: false,
       classic: false,
@@ -127,6 +200,117 @@ export function LandingPage() {
       ksm: true,
       odoo: false,
       classic: 'partial',
+    },
+  ];
+
+  const analyticComparison = [
+    {
+      feature: "Plan analytique et comptes analytiques",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Axes analytiques et centres d'analyse",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Charges analytiques et imputation sur les écritures",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Ventilation analytique des charges",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Tableau de répartition des coûts",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Coûts complets et coûts partiels",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Imputation rationnelle des charges indirectes",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Coûts préétablis et coûts standards",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Unités d'œuvre et incorporations",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Valorisation des stocks et méthodes de calcul des coûts",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Prix de cessions entre centres d'analyse",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Budget analytique en brouillon avec validation par le responsable",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Suivi budgétaire et validation des budgets",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Tableau budget versus réalisé par axe et par compte",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Balance par compte analytique",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "États et rapports analytiques dédiés",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Concordance comptabilité générale et comptabilité analytique",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Abonnement à la comptabilité analytique seule, sans activer la comptabilité générale",
+      ksm: true,
+      odoo: false,
+      classic: false,
     },
   ];
 
@@ -152,6 +336,89 @@ export function LandingPage() {
     );
   };
 
+  const ComparisonLegend = () => (
+    <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
+      <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100">
+          <Check className="h-3 w-3 text-green-600" />
+        </span>
+        Inclus
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100">
+          <Minus className="h-3 w-3 text-amber-600" />
+        </span>
+        Limité / payant en option
+      </span>
+      <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100">
+          <X className="h-3 w-3 text-red-500" />
+        </span>
+        Non disponible
+      </span>
+    </div>
+  );
+
+  const renderComparisonTable = (
+    rows: typeof comparison,
+    options?: { highlightClassic?: boolean },
+  ) => (
+    <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+      <table className="w-full min-w-[640px] text-left">
+        <thead>
+          <tr className="border-b border-gray-200">
+            <th className="py-5 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider">
+              Fonctionnalité
+            </th>
+            <th className="py-5 px-6 text-center">
+              <div className="inline-flex flex-col items-center">
+                <span className="text-lg font-bold text-blue-600">KSM</span>
+                <span className="text-xs text-gray-500">Notre solution</span>
+              </div>
+            </th>
+            <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
+              Odoo
+            </th>
+            {options?.highlightClassic !== false && (
+              <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
+                Solutions classiques
+              </th>
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <tr
+              key={row.feature}
+              className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+            >
+              <td className="py-4 px-6 text-sm text-gray-800 font-medium">
+                {row.feature}
+              </td>
+              <td className="py-4 px-6 text-center bg-blue-50/50">
+                <div className="flex justify-center">
+                  <ComparisonCell value={row.ksm} />
+                </div>
+              </td>
+              <td className="py-4 px-6 text-center">
+                <div className="flex justify-center">
+                  <ComparisonCell value={row.odoo} />
+                </div>
+              </td>
+              {options?.highlightClassic !== false && (
+                <td className="py-4 px-6 text-center">
+                  <div className="flex justify-center">
+                    <ComparisonCell value={row.classic} />
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Navigation */}
@@ -173,6 +440,9 @@ export function LandingPage() {
               </a>
               <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Solutions
+              </a>
+              <a href="#comparison-analytique" className="text-gray-600 hover:text-blue-600 transition-colors">
+                Analytique
               </a>
               <a href="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Tarifs
@@ -209,6 +479,9 @@ export function LandingPage() {
                 </a>
                 <a href="#comparison" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
                   Solutions
+                </a>
+                <a href="#comparison-analytique" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
+                  Analytique
                 </a>
                 <a href="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors px-3 py-2">
                   Tarifs
@@ -333,9 +606,10 @@ export function LandingPage() {
             <Button
               size="lg"
               variant="outline"
-              className="border-white text-white hover:bg-white/10 px-8 py-3 text-lg"
+              asChild
+              className="border-white bg-transparent text-white hover:bg-white/10 hover:text-white px-8 py-3 text-lg"
             >
-              Contacter l&apos;équipe
+              <Link href="/contact">Contacter l&apos;équipe</Link>
             </Button>
           </div>
         </div>
@@ -346,86 +620,35 @@ export function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Pourquoi choisir KSM&nbsp;?
+              Comptabilité générale&nbsp;: KSM vs Odoo
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Comparé aux solutions existantes comme Odoo ou les logiciels comptables
-              classiques, KSM est pensé pour le contexte et la réglementation OHADA.
+              Plan comptable, écritures, états financiers, multi-agence et modularité —
+              une comptabilité générale pensée pour la réglementation OHADA.
             </p>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
-            <table className="w-full min-w-[640px] text-left">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="py-5 px-6 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                    Fonctionnalité
-                  </th>
-                  <th className="py-5 px-6 text-center">
-                    <div className="inline-flex flex-col items-center">
-                      <span className="text-lg font-bold text-blue-600">KSM</span>
-                      <span className="text-xs text-gray-500">Notre solution</span>
-                    </div>
-                  </th>
-                  <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
-                    Odoo
-                  </th>
-                  <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
-                    Solutions classiques
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparison.map((row, index) => (
-                  <tr
-                    key={index}
-                    className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                  >
-                    <td className="py-4 px-6 text-sm text-gray-800 font-medium">
-                      {row.feature}
-                    </td>
-                    <td className="py-4 px-6 text-center bg-blue-50/50">
-                      <div className="flex justify-center">
-                        <ComparisonCell value={row.ksm} />
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex justify-center">
-                        <ComparisonCell value={row.odoo} />
-                      </div>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <div className="flex justify-center">
-                        <ComparisonCell value={row.classic} />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {renderComparisonTable(comparison)}
+          <ComparisonLegend />
+        </div>
+      </section>
+
+      {/* Analytic Accounting Comparison */}
+      <section id="comparison-analytique" className="py-20 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
+              Comptabilité analytique&nbsp;: KSM vs Odoo
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Axes, centres d&apos;analyse, coûts, budgets et concordance avec la
+              comptabilité générale — chaque organisation peut souscrire uniquement
+              à la comptabilité analytique, sans activer les autres modules.
+            </p>
           </div>
 
-          {/* Légende */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-600">
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100">
-                <Check className="h-3 w-3 text-green-600" />
-              </span>
-              Inclus
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-100">
-                <Minus className="h-3 w-3 text-amber-600" />
-              </span>
-              Limité / payant en option
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-red-100">
-                <X className="h-3 w-3 text-red-500" />
-              </span>
-              Non disponible
-            </span>
-          </div>
+          {renderComparisonTable(analyticComparison)}
+          <ComparisonLegend />
         </div>
       </section>
 

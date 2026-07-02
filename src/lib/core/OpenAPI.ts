@@ -25,7 +25,7 @@ export type OpenAPIConfig = {
 // (X-Client-Id / X-Api-Key) et les injecte côté serveur. Ces secrets ne doivent jamais
 // être exposés dans le bundle navigateur. Les chemins générés sont sans préfixe /api ;
 // le préfixe vers le Kernel est reconstruit par le proxy backend.
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://accounting.yowyob.com/accounting-api';
 const KERNEL_PROXY_BASE = `${BACKEND_BASE}/api/kernel`;
 
 export const OpenAPI: OpenAPIConfig = {
@@ -44,11 +44,11 @@ export const OpenAPI: OpenAPIConfig = {
                 // (configurable dans .env.local), sinon ''.
                 'X-Tenant-ID': localStorage.getItem('tenant_id')
                     || process.env.NEXT_PUBLIC_TENANT_ID
-                    || '',
+                    || '11111111-1111-1111-1111-111111111111',
                 // X-Organization-Id : organisation courante (relayée par le proxy au Kernel).
                 'X-Organization-Id': localStorage.getItem('organization_id')
                     || process.env.NEXT_PUBLIC_ORGANIZATION_ID
-                    || '',
+                    || '4e177ff2-89b8-4d24-926a-5763dfa1b19a',
                 // NB : X-Client-Id / X-Api-Key NE sont plus envoyés par le navigateur.
                 // Le proxy backend (/api/kernel) les injecte côté serveur.
               }

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PageHero } from '@/components/marketing/page-hero';
 
 const coordinates = [
-  { icon: Mail, label: 'E-mail', value: 'contact@yowyob.com' },
+  { icon: Mail, label: 'E-mail', value: 'info@yowyob.com' },
   { icon: Phone, label: 'Téléphone', value: '+237 6 94 77 34 72' },
   { icon: MapPin, label: 'Adresse', value: 'Yaoundé, Cameroun' },
 ];

@@ -6,7 +6,7 @@ import { clearSession, getStoredToken, isTokenValid } from '@/lib/auth-session';
 
 /** Chemin de la page de login (la landing héberge la modale de connexion). */
 export const LOGIN_PATH = '/';
-/** Page d'accueil de l'espace connecté. */
+/** Page d'accueil par défaut (CG) — préférer getDefaultDashboardPath avec l'abonnement. */
 export const DASHBOARD_PATH = '/accounting/dashboard';
 
 /**
