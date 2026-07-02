@@ -156,13 +156,6 @@ export default function ProfilePage() {
                 <ShieldCheck className="h-4.5 w-4.5 text-green-500 shrink-0" />
                 <span>Rôle système : <strong className="font-semibold text-gray-900">{getRoleLabel(accountingRole) || "Collaborateur"}</strong></span>
               </div>
-              
-              {profile?.id && (
-                <div className="flex items-center gap-2.5 text-sm text-gray-500 font-mono text-[11px] select-all">
-                  <span className="font-sans text-gray-600 font-normal">ID Utilisateur :</span>
-                  <span>{profile.id}</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

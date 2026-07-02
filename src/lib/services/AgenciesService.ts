@@ -69,10 +69,15 @@ export class AgenciesService {
      * @returns Agency OK
      * @throws ApiError
      */
-    public static getAgencies(): CancelablePromise<Array<Agency>> {
+    public static getAgencies(
+        organizationId: string,
+    ): CancelablePromise<Array<Agency>> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/agencies',
+            url: '/organizations/{organizationId}/agencies',
+            path: {
+                'organizationId': organizationId,
+            },
         });
     }
     /**

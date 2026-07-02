@@ -16,3 +16,105 @@
 ○ Compiling /accounting/chart-of-accounts ...
  GET /accounting/subscription 200 in 5.5s (next.js: 5.0s, application-code: 494ms)
  GET /accounting/chart-of-accounts 200 in 20.7s (next.js: 20.2s, application-code: 503ms)
+○ Compiling /settings/company ...
+ GET /settings/company 200 in 36.9s (next.js: 33.9s, application-code: 3.0s)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+○ Compiling /settings/profile ...
+ GET /settings/profile 200 in 36.3s (next.js: 35.0s, application-code: 1368ms)
+ GET / 200 in 894ms (next.js: 660ms, application-code: 235ms)
+ GET /accounting/subscription 200 in 15.2s (next.js: 13.8s, application-code: 1402ms)
+ GET /accounting/dashboard 200 in 1868ms (next.js: 1628ms, application-code: 240ms)
+ GET /accounting/subscription 200 in 289ms (next.js: 55ms, application-code: 234ms)
+ GET /settings/profile 200 in 305ms (next.js: 26ms, application-code: 278ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+ GET /settings/profile 200 in 2.3s (next.js: 76ms, application-code: 2.3s)
+○ Compiling /settings ...
+ GET /settings 200 in 38.7s (next.js: 38.3s, application-code: 450ms)
+○ Compiling /settings/users ...
+ GET /settings/users 200 in 17.1s (next.js: 16.3s, application-code: 804ms)
+ GET /settings/users 200 in 37.6s (next.js: 36.5s, application-code: 1025ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Internal Server Error
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+○ Compiling /settings/business-actor ...
+ GET /settings/business-actor 200 in 96s (next.js: 84s, application-code: 12.4s)
+[browser] ApiError: Aucun profil Business Actor trouvé pour cet utilisateur
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Aucun profil Business Actor trouvé pour cet utilisateur
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+○ Compiling / ...
+ GET / 200 in 41s (next.js: 36.6s, application-code: 4.2s)
+ GET / 200 in 87s (next.js: 82s, application-code: 4.2s)
+ GET / 200 in 584ms (next.js: 406ms, application-code: 177ms)
+ GET / 200 in 120ms (next.js: 12ms, application-code: 108ms)

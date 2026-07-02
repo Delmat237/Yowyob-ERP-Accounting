@@ -1,0 +1,160 @@
+
+> accounting-yowyob-erp@0.1.0 dev
+> next dev --webpack
+
+▲ Next.js 16.2.7 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://10.70.184.11:3000
+- Environments: .env.local
+✓ Ready in 18.6s
+
+○ Compiling /settings/users ...
+ GET /settings/users 200 in 68s (next.js: 61s, application-code: 6.3s)
+○ Compiling /settings/agencies ...
+ GET /settings/agencies 200 in 27.8s (next.js: 25.1s, application-code: 2.8s)
+○ Compiling / ...
+ GET / 200 in 8.9s (next.js: 8.0s, application-code: 903ms)
+○ Compiling /accounting/dashboard ...
+ GET /accounting/dashboard 200 in 17.4s (next.js: 17.1s, application-code: 335ms)
+○ Compiling /settings/company ...
+ GET /settings/company 200 in 9.4s (next.js: 9.1s, application-code: 279ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+ GET / 200 in 391ms (next.js: 202ms, application-code: 189ms)
+ GET / 200 in 3.5s (next.js: 68ms, application-code: 3.4s)
+ GET /accounting/dashboard 200 in 1299ms (next.js: 991ms, application-code: 308ms)
+○ Compiling /settings/profile ...
+ GET /settings/profile 200 in 20.0s (next.js: 19.8s, application-code: 268ms)
+ GET /settings/company 200 in 966ms (next.js: 775ms, application-code: 192ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+○ Compiling /settings/agencies ...
+ GET /settings/agencies 200 in 19.0s (next.js: 18.3s, application-code: 688ms)
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+○ Compiling /analyse/audits ...
+[browser] ApiError: Forbidden
+    at catchErrorCodes (src/lib/core/request.ts:291:15)
+    at eval (src/lib/core/request.ts:339:17)
+  289 |     const error = errors[result.status];
+  290 |     if (error) {
+> 291 |         throw new ApiError(options, result, error);
+      |               ^
+  292 |     }
+  293 |
+  294 |     if (!result.ok) { (app/(dashboard)
+ GET /analyse/audits 200 in 17.6s (next.js: 17.3s, application-code: 251ms)
+ GET /analyse/audits 200 in 236ms (next.js: 28ms, application-code: 207ms)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=12&debut=1&fin=2026&fin=12&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=12&debut=1&fin=2026&fin=12&fin=31 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=6&debut=16&fin=2026&fin=6&fin=30 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+[browser] [API Error] HTTP 500 on http://localhost:8081/api/accounting/audit/organization/f9ab9d23-334b-468d-97ca-0e8b7489fc02/periode?debut=2026&debut=6&debut=16&fin=2026&fin=6&fin=30 ApiError: An unexpected error occurred on the server
+    at catchErrorCodes (src/lib2/core/request.ts:312:15)
+    at eval (src/lib2/core/request.ts:375:21)
+  310 |     if (error) {
+  311 |         const message = result.body?.message || error;
+> 312 |         throw new ApiError(options, result, message);
+      |               ^
+  313 |     }
+  314 |
+  315 |     if (!result.ok) { (src/lib2/core/request.ts:378:29)
+○ Compiling /analyse/generale-ledger ...
+ GET /analyse/generale-ledger 200 in 18.2s (next.js: 17.9s, application-code: 328ms)
+○ Compiling /analyse/generale-balance ...
+[browser] PDF Export failed TypeError: Failed to fetch
+    at handleGeneratePDF (app/(dashboard)/analyse/generale-ledger/page.tsx:125:30)
+  123 |
+  124 |       // Fetch the PDF as a blob
+> 125 |       const response = await fetch(pdfUrl);
+      |                              ^
+  126 |       if (!response.ok) {
+  127 |         throw new Error(`HTTP error! status: ${response.status}`);
+  128 |       } (app/(dashboard)
+ GET /analyse/generale-balance 200 in 15.1s (next.js: 14.9s, application-code: 206ms)
+[browser] PDF Export failed TypeError: Failed to fetch
+    at handleGeneratePDF (app/(dashboard)/analyse/generale-balance/page.tsx:103:30)
+  101 |
+  102 |       // Fetch the PDF as a blob
+> 103 |       const response = await fetch(pdfUrl);
+      |                              ^
+  104 |       if (!response.ok) {
+  105 |         throw new Error(`HTTP error! status: ${response.status}`);
+  106 |       } (app/(dashboard)
+○ Compiling /analyse/cache-flow ...
+ GET /analyse/cache-flow 200 in 4.5s (next.js: 4.3s, application-code: 162ms)
+○ Compiling /analyse/balance-sheet ...
+ GET /analyse/balance-sheet 200 in 6.0s (next.js: 5.8s, application-code: 219ms)
+○ Compiling / ...
+ GET / 200 in 15.2s (next.js: 15.1s, application-code: 139ms)
+ GET / 200 in 1574ms (next.js: 14ms, application-code: 1561ms)

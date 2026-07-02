@@ -70,7 +70,7 @@ export default function UsersSettingsPage() {
     agencyId: "none", // "none" represents no agency scope
   });
 
-  const orgId = user?.organizationId || typeof window !== 'undefined' ? localStorage.getItem('organization_id') : null;
+  const orgId = user?.organizationId || (typeof window !== 'undefined' ? localStorage.getItem('organization_id') : null);
 
   useEffect(() => {
     if (orgId) {
@@ -84,17 +84,35 @@ export default function UsersSettingsPage() {
     setIsLoading(true);
     try {
       if (!orgId) return;
-      const [membersData, rolesData, agenciesData] = await Promise.all([
+
+      // La liste des membres est la donnée critique de la page. Les rôles et
+      // les agences ne servent qu'à la modale d'invitation : on les charge en
+      // "best-effort" pour qu'un échec (ex. 403 si l'utilisateur n'est pas
+      // Owner) ne masque pas la liste des collaborateurs.
+      const [membersResult, rolesResult, agenciesResult] = await Promise.allSettled([
         EmployeesRolesService.getEmployees(orgId),
         EmployeesRolesService.getRoles(),
-        AgenciesService.getAgencies()
+        AgenciesService.getAgencies(orgId)
       ]);
-      setEmployees(membersData || []);
-      setRoles(rolesData || []);
-      setAgencies(agenciesData || []);
-    } catch (error) {
-      console.error(error);
-      toast.error("Impossible de charger les données des collaborateurs.");
+
+      if (membersResult.status === "fulfilled") {
+        setEmployees(membersResult.value || []);
+      } else {
+        console.error(membersResult.reason);
+        toast.error("Impossible de charger les données des collaborateurs.");
+      }
+
+      if (rolesResult.status === "fulfilled") {
+        setRoles(rolesResult.value || []);
+      } else {
+        console.warn("Chargement des rôles échoué:", rolesResult.reason);
+      }
+
+      if (agenciesResult.status === "fulfilled") {
+        setAgencies(agenciesResult.value || []);
+      } else {
+        console.warn("Chargement des agences échoué:", agenciesResult.reason);
+      }
     } finally {
       setIsLoading(false);
     }

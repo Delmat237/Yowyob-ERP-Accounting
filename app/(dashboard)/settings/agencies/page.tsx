@@ -27,7 +27,12 @@ export default function AgenciesSettingsPage() {
     (async () => {
       setIsLoading(true);
       try {
-        const data = await AgenciesService.getAgencies();
+        const orgId = typeof window !== "undefined" ? localStorage.getItem("organization_id") : null;
+        if (!orgId) {
+          if (!cancelled) setAgencies([]);
+          return;
+        }
+        const data = await AgenciesService.getAgencies(orgId);
         if (!cancelled) setAgencies(data || []);
       } catch (error) {
         console.error(error);
