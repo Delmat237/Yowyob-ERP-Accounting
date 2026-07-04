@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { CompteDto } from '@/src/lib2/models/CompteDto';
 import { AccountingComptesService } from '@/src/lib2/services/AccountingComptesService';
 import { CompteComptableListView } from '@/components/accounting/compte-comptable-list-view';
@@ -29,8 +30,8 @@ export default function AccountsPage() {
 
     const { onOpen, onClose: closeCompose } = useCompose();
 
-    const fetchComptes = useCallback(async () => {
-        setIsLoading(true);
+    const fetchComptes = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) setIsLoading(true);
         setError(null);
         try {
             const response = await AccountingComptesService.getAllComptes();
@@ -49,13 +50,15 @@ export default function AccountsPage() {
             });
             setError('Impossible de charger les comptes comptables. Veuillez vérifier votre connexion internet.');
         } finally {
-            setIsLoading(false);
+            if (!options?.silent) setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchComptes();
+        void fetchComptes();
     }, [fetchComptes]);
+
+    useAutoRefresh(fetchComptes, [fetchComptes]);
 
 
     const handleSave = async (data: CompteDto) => {
@@ -193,7 +196,6 @@ export default function AccountsPage() {
                     onEditCompte={handleEditCompte}
                     onDeleteCompte={confirmDelete}
                     onAddNew={handleAddNew}
-                    onRefresh={fetchComptes}
                     selectedId={selectedCompteId || undefined}
                 />
 

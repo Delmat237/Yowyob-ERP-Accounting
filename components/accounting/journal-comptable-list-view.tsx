@@ -14,7 +14,8 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { JournalComptableDto } from '@/src/lib2/models/JournalComptableDto';
-import { Edit, Trash2, RefreshCw, Search, Plus } from 'lucide-react';
+import { Edit, Trash2, Search, Plus } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { PermissionGuard } from '@/components/auth/permission-guard';
@@ -26,7 +27,6 @@ interface JournalComptableListViewProps {
   onEditJournal: (id: string) => void;
   onDeleteJournal: (journal: JournalComptableDto) => void;
   onAddNew: () => void;
-  onRefresh: () => void;
   selectedId?: string;
 }
 
@@ -70,7 +70,6 @@ export const JournalComptableListView: React.FC<JournalComptableListViewProps> =
   onEditJournal,
   onDeleteJournal,
   onAddNew,
-  onRefresh,
   selectedId,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,6 +85,8 @@ export const JournalComptableListView: React.FC<JournalComptableListViewProps> =
       return matchesSearch;
     });
   }, [journals, searchQuery]);
+
+  if (isLoading) return <CustomPageLoader message="Chargement des journaux..." />;
 
   return (
     <div className="space-y-4">
@@ -105,7 +106,7 @@ export const JournalComptableListView: React.FC<JournalComptableListViewProps> =
           </div>
         </div>
 
-        {/* Bottom Row: Action buttons (New left, Refresh right) */}
+        {/* Bottom Row: Action buttons */}
         <div className="flex items-center justify-between">
           <PermissionGuard feature="journals" action="create">
             <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
@@ -113,9 +114,6 @@ export const JournalComptableListView: React.FC<JournalComptableListViewProps> =
               Nouveau Journal
             </Button>
           </PermissionGuard>
-          <Button onClick={onRefresh} variant="outline" size="icon">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
       </div>
 
@@ -132,13 +130,7 @@ export const JournalComptableListView: React.FC<JournalComptableListViewProps> =
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-10 text-gray-400 font-medium italic">
-                  Chargement des journaux...
-                </TableCell>
-              </TableRow>
-            ) : filteredJournals.length === 0 ? (
+            {filteredJournals.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-10 text-gray-400 font-medium italic">Aucun journal trouvé.</TableCell>
               </TableRow>

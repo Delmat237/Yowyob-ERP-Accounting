@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Loader2, User, Mail, Shield, Building2, ShieldCheck, ArrowLeft } from "lucide-react";
+import { User, Mail, Shield, Building2, ShieldCheck, ArrowLeft } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,18 +12,11 @@ import { getRoleLabel } from "@/src/lib/auth/roles";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 export default function AnalytiqueProfilePage() {
-  const { profile, organization, accountingRole, loading, initials, fullName, refresh, error } =
+  const { profile, organization, accountingRole, loading, initials, fullName, error } =
     useUserProfile({ loadOrganization: true });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-          <p className="text-sm text-muted-foreground">Chargement de votre profil...</p>
-        </div>
-      </div>
-    );
+    return <CustomPageLoader message="Chargement de votre profil..." />;
   }
 
   return (
@@ -100,11 +94,6 @@ export default function AnalytiqueProfilePage() {
                   <strong className="text-foreground">{getRoleLabel(accountingRole) || "—"}</strong>
                 </span>
               </div>
-              {profile?.id && (
-                <p className="text-[11px] text-muted-foreground font-mono select-all">
-                  ID utilisateur : {profile.id}
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>
@@ -139,12 +128,6 @@ export default function AnalytiqueProfilePage() {
           </CardContent>
         </Card>
       )}
-
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={() => refresh()}>
-          Actualiser le profil
-        </Button>
-      </div>
     </div>
   );
 }

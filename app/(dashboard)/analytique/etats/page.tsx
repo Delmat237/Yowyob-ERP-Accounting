@@ -141,7 +141,7 @@ export default function EtatsReportingPage() {
                 <Filter className="h-5 w-5 text-muted-foreground ml-2 flex-shrink-0" />
                 <div className="flex border border-border rounded-xl overflow-hidden">
                     {(["resultats", "repartition", "concordance"] as const).map((id) => {
-                        const labels = { resultats: "Compte de Résultats", repartition: "Synthèse Répartition", concordance: "Concordance CG/CA" };
+                        const labels = { resultats: "Compte de Résultats", repartition: "Synthèse Répartition", concordance: "Concordance comptabilité générale / analytique" };
                         return (
                             <button key={id} onClick={() => setReportType(id)}
                                 className={`px-3 py-2 text-sm font-medium transition-colors ${reportType === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}>
@@ -251,7 +251,7 @@ export default function EtatsReportingPage() {
                         </div>
                     </div>
                     <div className="bg-muted/30 border border-border rounded-xl p-3 text-xs text-muted-foreground">
-                        <strong>Note :</strong> CA = Coût de revient × 1,35 | CV = Coût production × 0,85 | CF Spécifiques = Coût production × 0,12 | Frais généraux = Σ(coûts d&apos;achat) × 10%
+                        <strong>Note :</strong> Chiffre d&apos;affaires = coût de revient × 1,35 | Coûts variables = coût de production × 0,85 | Coûts fixes spécifiques = coût de production × 0,12 | Frais généraux = Σ(coûts d&apos;achat) × 10%
                     </div>
                 </div>
             )}
@@ -304,7 +304,7 @@ export default function EtatsReportingPage() {
                                                     </div>
                                                     <span className="font-mono text-muted-foreground">{formatCurrency(c.montant)}</span>
                                                 </div>
-                                                <div className="text-xs text-muted-foreground">UO : {c.uniteOeuvre}</div>
+                                                <div className="text-xs text-muted-foreground">Unité d&apos;œuvre : {c.uniteOeuvre}</div>
                                                 <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
                                                     <div className={`h-full rounded-full transition-all ${isPrincipal ? "bg-indigo-500" : "bg-cyan-500"}`} style={{ width: `${Math.min(100, pct)}%` }} />
                                                 </div>
@@ -367,34 +367,34 @@ export default function EtatsReportingPage() {
             {reportType === "concordance" && (
                 <div className="space-y-4" id="print-concordance">
                     <div className="bg-card border border-border rounded-2xl shadow-sm p-4 text-center">
-                        <h2 className="text-lg font-bold">ÉTAT 3 : Concordance CG / CA — {selectedPeriode.libelle}</h2>
-                        <p className="text-sm text-muted-foreground mt-1">Rapprochement entre le résultat CG et le résultat analytique reconstitué</p>
+                        <h2 className="text-lg font-bold">ÉTAT 3 : Concordance comptabilité générale / analytique — {selectedPeriode.libelle}</h2>
+                        <p className="text-sm text-muted-foreground mt-1">Rapprochement entre le résultat de la comptabilité générale et le résultat analytique reconstitué</p>
                     </div>
 
                     {!concordance.periodeCG ? (
                         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-                            <p className="text-sm text-amber-800 font-semibold">Aucune période CG liée à cette période analytique.</p>
-                            <p className="text-xs text-amber-600 mt-1">Liez la période dans le module Périodes (Janvier, Février ou Mars 2026 ont une période CG).</p>
+                            <p className="text-sm text-amber-800 font-semibold">Aucune période de comptabilité générale liée à cette période analytique.</p>
+                            <p className="text-xs text-amber-600 mt-1">Liez la période dans le module Périodes (Janvier, Février ou Mars 2026 ont une période comptabilité générale).</p>
                         </div>
                     ) : (
                         <>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {[
-                                    { label: "Produits CG", val: concordance.totalProduitsCG, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
-                                    { label: "Charges CG", val: concordance.totalChargesCG, color: "text-rose-600", bg: "bg-rose-50 border-rose-200" },
-                                    { label: "Résultat Net CG", val: concordance.resultatCG, color: concordance.resultatCG >= 0 ? "text-indigo-700" : "text-rose-600", bg: "bg-indigo-50 border-indigo-200" },
+                                    { label: "Produits comptabilité générale", val: concordance.totalProduitsCG, color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-200" },
+                                    { label: "Charges comptabilité générale", val: concordance.totalChargesCG, color: "text-rose-600", bg: "bg-rose-50 border-rose-200" },
+                                    { label: "Résultat net comptabilité générale", val: concordance.resultatCG, color: concordance.resultatCG >= 0 ? "text-indigo-700" : "text-rose-600", bg: "bg-indigo-50 border-indigo-200" },
                                 ].map((k) => (
                                     <div key={k.label} className={`rounded-2xl border p-5 shadow-sm ${k.bg}`}>
                                         <p className="text-xs font-semibold text-muted-foreground uppercase">{k.label}</p>
                                         <p className={`text-2xl font-bold mt-1 ${k.color}`}>{formatCurrency(k.val)}</p>
-                                        <p className="text-xs text-muted-foreground mt-0.5">Période CG : {concordance.periodeCG.libelle}</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">Période comptabilité générale : {concordance.periodeCG.libelle}</p>
                                     </div>
                                 ))}
                             </div>
 
                             <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
                                 <div className="px-5 py-3 border-b border-border bg-muted/20">
-                                    <h3 className="text-sm font-bold">Tableau de passage CG → CA</h3>
+                                    <h3 className="text-sm font-bold">Tableau de passage comptabilité générale → analytique</h3>
                                 </div>
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted/50 border-b border-border">
@@ -426,7 +426,7 @@ export default function EtatsReportingPage() {
                                     </tbody>
                                     <tfoot className="border-t-2 border-border">
                                         <tr className="bg-indigo-50">
-                                            <td colSpan={2} className="px-4 py-4 font-bold text-indigo-900 text-base">Résultat Analytique Reconstitué (CG)</td>
+                                            <td colSpan={2} className="px-4 py-4 font-bold text-indigo-900 text-base">Résultat analytique reconstitué (depuis comptabilité générale)</td>
                                             <td className="hidden md:table-cell" />
                                             <td className="px-4 py-4 text-center text-indigo-700 font-semibold">=</td>
                                             <td className={`px-4 py-4 text-right font-mono font-bold text-lg ${concordance.resultatCA >= 0 ? "text-indigo-700" : "text-rose-600"}`}>{formatCurrency(concordance.resultatCA)}</td>
@@ -458,7 +458,7 @@ export default function EtatsReportingPage() {
                                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center justify-between">
                                     <div>
                                         <p className="text-sm font-semibold text-amber-800">Charges non incorporables détectées sur cette période</p>
-                                        <p className="text-xs text-amber-600 mt-0.5">Ces charges figurent en CG mais sont exclues du calcul analytique.</p>
+                                        <p className="text-xs text-amber-600 mt-0.5">Ces charges figurent en comptabilité générale mais sont exclues du calcul analytique.</p>
                                     </div>
                                     <span className="text-lg font-bold text-amber-700 font-mono">{formatCurrency(concordance.chargesNonInc)}</span>
                                 </div>

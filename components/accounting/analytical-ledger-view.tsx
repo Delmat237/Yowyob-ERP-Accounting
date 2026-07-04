@@ -25,7 +25,6 @@ import {
     TrendingDown,
     Scale,
     X,
-    RefreshCw,
 } from 'lucide-react';
 import { useNationalCurrency } from '@/hooks/use-national-currency';
 
@@ -194,14 +193,6 @@ export function AnalyticalLedgerView() {
                     >
                         <X className="h-3.5 w-3.5" />
                         Réinitialiser
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs gap-1.5 border-slate-200 text-slate-600 hover:text-slate-900"
-                    >
-                        <RefreshCw className="h-3.5 w-3.5" />
-                        Actualiser
                     </Button>
                 </div>
             </div>

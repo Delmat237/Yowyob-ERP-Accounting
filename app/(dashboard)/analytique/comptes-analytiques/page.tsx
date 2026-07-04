@@ -273,7 +273,7 @@ export default function ComptesAnalytiquesPage() {
                                                         )}
                                                         {c.numero.startsWith("90") && c.compteCGMiroir && (
                                                             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                                                CG {c.compteCGMiroir}
+                                                                Comptabilité générale {c.compteCGMiroir}
                                                             </span>
                                                         )}
                                                         {c.description && (

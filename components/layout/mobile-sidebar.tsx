@@ -7,18 +7,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { MainNav } from "./main-nav";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useNavigationStore } from "@/hooks/use-navigation-store";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 import { modules, ModuleKey, SidebarLink } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { applyAccountingModuleSwitch } from "@/lib/accounting-module-switch";
 import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
-import {
-  getModuleNavigationTarget,
-  isPathInModule,
-  resolveDashboardSidebarLinks,
-} from "@/lib/accounting-dashboard-routes";
+import { resolveDashboardSidebarLinks, isDashboardPath } from "@/lib/accounting-dashboard-routes";
 import {
   isModuleVisibleForChoice,
   isWorkspaceChoiceRequired,
@@ -29,7 +25,6 @@ export function MobileSidebar() {
   const { isMobileOpen, setMobileOpen } = useSidebar();
   const { activeModule, setActiveModule } = useNavigationStore();
   const pathname = usePathname();
-  const router = useRouter();
   const { accountingRole } = useAuth();
   const { generale, analytique, load } = useAccountingSubscription();
   const { choice: effectiveChoice } = useEffectiveAccountingChoice();
@@ -64,32 +59,10 @@ export function MobileSidebar() {
     return false;
   };
 
-  const navOptions = {
-    choice: effectiveChoice,
-    generale,
-    analytique,
-    accountingRole,
-  };
-
   const handleModuleSwitch = (key: ModuleKey) => {
     if (isModuleDisabled(key)) return;
     applyAccountingModuleSwitch(key);
-
-    const target = getModuleNavigationTarget(key, navOptions);
-    if (!target) {
-      setActiveModule(key);
-      setMobileOpen(false);
-      return;
-    }
-
-    if (isPathInModule(pathname, key, navOptions)) {
-      setActiveModule(key);
-      setMobileOpen(false);
-      return;
-    }
-
-    router.push(target);
-    setMobileOpen(false);
+    setActiveModule(key);
   };
 
   // Fermer le drawer lors d'un changement de route
@@ -105,11 +78,12 @@ export function MobileSidebar() {
       return;
     }
 
-    const currentModuleKey = Object.entries(modules).find(([, module]) =>
-      module.sidebarLinks.some(
-        (link) => pathname === link.href || pathname.startsWith(`${link.href}/`)
-      )
-    )?.[0] as ModuleKey;
+    const currentModuleKey = Object.entries(modules).find(([key, module]) => {
+      if (key === "dashboard") return false;
+      return module.sidebarLinks.some(
+        (link) => pathname === link.href || pathname.startsWith(`${link.href}/`),
+      );
+    })?.[0] as ModuleKey;
     if (currentModuleKey) setActiveModule(currentModuleKey);
   }, [pathname, setActiveModule]);
 
@@ -119,7 +93,7 @@ export function MobileSidebar() {
     ? []
     : (activeModule === "dashboard"
         ? resolveDashboardSidebarLinks({ generale, analytique, choice: effectiveChoice })
-        : currentModuleData.sidebarLinks
+        : currentModuleData.sidebarLinks.filter((link) => !isDashboardPath(link.href))
       ).filter((link) => {
         if (activeModule === "analytique" && effectiveChoice !== "analytique") return false;
         if (activeModule === "analyseAnalytique" && effectiveChoice !== "analytique") return false;

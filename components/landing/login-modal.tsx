@@ -146,7 +146,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Sélection de contexte/organisation quand le compte en a plusieurs (multi-tenant / multi-org).
     const [pendingSelection, setPendingSelection] = useState<{ selectionToken: string; options: SelectOption[] } | null>(null);
 
-    const [loginError, setLoginError] = useState<string | null>(null);
     const [registerError, setRegisterError] = useState<string | null>(null);
 
     const loginForm = useForm<LoginData>({ mode: 'onChange' });
@@ -161,7 +160,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Kernel résout lui-même les tenants du principal → vrai multi-tenant.
     const handleLogin = async (data: LoginData) => {
         setIsLoading(true);
-        setLoginError(null);
         setPendingSelection(null);
         try {
             const res = await fetch(`${apiBase()}/api/auth/discover-contexts`, {
@@ -191,8 +189,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 setIsLoading(false);
             }
         } catch (error: unknown) {
-            setLoginError(
-                getErrorMessage(error, 'Identifiants incorrects. Veuillez réessayer.')
+            toast.error(
+                getErrorMessage(error, 'Identifiants incorrects. Veuillez réessayer.'),
             );
             setIsLoading(false);
         }
@@ -201,7 +199,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
     // Étape 2 : sélection d'un contexte (et organisation) → login finalisé.
     const completeSelection = async (selectionToken: string, option: SelectOption) => {
         setIsLoading(true);
-        setLoginError(null);
         try {
             const res = await fetch(`${apiBase()}/api/auth/select-context`, {
                 method: 'POST',
@@ -245,8 +242,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             onClose();
             router.push('/accounting/dashboard');
         } catch (error: unknown) {
-            setLoginError(
-                getErrorMessage(error, 'Connexion impossible. Veuillez réessayer.')
+            toast.error(
+                getErrorMessage(error, 'Connexion impossible. Veuillez réessayer.'),
             );
         } finally {
             setIsLoading(false);
@@ -284,7 +281,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     </DialogDescription>
                 </DialogHeader>
 
-                <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setLoginError(null); setRegisterError(null); }} className="w-full mt-2">
+                <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setRegisterError(null); }} className="w-full mt-2">
                     <TabsList className="grid w-full grid-cols-2 bg-gray-100 rounded-lg mb-2">
                         <TabsTrigger value="login">Connexion</TabsTrigger>
                         <TabsTrigger value="register">Inscription</TabsTrigger>
@@ -292,7 +289,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
                     {/* ── Onglet Connexion ── */}
                     <TabsContent value="login" className="space-y-4 mt-6">
-                        {loginError && <ErrorBanner message={loginError} />}
                         {pendingSelection ? (
                             <div className="space-y-3">
                                 <p className="text-sm text-gray-600">
@@ -316,7 +312,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     type="button"
                                     variant="link"
                                     className="text-sm p-0 h-auto text-gray-500"
-                                    onClick={() => { setPendingSelection(null); setLoginError(null); }}
+                                    onClick={() => setPendingSelection(null)}
                                 >
                                     ← Revenir
                                 </Button>

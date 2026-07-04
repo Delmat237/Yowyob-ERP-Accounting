@@ -108,7 +108,7 @@ function LigneModal({
                     </div>
                     {form.composante === "CHARGES_INDIRECTES" && (
                         <div>
-                            <label className="text-sm font-medium">Activité normale (UO)</label>
+                            <label className="text-sm font-medium">Activité normale (unité d&apos;œuvre)</label>
                             <input type="number" min={0}
                                 className="mt-1 w-full text-sm border border-border rounded-xl px-3 py-2 bg-input"
                                 placeholder="Ex: 1000 H.Mod"

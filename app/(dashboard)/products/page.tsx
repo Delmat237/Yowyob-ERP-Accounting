@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { CompteDto } from '@/src/lib2/models/CompteDto';
 import { AccountingComptesService } from '@/src/lib2/services/AccountingComptesService';
 import { useCompose } from '@/hooks/use-compose-store';
@@ -31,8 +32,8 @@ export default function ProductsPage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchAndSetProducts = useCallback(async () => {
-    setIsLoading(true);
+  const fetchAndSetProducts = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
       const res = await AccountingComptesService.getAccountsByType('STOCK');
@@ -46,13 +47,15 @@ export default function ProductsPage() {
       setError("Impossible de charger les articles. Veuillez vérifier votre connexion.");
       toast.error("Erreur lors de la récupération des articles");
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAndSetProducts();
+    void fetchAndSetProducts();
   }, [fetchAndSetProducts]);
+
+  useAutoRefresh(fetchAndSetProducts, [fetchAndSetProducts]);
 
   const handleSave = async (data: CompteDto) => {
     try {
@@ -211,7 +214,6 @@ export default function ProductsPage() {
           onEditProduct={handleEditProduct}
           onDeleteProduct={(p) => { if (p.id) confirmDelete(p.id) }}
           onAddNew={handleAddNew}
-          onRefresh={fetchAndSetProducts}
         />
 
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

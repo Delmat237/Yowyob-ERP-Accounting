@@ -12,7 +12,7 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-    TrendingUp, TrendingDown, Minus, Search, RefreshCw,
+    TrendingUp, TrendingDown, Minus, Search,
     AlertTriangle, CheckCircle2, XCircle, BarChart3, ChevronDown, ChevronRight,
 } from 'lucide-react';
 import { Budget } from './budget-list-view';
@@ -144,10 +144,9 @@ function StatutBadge({ statut }: { statut: 'ok' | 'alerte' | 'depassement' }) {
 interface BudgetVsRealiseViewProps {
     budgets: Budget[];
     isLoading: boolean;
-    onRefresh: () => void;
 }
 
-export function BudgetVsRealiseView({ budgets, isLoading, onRefresh }: BudgetVsRealiseViewProps) {
+export function BudgetVsRealiseView({ budgets, isLoading }: BudgetVsRealiseViewProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatut, setFilterStatut] = useState<string>('ALL');
     const [filterAlerte, setFilterAlerte] = useState<string>('ALL');
@@ -281,9 +280,6 @@ export function BudgetVsRealiseView({ budgets, isLoading, onRefresh }: BudgetVsR
                         <SelectItem value="ok">Normal</SelectItem>
                     </SelectContent>
                 </Select>
-                <Button variant="outline" onClick={onRefresh} className="border-gray-300">
-                    <RefreshCw className={cn('h-4 w-4', isLoading && 'animate-spin')} />
-                </Button>
             </div>
 
             {/* ── Tableau principal ── */}

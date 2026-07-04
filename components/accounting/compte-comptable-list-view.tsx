@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { CompteDto } from '@/src/lib2/models/CompteDto';
-import { Edit, Plus, RefreshCw, Eye, Trash2, Loader2 } from 'lucide-react';
+import { Edit, Plus, Eye, Trash2 } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import {
@@ -31,7 +32,6 @@ interface CompteComptableListViewProps {
     onEditCompte: (id: string) => void;
     onDeleteCompte: (id: string) => void;
     onAddNew?: () => void;
-    onRefresh?: () => void;
     selectedId?: string;
 }
 
@@ -115,12 +115,13 @@ export const CompteComptableListView: React.FC<CompteComptableListViewProps> = (
     onEditCompte,
     onDeleteCompte,
     onAddNew,
-    onRefresh,
     selectedId,
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedClasse, setSelectedClasse] = useState<string>('all');
     const [selectedType, setSelectedType] = useState<string>('all');
+
+    if (isLoading) return <CustomPageLoader message="Chargement des comptes..." />;
 
     // Extract unique classes and types from comptes
     const uniqueClasses = Array.from(new Set(comptes.map(c => c.classe).filter(c => c !== undefined && c !== null)))
@@ -145,7 +146,7 @@ export const CompteComptableListView: React.FC<CompteComptableListViewProps> = (
 
     return (
         <div className="space-y-4">
-            {/* Top row: Nouveau Compte button on left, Refresh button on right */}
+            {/* Top row: Nouveau Compte button */}
             <div className="flex items-center justify-between">
                 <div>
                     {onAddNew && (
@@ -155,13 +156,6 @@ export const CompteComptableListView: React.FC<CompteComptableListViewProps> = (
                                 Nouveau Compte
                             </Button>
                         </PermissionGuard>
-                    )}
-                </div>
-                <div>
-                    {onRefresh && (
-                        <Button variant="outline" size="sm" onClick={onRefresh}>
-                            <RefreshCw className="h-4 w-4 mr-2" />
-                        </Button>
                     )}
                 </div>
             </div>
@@ -216,16 +210,7 @@ export const CompteComptableListView: React.FC<CompteComptableListViewProps> = (
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-gray-400">
-                                    <div className="flex justify-center items-center py-4">
-                                        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                                    </div>
-                                    <span className="sr-only">Chargement des comptes...</span>
-                                </TableCell>
-                            </TableRow>
-                        ) : filteredComptes.length === 0 ? (
+                        {filteredComptes.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={7} className="text-center py-8 text-gray-400">
                                     {searchTerm ? 'Aucun compte trouvé pour cette recherche.' : 'Aucun compte disponible.'}
@@ -277,7 +262,7 @@ export const CompteComptableListView: React.FC<CompteComptableListViewProps> = (
                 </Table>
             </div>
 
-            {!isLoading && filteredComptes.length > 0 && (
+            {filteredComptes.length > 0 && (
                 <div className="text-sm text-gray-500 text-center">
                     {filteredComptes.length} compte(s) affiché(s) sur {comptes.length} au total
                 </div>

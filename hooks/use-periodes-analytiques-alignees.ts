@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
 import {
   AccountingFiscalYearsService,
   AccountingPeriodsService,
@@ -22,7 +23,7 @@ type UsePeriodesAnalytiquesAligneesResult = {
   loading: boolean;
   error: string | null;
   usingMockFallback: boolean;
-  reload: () => Promise<void>;
+  reload: (options?: AutoRefreshOptions) => Promise<void>;
   setStatutLocal: (periodeId: string, statut: StatutPeriode) => void;
   synchroniserClotures: () => void;
 };
@@ -64,8 +65,10 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
   const [error, setError] = useState<string | null>(null);
   const [usingMockFallback, setUsingMockFallback] = useState(false);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) {
+      setLoading(true);
+    }
     setError(null);
     setUsingMockFallback(false);
     try {
@@ -118,13 +121,17 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
           : "API indisponible — affichage des données de démonstration.",
       );
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
+
+  useAutoRefresh(load, [load]);
 
   const periodesBase = useMemo(
     () => periodesCG.map((cg) => mapPeriodeCGToAnalytique(cg)),

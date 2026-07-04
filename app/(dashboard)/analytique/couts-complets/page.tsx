@@ -171,7 +171,7 @@ export default function CoutsCompletsPage() {
     return [
       { label: "Coût d'achat matières consommées", val: achat, pct: achat / prod },
       { label: "Main-d'œuvre directe", val: mod, pct: mod / prod },
-      { label: "Centre Production (UO: H.Machine)", val: prod * 0.18, pct: 0.18 },
+      { label: "Centre Production (unité d'œuvre : heure machine)", val: prod * 0.18, pct: 0.18 },
       { label: "En-cours début de période", val: prod * 0.04, pct: 0.04 },
       { label: "(−) En-cours fin de période", val: -prod * 0.02, pct: -0.02 },
     ];
@@ -183,8 +183,8 @@ export default function CoutsCompletsPage() {
     const dist = rev - prod - rev * 0.08 - rev * 0.03;
     return [
       { label: "Coût de production des produits vendus", val: prod },
-      { label: "Centre Distribution (UO: Unité vendue)", val: dist },
-      { label: "Centre Administration (Assiette CG)", val: rev * 0.08 },
+      { label: "Centre Distribution (unité d'œuvre : unité vendue)", val: dist },
+      { label: "Centre Administration (assiette comptabilité générale)", val: rev * 0.08 },
       { label: "Frais emballage", val: rev * 0.03 },
     ];
   }, [selectedProduit]);
@@ -278,14 +278,18 @@ export default function CoutsCompletsPage() {
                 {(["CUMP", "FIFO", "LIFO"] as MethodeStock[]).map((m) => (
                   <button key={m} onClick={() => setMethode(m)}
                     className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${methode === m ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:bg-secondary"}`}>
-                    {m}
+                    {m === "CUMP"
+                      ? "Coût unitaire moyen pondéré"
+                      : m === "FIFO"
+                        ? "Premier entré, premier sorti"
+                        : "Dernier entré, premier sorti"}
                   </button>
                 ))}
               </div>
               <div className="text-xs text-muted-foreground space-y-2">
-                <p><strong>CUMP :</strong> Coût Unitaire Moyen Pondéré — recalculé après chaque entrée.</p>
-                <p><strong>FIFO :</strong> Premier entré, premier sorti — valorise les sorties aux premières entrées.</p>
-                <p><strong>LIFO :</strong> Dernier entré, premier sorti — sorties valorisées aux dernières entrées.</p>
+                <p><strong>Coût unitaire moyen pondéré :</strong> recalculé après chaque entrée.</p>
+                <p><strong>Premier entré, premier sorti :</strong> valorise les sorties aux premières entrées.</p>
+                <p><strong>Dernier entré, premier sorti :</strong> sorties valorisées aux dernières entrées.</p>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2 pt-3 border-t border-border">
                 <div className="text-center"><p className="text-xs text-muted-foreground">Total entrées</p><p className="text-sm font-bold text-cyan-700">{formatCurrency(totalEntrees)}</p></div>
@@ -314,7 +318,7 @@ export default function CoutsCompletsPage() {
                     <th className="px-3 py-2.5 text-right">Val. S.</th>
                     <th className="px-3 py-2.5 text-right">Stock Qté</th>
                     <th className="px-3 py-2.5 text-right">Stock Val.</th>
-                    {methode === "CUMP" && <th className="px-3 py-2.5 text-right">CUMP</th>}
+                    {methode === "CUMP" && <th className="px-3 py-2.5 text-right">Coût unitaire moyen pondéré</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -401,7 +405,7 @@ export default function CoutsCompletsPage() {
           <div className="mt-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between">
             <div>
               <span className="text-sm text-emerald-800 font-medium">Résultat analytique estimé</span>
-              <p className="text-xs text-emerald-600 mt-0.5">CA estimé ({formatCurrency(selectedProduit.coutRevient * 1.35)}) − Coût de revient</p>
+              <p className="text-xs text-emerald-600 mt-0.5">Chiffre d&apos;affaires estimé ({formatCurrency(selectedProduit.coutRevient * 1.35)}) − coût de revient</p>
             </div>
             <span className="text-lg font-bold text-emerald-700">{formatCurrency(selectedProduit.coutRevient * 0.35)}</span>
           </div>

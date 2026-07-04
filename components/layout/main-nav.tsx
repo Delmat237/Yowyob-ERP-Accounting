@@ -33,12 +33,14 @@ export function MainNav({ links }: MainNavProps) {
             key={index}
             href={link.href}
             onClick={() => {
-              if (pathname !== link.href) {
+              const isCurrent =
+                pathname === link.href || pathname.startsWith(`${link.href}/`);
+              if (!isCurrent) {
                 startLoading();
               }
             }}
             className={cn(
-              "flex items-center gap-3 rounded-r-full rounded-l-none px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200/50",
+              "flex items-start gap-3 rounded-r-full rounded-l-none px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200/50",
               isActive
                 ? "bg-blue-100 text-blue-800 font-semibold hover:bg-blue-100"
                 : "hover:bg-gray-200"
@@ -46,11 +48,13 @@ export function MainNav({ links }: MainNavProps) {
           >
             <link.icon
               className={cn(
-                "h-5 w-5 shrink-0",
+                "h-5 w-5 shrink-0 mt-0.5",
                 isActive ? "text-blue-700" : "text-gray-600"
               )}
             />
-            <span className="truncate">{link.title}</span>
+            <span className="min-w-0 flex-1 leading-snug line-clamp-2">
+              {link.title}
+            </span>
           </Link>
         );
       })}

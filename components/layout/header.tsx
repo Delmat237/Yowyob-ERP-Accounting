@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { NotificationBell } from "../notifications/notification-bell";
 import { useAuth } from "@/hooks/use-auth";
+import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
 
 // ─── Contenu du centre d'aide par rôle ───────────────────────────────────────
 
@@ -113,7 +114,7 @@ export function Header() {
       <Button variant="ghost" size="icon" className="mr-2" onClick={handleMenuClick}>
         <Menu className="h-5 w-5 text-gray-600" />
       </Button>
-      <div className="font-semibold text-lg tracking-tight text-gray-700 mr-6">
+      <div className="font-semibold text-lg tracking-tight text-gray-700 mr-6 shrink-0">
         KSM
       </div>
 
@@ -130,6 +131,8 @@ export function Header() {
       <div className="flex-1" />
 
       <div className="ml-auto flex items-center gap-1 md:gap-2">
+        <AccountingWorkspaceSwitch />
+
         {/* Centre d'aide spécifique au rôle — masqué sur mobile */}
         <div className="hidden md:flex">
           <DropdownMenu>

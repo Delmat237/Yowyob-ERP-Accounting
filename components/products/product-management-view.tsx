@@ -5,7 +5,7 @@ import { Product } from "@/types/core";
 import { Search, Plus, ShoppingBasket, Archive, Banknote, History } from "lucide-react";
 import { ProductForm } from "./product-form";
 import { getProducts, createProduct, updateProduct, deleteProduct } from "@/lib/api";
-import { Skeleton } from "../ui/skeleton";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 const PricingInfoView = ({ product }: {product: Product}) => (
     <div className="p-6"><h3 className="text-lg font-semibold mb-4 text-gray-900">Informations Prix</h3><p className="text-gray-600">Détails des prix pour {product.name}</p></div>
@@ -119,6 +119,8 @@ export function ProductManagementView() {
         );
     }
 
+    if (isLoading) return <CustomPageLoader message="Chargement des produits..." />;
+
     return (
         <div className="h-screen bg-gray-50 flex">
             <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
@@ -149,10 +151,7 @@ export function ProductManagementView() {
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {isLoading ? (
-                         <div className="p-4 space-y-3">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-                    ) : (
-                        filteredProducts.map((product) => (
+                    {filteredProducts.map((product) => (
                             <div key={product.id} onClick={() => handleSelectProduct(product)} className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${selectedProduct?.id === product.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}>
                                 <div className="flex items-center justify-between mb-1">
                                     <h3 className="font-medium text-gray-900 truncate pr-2">{product.name}</h3>
@@ -161,8 +160,7 @@ export function ProductManagementView() {
                                 <p className="text-sm text-gray-600">{product.code}</p>
                                 <p className="text-xs text-gray-500 mt-1">{product.family}</p>
                             </div>
-                        ))
-                    )}
+                    ))}
                 </div>
             </div>
             

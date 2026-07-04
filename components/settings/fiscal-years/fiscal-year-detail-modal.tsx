@@ -89,7 +89,7 @@ export function FiscalYearDetailModal({ year, allOrders, isOpen, onClose }: Fisc
                 </DialogHeader>
                 <div className="max-h-[70vh] overflow-y-auto pr-4 space-y-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <StatCard title="CA TTC" value={`${yearStats.totalRevenue.toLocaleString('fr-FR')} ${currencyCode}`} variant="primary" />
+                        <StatCard title="Chiffre d'affaires TTC" value={`${yearStats.totalRevenue.toLocaleString('fr-FR')} ${currencyCode}`} variant="primary" />
                         <StatCard title="Total HT" value={`${yearStats.totalHT.toLocaleString('fr-FR')} ${currencyCode}`} />
                         <StatCard title="Total TVA" value={`${yearStats.totalTVA.toLocaleString('fr-FR')} ${currencyCode}`} />
                         <StatCard title="Commandes" value={yearStats.invoiceCount.toLocaleString('fr-FR')} />

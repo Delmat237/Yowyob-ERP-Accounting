@@ -11,7 +11,7 @@ import {
     TableCell,
 } from '@/components/ui/table';
 import { EcritureComptableDto } from '@/src/lib2/models/EcritureComptableDto';
-import { Loader2 } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 
 interface JournalEntriesAnalysisTableProps {
     ecritures: EcritureComptableDto[];
@@ -117,12 +117,7 @@ export const JournalEntriesAnalysisTable: React.FC<JournalEntriesAnalysisTablePr
     }, []);
 
     if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                <p className="italic text-sm">Chargement de l'analyse du journal...</p>
-            </div>
-        );
+        return <CustomPageLoader message="Chargement de l'analyse du journal..." />;
     }
 
     if (!flattenedRows || flattenedRows.length === 0) {

@@ -95,7 +95,7 @@ export function PlanAnalytiqueList({ axes, onEdit, onDelete, onAddAccount }: Pla
                                             <td colSpan={5} className="px-12 py-4">
                                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Comptes analytiques rattachés</p>
                                                 <div className="flex flex-wrap gap-2">
-                                                    {["CA-001", "CA-002", "CA-003"].map((code) => (
+                                                    {["ANAL-001", "ANAL-002", "ANAL-003"].map((code) => (
                                                         <span key={code} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-card border border-border rounded-lg text-xs font-medium text-foreground shadow-sm">
                                                             <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                                                             {code} — {axe.libelle}

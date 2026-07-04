@@ -2,7 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Building2, Search, MapPin, Phone, Mail, Star } from "lucide-react";
+import { Building2, Search, MapPin, Phone, Mail, Star } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +57,10 @@ export default function AgenciesSettingsPage() {
     );
   }, [agencies, query]);
 
+  if (isLoading) {
+    return <CustomPageLoader message="Chargement des agences..." />;
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
       <div>
@@ -84,11 +89,7 @@ export default function AgenciesSettingsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            </div>
-          ) : filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">
               Aucune agence à afficher.
             </p>

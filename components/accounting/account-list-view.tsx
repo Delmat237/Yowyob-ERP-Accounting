@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/table';
 import { PlanComptableDto } from '@/src/lib2/models/PlanComptableDto';
 import { Edit, Trash2, RefreshCw, Search, Plus } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 
@@ -30,7 +31,6 @@ interface AccountListViewProps {
   onEditAccount: (id: string) => void;
   onDeleteAccount: (account: PlanComptableDto) => void;
   onAddNew: () => void;
-  onRefresh: () => void;
   selectedId?: string;
   onInitPlan?: () => void;
   onImport?: () => void;
@@ -72,7 +72,6 @@ export const AccountListView: React.FC<AccountListViewProps> = ({
   onEditAccount,
   onDeleteAccount,
   onAddNew,
-  onRefresh,
   selectedId,
   onInitPlan,
   onImport,
@@ -96,6 +95,8 @@ export const AccountListView: React.FC<AccountListViewProps> = ({
       })
       .sort((a, b) => (a.noCompte || '').localeCompare(b.noCompte || ''));
   }, [accounts, searchQuery, classFilter, typeFilter]);
+
+  if (isLoading) return <CustomPageLoader message="Chargement des comptes..." />;
 
   return (
     <div className="space-y-4">
@@ -142,7 +143,7 @@ export const AccountListView: React.FC<AccountListViewProps> = ({
           </Select>
         </div>
 
-        {/* Bottom Row: Action buttons (New left, Refresh right) */}
+        {/* Bottom Row: Action buttons */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <PermissionGuard feature="accounts" action="create">
@@ -156,7 +157,7 @@ export const AccountListView: React.FC<AccountListViewProps> = ({
               </Button>
             </PermissionGuard>
 
-            {accounts.length === 0 && !isLoading && onInitPlan && (
+            {accounts.length === 0 && onInitPlan && (
               <PermissionGuard feature="accounts" action="create">
                 <Button
                   onClick={onInitPlan}
@@ -181,9 +182,6 @@ export const AccountListView: React.FC<AccountListViewProps> = ({
               </PermissionGuard>
             )}
           </div>
-          <Button onClick={onRefresh} variant="outline" size="icon">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
       </div>
 
@@ -202,13 +200,7 @@ export const AccountListView: React.FC<AccountListViewProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-10 text-gray-400 font-medium italic">
-                  Chargement des comptes...
-                </TableCell>
-              </TableRow>
-            ) : filteredAccounts.length === 0 ? (
+            {filteredAccounts.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-10 text-gray-400 border-2 border-dashed rounded-lg">
                   Aucun compte disponible.

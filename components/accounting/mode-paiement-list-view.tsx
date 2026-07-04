@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ModePaiement, ModePaiementType } from '@/types/accounting';
-import { Edit, Trash2, Plus, RefreshCw, Landmark, Wallet, Smartphone, CreditCard, Search, BarChart3, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Landmark, Wallet, Smartphone, CreditCard, Search, BarChart3 } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
@@ -14,7 +15,6 @@ interface ModePaiementListViewProps {
   onEdit: (id: string) => void;
   onDelete: (mode: ModePaiement) => void;
   onAddNew: () => void;
-  onRefresh: () => void;
 }
 
 // Helper pour les icônes et labels
@@ -45,13 +45,14 @@ export const ModePaiementListView: React.FC<ModePaiementListViewProps> = ({
   onEdit,
   onDelete,
   onAddNew,
-  onRefresh,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredModes = modes.filter((mode) =>
     mode.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) return <CustomPageLoader message="Chargement des modes de paiement..." />;
 
   return (
     <div className="space-y-6">
@@ -70,13 +71,6 @@ export const ModePaiementListView: React.FC<ModePaiementListViewProps> = ({
         </div>
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={onRefresh}
-            className="border-gray-300 hover:bg-gray-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
           <Button
             onClick={onAddNew}
             className="bg-blue-600 hover:bg-blue-700 shadow-sm sm:w-auto w-full"
@@ -133,13 +127,7 @@ export const ModePaiementListView: React.FC<ModePaiementListViewProps> = ({
             </div>
 
             <div className="divide-y divide-gray-100">
-              {isLoading ? (
-                <div className="h-48 flex items-center justify-center">
-                  <div className="flex justify-center items-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                </div>
-              ) : filteredModes.length === 0 ? (
+              {filteredModes.length === 0 ? (
                 <div className="h-48 flex items-center justify-center">
                   <div className="flex flex-col items-center justify-center">
                     <Search className="h-10 w-10 text-gray-300 mb-3" />
@@ -231,7 +219,7 @@ export const ModePaiementListView: React.FC<ModePaiementListViewProps> = ({
         </div>
 
         {/* Footer de la liste */}
-        {!isLoading && filteredModes.length > 0 && (
+        {filteredModes.length > 0 && (
           <div className="bg-gray-50 border-t px-6 py-3">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
               <div className="text-sm text-gray-700">

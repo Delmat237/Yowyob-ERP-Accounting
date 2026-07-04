@@ -2,6 +2,7 @@
 
 /* eslint-disable react/no-unescaped-entities */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { BudgetListView, BudgetItem, BudgetStatut, BudgetType } from '@/components/accounting/budget-list-view';
 import { useCompose } from '@/hooks/use-compose-store';
 import { toast } from 'sonner';
@@ -1102,8 +1103,8 @@ export default function BudgetsPage() {
     const canManage = hasPermission(accountingRole, 'budgets', 'lock');
     const canCreate = hasPermission(accountingRole, 'budgets', 'create');
 
-    const loadBudgets = useCallback(async () => {
-        setIsLoading(true);
+    const loadBudgets = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) setIsLoading(true);
         try {
             const response = await AccountingBudgetsService.getAllBudgets();
             if (!mountedRef.current) return;
@@ -1115,7 +1116,7 @@ export default function BudgetsPage() {
             console.error('Failed to load budgets:', error);
             toast.error('Impossible de charger les budgets depuis le backend.');
         } finally {
-            if (mountedRef.current) setIsLoading(false);
+            if (mountedRef.current && !options?.silent) setIsLoading(false);
         }
     }, [mountedRef]);
 
@@ -1131,15 +1132,15 @@ export default function BudgetsPage() {
         }
     }, [mountedRef]);
 
-    useEffect(() => {
-        loadBudgets();
-        loadAxes();
+    const refreshBudgetsData = useCallback(async (options?: AutoRefreshOptions) => {
+        await Promise.all([loadBudgets(options), loadAxes()]);
     }, [loadBudgets, loadAxes]);
 
-    const handleRefresh = () => {
-        loadBudgets();
-        loadAxes();
-    };
+    useEffect(() => {
+        void refreshBudgetsData();
+    }, [refreshBudgetsData]);
+
+    useAutoRefresh(refreshBudgetsData, [refreshBudgetsData]);
 
     const handleSelect = (b: BudgetItem) => setSelectedBudget(b);
 
@@ -1304,7 +1305,6 @@ export default function BudgetsPage() {
                                     onView={(id) => { const b = budgets.find(x => x.id === id); if (b) handleSelect(b); }}
                                     onDelete={(b) => setBudgetToDelete(b)}
                                     onAddNew={handleAddNew}
-                                    onRefresh={handleRefresh}
                                     onLock={handleLock}
                                     onValidate={canManage ? handleValidate : undefined}
                                 />

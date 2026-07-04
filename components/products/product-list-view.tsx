@@ -5,9 +5,9 @@ import { CompteDto } from '@/src/lib2/models/CompteDto';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RefreshCw, Archive, Edit, Trash2, PenSquare } from 'lucide-react';
+import { Archive, Edit, Trash2, PenSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Badge } from '../ui/badge';
 
@@ -18,7 +18,6 @@ interface ProductListViewProps {
     onEditProduct: (id: string) => void;
     onDeleteProduct: (product: CompteDto) => void;
     onAddNew: () => void;
-    onRefresh: () => void;
 }
 
 const RowActions = ({ product, onEdit, onDelete }: { product: CompteDto, onEdit: (id: string) => void, onDelete: (product: CompteDto) => void }) => {
@@ -46,7 +45,9 @@ const RowActions = ({ product, onEdit, onDelete }: { product: CompteDto, onEdit:
     );
 };
 
-export function ProductListView({ products, isLoading, onSelectProduct, onEditProduct, onDeleteProduct, onAddNew, onRefresh }: ProductListViewProps) {
+export function ProductListView({ products, isLoading, onSelectProduct, onEditProduct, onDeleteProduct, onAddNew }: ProductListViewProps) {
+    if (isLoading) return <CustomPageLoader message="Chargement des produits..." />;
+
     const columns: ColumnDef<CompteDto>[] = [
         {
             id: 'select',
@@ -86,7 +87,6 @@ export function ProductListView({ products, isLoading, onSelectProduct, onEditPr
             </div>
             <div className="p-2 border-b flex items-center gap-2">
                 <Checkbox />
-                <Button variant="ghost" size="icon" onClick={onRefresh}><RefreshCw className="h-5 w-5" /></Button>
                 <Button variant="ghost" size="icon"><Archive className="h-5 w-5" /></Button>
                 <div className="flex-1" />
                 <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-5 py-2">
@@ -94,13 +94,7 @@ export function ProductListView({ products, isLoading, onSelectProduct, onEditPr
                 </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
-                {isLoading ? (
-                    <div className="p-4 space-y-4">
-                        {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                    </div>
-                ) : (
-                    <DataTable columns={columns} data={products} />
-                )}
+                <DataTable columns={columns} data={products} />
             </div>
         </div>
     );

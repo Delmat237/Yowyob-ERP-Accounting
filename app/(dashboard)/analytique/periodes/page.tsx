@@ -8,8 +8,9 @@ import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques
 import { formatCurrency, formatDateDisplay } from "@/lib/utils";
 import {
     CheckCircle2, AlertCircle, Clock, Calendar,
-    Lock, AlertTriangle, ArrowRightLeft, RefreshCw, Loader2, Link2,
+    Lock, AlertTriangle, ArrowRightLeft, RefreshCw, Link2,
 } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 const STATUTS: Record<StatutPeriode, { label: string; color: string; icon: React.ElementType }> = {
     OUVERT: { label: "Ouverte", color: "bg-slate-100 text-slate-700 border-slate-200", icon: Calendar },
@@ -47,6 +48,10 @@ export default function PeriodesPage() {
         exercices.find((e) => e.id === exerciceId)?.code ??
         "—";
 
+    if (loading) {
+        return <CustomPageLoader message="Chargement des périodes..." />;
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up">
             <div className="flex items-start justify-between gap-4">
@@ -56,23 +61,13 @@ export default function PeriodesPage() {
                         Calendrier aligné sur la comptabilité générale — une période analytique = une période comptable (mêmes dates).
                     </p>
                 </div>
-                {isResponsable && (
-                    <button
-                        onClick={handleSynchronize}
-                        disabled={isSyncing || loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isSyncing || loading ? "animate-spin" : ""}`} />
-                        Actualiser
-                    </button>
-                )}
             </div>
 
             <div className="flex items-start gap-2 px-3 py-2.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-800">
                 <Link2 className="h-4 w-4 flex-shrink-0 mt-0.5" />
                 <p>
                     Les exercices et périodes analytiques reprennent automatiquement ceux de la{" "}
-                    <strong>comptabilité générale</strong>. La clôture analytique suit la clôture CG.
+                    <strong>comptabilité générale</strong>. La clôture analytique suit la clôture de la comptabilité générale.
                 </p>
             </div>
 
@@ -94,9 +89,9 @@ export default function PeriodesPage() {
                 <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex gap-3 text-rose-800 text-sm">
                     <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                        <p className="font-bold text-base">Clôture CG non répercutée en analytique</p>
+                        <p className="font-bold text-base">Clôture comptabilité générale non répercutée en analytique</p>
                         <p className="mt-1 text-rose-700/80">
-                            {desynchros.map((p) => p.libelle).join(", ")} — clôturée(s) en CG, ouverte(s) en analytique.
+                            {desynchros.map((p) => p.libelle).join(", ")} — clôturée(s) en comptabilité générale, ouverte(s) en analytique.
                         </p>
                     </div>
                     {isResponsable && (
@@ -117,7 +112,7 @@ export default function PeriodesPage() {
                     { label: "Ouvertes", val: periodes.filter((p) => p.statut === "OUVERT").length, color: "text-slate-600" },
                     { label: "En cours", val: periodes.find((p) => p.statut === "EN_COURS")?.libelle ?? "Aucune", color: "text-amber-600" },
                     { label: "Clôturées", val: periodes.filter((p) => p.statut === "CLOTURE").length, color: "text-emerald-600" },
-                    { label: "Alignées CG", val: periodes.length, color: "text-indigo-600" },
+                    { label: "Alignées comptabilité générale", val: periodes.length, color: "text-indigo-600" },
                 ].map((s, i) => (
                     <div key={i} className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
                         <p className={`text-xl font-bold ${s.color}`}>{s.val}</p>
@@ -127,20 +122,14 @@ export default function PeriodesPage() {
             </div>
 
             <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-                {loading ? (
-                    <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                        Chargement des périodes…
-                    </div>
-                ) : (
-                    <table className="w-full text-sm">
+                <table className="w-full text-sm">
                         <thead className="bg-muted/50 border-b border-border">
                             <tr>
                                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Période</th>
-                                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Exercice CG</th>
+                                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Exercice comptabilité générale</th>
                                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Dates</th>
                                 <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Statut analytique</th>
-                                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Statut CG</th>
+                                <th className="text-left px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Statut comptabilité générale</th>
                                 <th className="text-right px-5 py-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
                             </tr>
                         </thead>
@@ -224,14 +213,13 @@ export default function PeriodesPage() {
                             )}
                         </tbody>
                     </table>
-                )}
             </div>
 
             <div className="bg-muted/20 border border-border rounded-xl p-4 text-xs text-muted-foreground space-y-1.5">
                 <p className="font-semibold text-foreground text-sm mb-2">Règles d&apos;alignement (par défaut)</p>
                 <p><span className="font-bold text-foreground">Exercice :</span> l&apos;exercice analytique est l&apos;exercice comptable (<code className="text-[10px]">exercice_id</code>).</p>
-                <p><span className="font-bold text-foreground">Période :</span> même identifiant, mêmes dates de début et de fin que la période CG.</p>
-                <p><span className="font-bold text-foreground">Clôture :</span> lorsque la CG clôture un mois, l&apos;analytique doit être synchronisé (bouton Actualiser).</p>
+                <p><span className="font-bold text-foreground">Période :</span> même identifiant, mêmes dates de début et de fin que la période de la comptabilité générale.</p>
+                <p><span className="font-bold text-foreground">Clôture :</span> lorsque la comptabilité générale clôture un mois, l&apos;analytique doit être synchronisé (bouton Synchroniser).</p>
             </div>
         </div>
     );

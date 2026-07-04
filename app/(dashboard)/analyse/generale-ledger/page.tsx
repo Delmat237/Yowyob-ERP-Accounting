@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import {
   Select,
   SelectContent,
@@ -78,12 +79,12 @@ export default function GeneralLedgerPage() {
     fetchPeriodesData();
   }, [fetchPeriodesData]);
 
-  const generateReport = useCallback(async () => {
+  const generateReport = useCallback(async (options?: AutoRefreshOptions) => {
     if (!selectedPeriodeId) return;
     const periode = periodes.find(p => p.id === selectedPeriodeId);
     if (!periode) return;
 
-    setIsGenerating(true);
+    if (!options?.silent) setIsGenerating(true);
     try {
       const response = await AccountingFinancialReportsService.generateGrandLivre(
         formatDateForApi(periode.dateDebut),
@@ -99,15 +100,17 @@ export default function GeneralLedgerPage() {
       console.error('Error generating report:', error);
       toast.error("Échec de la génération du grand livre");
     } finally {
-      setIsGenerating(false);
+      if (!options?.silent) setIsGenerating(false);
     }
   }, [selectedPeriodeId, periodes]);
 
   useEffect(() => {
     if (selectedPeriodeId) {
-      generateReport();
+      void generateReport();
     }
   }, [selectedPeriodeId, generateReport]);
+
+  useAutoRefresh(generateReport, [generateReport]);
 
   const handleGeneratePDF = async () => {
     if (!selectedPeriodeId) return;
@@ -237,20 +240,6 @@ export default function GeneralLedgerPage() {
                 <Download className="h-4 w-4 mr-2" /> XLSX
               </Button>
               <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block"></div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={generateReport}
-                disabled={isGenerating || !selectedPeriodeId}
-                className={cn(
-                  "h-10 w-10 border-slate-200 text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all",
-                  isGenerating && "bg-blue-50 text-blue-600 border-blue-200"
-                )}
-                title="Actualiser les données"
-              >
-                <RefreshCw className={cn("h-5 w-5", isGenerating && "animate-spin")} />
-              </Button>
             </div>
           </div>
         </div>

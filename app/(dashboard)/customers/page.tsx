@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { Client } from '@/types/core';
 import { CustomerListView } from '@/components/customers/customer-list-view';
 import { CustomerDetailView } from '@/components/customers/customer-detail-view';
@@ -31,8 +32,8 @@ export default function CustomersPage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchAndSetClients = useCallback(async () => {
-    setIsLoading(true);
+  const fetchAndSetClients = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
       const accountsRes = await AccountingComptesService.getClientAccounts();
@@ -57,13 +58,15 @@ export default function CustomersPage() {
       setError("Impossible de charger les clients. Veuillez vérifier votre connexion.");
       toast.error("Erreur lors de la récupération des clients");
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAndSetClients();
+    void fetchAndSetClients();
   }, [fetchAndSetClients]);
+
+  useAutoRefresh(fetchAndSetClients, [fetchAndSetClients]);
 
   const handleSave = useCallback(async (data: Client) => {
     const isNew = !data.id || data.id === data.code;
@@ -232,7 +235,6 @@ export default function CustomersPage() {
           onEditClient={handleEditClient}
           onDeleteClient={confirmDelete}
           onAddNew={handleAddNew}
-          onRefresh={fetchAndSetClients}
         />
 
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

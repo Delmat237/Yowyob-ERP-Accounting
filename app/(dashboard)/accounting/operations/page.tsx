@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { OperationComptableDto } from '@/src/lib2/models/OperationComptableDto';
 import { AccountingOperationsService } from '@/src/lib2/services/AccountingOperationsService';
 import { OperationComptableListView } from '@/components/accounting/operation-comptable-list-view';
@@ -37,8 +38,8 @@ export default function OperationComptablePage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchOperations = useCallback(async () => {
-    setIsLoading(true);
+  const fetchOperations = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
       const response = await AccountingOperationsService.getAllOperationsComptables();
@@ -59,13 +60,15 @@ export default function OperationComptablePage() {
       });
       setError('Impossible de charger les opérations comptables. Veuillez vérifier votre connexion internet.');
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchOperations();
+    void fetchOperations();
   }, [fetchOperations]);
+
+  useAutoRefresh(fetchOperations, [fetchOperations]);
 
   const handleSave = async (data: OperationComptableDto, journalIds: string[]) => {
     try {
@@ -234,7 +237,6 @@ export default function OperationComptablePage() {
           onEditOperation={handleEditOperation}
           onDeleteOperation={confirmDelete}
           onAddNew={handleAddNew}
-          onRefresh={fetchOperations}
           selectedId={selectedOperationId || undefined}
         />
 

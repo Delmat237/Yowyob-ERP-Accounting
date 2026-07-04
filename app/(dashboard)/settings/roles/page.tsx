@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, KeyRound } from "lucide-react";
+import { ShieldCheck, KeyRound } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmployeesRolesService } from "@/src/lib/services/EmployeesRolesService";
@@ -31,6 +32,10 @@ export default function RolesSettingsPage() {
     };
   }, []);
 
+  if (isLoading) {
+    return <CustomPageLoader message="Chargement des rôles..." />;
+  }
+
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
       <div>
@@ -42,11 +47,7 @@ export default function RolesSettingsPage() {
         </p>
       </div>
 
-      {isLoading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-        </div>
-      ) : roles.length === 0 ? (
+      {roles.length === 0 ? (
         <Card className="border-gray-100 shadow-sm rounded-xl">
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
             Aucun rôle défini.

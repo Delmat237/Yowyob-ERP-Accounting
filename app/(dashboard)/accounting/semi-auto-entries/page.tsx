@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { DraftAccountingService } from '@/src/lib2/services/DraftAccountingService';
 import { BrouillardComptableDto } from '@/src/lib2/models/BrouillardComptableDto';
 import { format } from 'date-fns';
@@ -35,8 +36,8 @@ export default function AccountingSemiAutoEntryPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedDraft, setSelectedDraft] = useState<BrouillardComptableDto | null>(null);
 
-  const fetchDrafts = useCallback(async () => {
-    setIsLoading(true);
+  const fetchDrafts = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     try {
       // Fetch Drafts
       const response = await DraftAccountingService.getAllBrouillards(BrouillardComptableDto.statut.EN_ATTENTE_VALIDATION);
@@ -52,13 +53,15 @@ export default function AccountingSemiAutoEntryPage() {
       console.error("Failed to fetch drafts:", error);
       toast.error("Erreur", { description: "Impossible de charger les brouillards comptables." });
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchDrafts();
+    void fetchDrafts();
   }, [fetchDrafts]);
+
+  useAutoRefresh(fetchDrafts, [fetchDrafts]);
 
   const handleValidate = async () => {
     if (!selectedDraft || !selectedDraft.id) return;
@@ -194,12 +197,6 @@ export default function AccountingSemiAutoEntryPage() {
             <FileStack className="w-5 h-5" />
             Saisie semi-automatique des écritures
           </h1>
-        </div>
-        <div className="space-x-2">
-          <Button onClick={fetchDrafts} variant="outline" size="sm" disabled={isLoading} className="h-8">
-            <RefreshCw className={`w-3.5 h-3.5 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            Actualiser
-          </Button>
         </div>
       </div>
 

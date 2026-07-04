@@ -2,6 +2,7 @@
 
 /* eslint-disable react/no-unescaped-entities */
 import React, { useCallback, useEffect, useState } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { AnalyticsListView, AxeAnalytique } from '@/components/accounting/analytics-list-view';
 import { toast } from 'sonner';
 import {
@@ -176,8 +177,8 @@ export default function AnalyticsPage() {
     const { accountingRole } = useAuth();
     const canToggleActif = hasPermission(accountingRole, 'analytics', 'update');
 
-    const loadAxes = useCallback(async () => {
-        setIsLoading(true);
+    const loadAxes = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) setIsLoading(true);
         try {
             const response = await AccountingAnalyticsService.getAllAxes();
             setAxes((response.data ?? []).map(mapAxeDto));
@@ -186,17 +187,15 @@ export default function AnalyticsPage() {
             console.error('Failed to load analytical axes:', error);
             toast.error("Impossible de charger les axes analytiques depuis le backend.");
         } finally {
-            setIsLoading(false);
+            if (!options?.silent) setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        loadAxes();
+        void loadAxes();
     }, [loadAxes]);
 
-    const handleRefresh = () => {
-        loadAxes();
-    };
+    useAutoRefresh(loadAxes, [loadAxes]);
 
     const handleAddNew = () => {
         onOpen({
@@ -310,7 +309,6 @@ export default function AnalyticsPage() {
                             onView={handleView}
                             onDelete={(a) => setAxeToDelete(a)}
                             onAddNew={handleAddNew}
-                            onRefresh={handleRefresh}
                         />
                     </div>
 

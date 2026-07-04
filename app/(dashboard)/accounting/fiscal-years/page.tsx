@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { ExerciceComptableDto } from '@/src/lib2/models/ExerciceComptableDto';
 import { AccountingFiscalYearsService } from '@/src/lib2/services/AccountingFiscalYearsService';
 import { ExerciceComptableListView } from '@/components/accounting/exercice-comptable-list-view';
@@ -29,8 +30,8 @@ export default function FiscalYearsPage() {
 
     const { onOpen, onClose: closeCompose } = useCompose();
 
-    const fetchExercices = useCallback(async () => {
-        setIsLoading(true);
+    const fetchExercices = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) setIsLoading(true);
         setError(null);
         try {
             const response = await AccountingFiscalYearsService.getAllExercices();
@@ -51,13 +52,15 @@ export default function FiscalYearsPage() {
             });
             setError('Impossible de charger les exercices comptables. Veuillez vérifier votre connexion internet.');
         } finally {
-            setIsLoading(false);
+            if (!options?.silent) setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchExercices();
+        void fetchExercices();
     }, [fetchExercices]);
+
+    useAutoRefresh(fetchExercices, [fetchExercices]);
 
     const handleSave = async (data: ExerciceComptableDto) => {
         try {
@@ -220,7 +223,6 @@ export default function FiscalYearsPage() {
                     onEditExercice={handleEditExercice}
                     onCloseExercice={confirmClose}
                     onAddNew={handleAddNew}
-                    onRefresh={fetchExercices}
                     selectedId={selectedExerciceId || undefined}
                 />
 

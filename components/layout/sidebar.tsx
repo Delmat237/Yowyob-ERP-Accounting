@@ -7,18 +7,13 @@ import { useNavigationStore } from "@/hooks/use-navigation-store";
 import { modules, ModuleKey, SidebarLink } from "@/config/navigation";
 import { Button } from "../ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 import { applyAccountingModuleSwitch } from "@/lib/accounting-module-switch";
 import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
-import {
-  getModuleNavigationTarget,
-  isPathInModule,
-  resolveDashboardSidebarLinks,
-} from "@/lib/accounting-dashboard-routes";
-import { useLoadingStore } from "@/hooks/use-loading-store";
+import { resolveDashboardSidebarLinks, isDashboardPath } from "@/lib/accounting-dashboard-routes";
 import {
   isModuleVisibleForChoice,
   isWorkspaceChoiceRequired,
@@ -26,11 +21,9 @@ import {
 } from "@/lib/accounting-workspace-routes";
 
 export function Sidebar() {
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed, setCollapsed } = useSidebar();
   const { activeModule, setActiveModule } = useNavigationStore();
   const pathname = usePathname();
-  const router = useRouter();
-  const { startLoading } = useLoadingStore();
   const { accountingRole } = useAuth();
   const { generale, analytique, load } = useAccountingSubscription();
   const { choice: effectiveChoice } = useEffectiveAccountingChoice();
@@ -67,30 +60,13 @@ export function Sidebar() {
     return false;
   };
 
-  const navOptions = {
-    choice: effectiveChoice,
-    generale,
-    analytique,
-    accountingRole,
-  };
-
   const handleModuleSwitch = (key: ModuleKey) => {
     if (isModuleDisabled(key)) return;
     applyAccountingModuleSwitch(key);
-
-    const target = getModuleNavigationTarget(key, navOptions);
-    if (!target) {
-      setActiveModule(key);
-      return;
+    setActiveModule(key);
+    if (isCollapsed) {
+      setCollapsed(false);
     }
-
-    if (isPathInModule(pathname, key, navOptions)) {
-      setActiveModule(key);
-      return;
-    }
-
-    startLoading();
-    router.push(target);
   };
 
   useEffect(() => {
@@ -100,9 +76,12 @@ export function Sidebar() {
       return;
     }
 
-    const currentModuleKey = Object.entries(modules).find(([, module]) =>
-      module.sidebarLinks.some((link) => pathname === link.href || pathname.startsWith(`${link.href}/`))
-    )?.[0] as ModuleKey;
+    const currentModuleKey = Object.entries(modules).find(([key, module]) => {
+      if (key === "dashboard") return false;
+      return module.sidebarLinks.some(
+        (link) => pathname === link.href || pathname.startsWith(`${link.href}/`),
+      );
+    })?.[0] as ModuleKey;
 
     if (currentModuleKey) {
       setActiveModule(currentModuleKey);
@@ -117,7 +96,7 @@ export function Sidebar() {
     ? []
     : (activeModule === "dashboard"
         ? resolveDashboardSidebarLinks({ generale, analytique, choice: effectiveChoice })
-        : currentModuleData.sidebarLinks
+        : currentModuleData.sidebarLinks.filter((link) => !isDashboardPath(link.href))
       ).filter((link) => {
         if (activeModule === "analytique" && effectiveChoice !== "analytique") return false;
         if (activeModule === "analyseAnalytique" && effectiveChoice !== "analytique") return false;

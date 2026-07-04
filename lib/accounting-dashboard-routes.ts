@@ -6,6 +6,16 @@ import type { AccountingChoice } from '@/lib/accounting-choice';
 export const GENERALE_DASHBOARD_PATH = '/accounting/dashboard';
 export const ANALYTIQUE_DASHBOARD_PATH = '/analytique/dashboard';
 
+/** Routes des tableaux de bord CG / CA (module latéral « Tableau de bord » uniquement). */
+export function isDashboardPath(pathname: string): boolean {
+  return (
+    pathname === GENERALE_DASHBOARD_PATH ||
+    pathname === ANALYTIQUE_DASHBOARD_PATH ||
+    pathname.startsWith(`${GENERALE_DASHBOARD_PATH}/`) ||
+    pathname.startsWith(`${ANALYTIQUE_DASHBOARD_PATH}/`)
+  );
+}
+
 export function getDashboardPathForChoice(choice: AccountingChoice): string {
   return choice === 'analytique' ? ANALYTIQUE_DASHBOARD_PATH : GENERALE_DASHBOARD_PATH;
 }
@@ -34,14 +44,14 @@ export function resolveDashboardSidebarLinks(options: {
 
   if (generale && (choice === null || choice === 'generale')) {
     links.push({
-      title: both ? 'Tableau de bord (CG)' : 'Tableau de bord',
+      title: both ? 'Tableau de bord (comptabilité générale)' : 'Tableau de bord',
       icon: LayoutDashboard,
       href: GENERALE_DASHBOARD_PATH,
     });
   }
   if (analytique && (choice === null || choice === 'analytique')) {
     links.push({
-      title: both ? 'Tableau de bord (CA)' : 'Tableau de bord',
+      title: both ? 'Tableau de bord (comptabilité analytique)' : 'Tableau de bord',
       icon: LayoutDashboard,
       href: ANALYTIQUE_DASHBOARD_PATH,
     });

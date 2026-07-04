@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { TaxeDto } from '@/src/lib2/models/TaxeDto';
 import { AccountingTaxManagementService } from '@/src/lib2/services/AccountingTaxManagementService';
 import { TaxeListView } from '@/components/accounting/taxe-list-view';
@@ -28,8 +29,8 @@ export default function TaxesPage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchTaxes = useCallback(async () => {
-    setIsLoading(true);
+  const fetchTaxes = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
       const response = await AccountingTaxManagementService.getAllTaxes();
@@ -50,13 +51,15 @@ export default function TaxesPage() {
       });
       setError('Impossible de charger les taxes. Veuillez vérifier votre connexion internet.');
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchTaxes();
+    void fetchTaxes();
   }, [fetchTaxes]);
+
+  useAutoRefresh(fetchTaxes, [fetchTaxes]);
 
   const handleSave = async (data: TaxeDto) => {
     try {
@@ -163,7 +166,6 @@ export default function TaxesPage() {
           onEdit={handleEditTaxe}
           onDelete={confirmDelete}
           onAddNew={handleAddNew}
-          onRefresh={fetchTaxes}
         />
 
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

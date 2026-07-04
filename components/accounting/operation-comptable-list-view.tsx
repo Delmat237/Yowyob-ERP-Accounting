@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { OperationComptableDto } from '@/src/lib2/models/OperationComptableDto';
-import { Edit, Trash2, Plus, RefreshCw, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import {
@@ -50,7 +51,6 @@ interface OperationComptableListViewProps {
   onEditOperation: (id: string) => void;
   onDeleteOperation: (operation: OperationComptableDto) => void;
   onAddNew?: () => void;
-  onRefresh?: () => void;
   selectedId?: string;
   readOnly?: boolean;
   variant?: 'sentence' | 'detailed';
@@ -110,7 +110,6 @@ export const OperationComptableListView: React.FC<OperationComptableListViewProp
   onEditOperation,
   onDeleteOperation,
   onAddNew,
-  onRefresh,
   selectedId,
   readOnly = false,
   variant = 'sentence',
@@ -242,9 +241,11 @@ export const OperationComptableListView: React.FC<OperationComptableListViewProp
     return content.includes(searchTerm.toLowerCase());
   });
 
+  if (isLoading) return <CustomPageLoader message="Chargement des opérations comptables..." />;
+
   return (
     <div className="space-y-4">
-      {!readOnly && (onAddNew || onRefresh) && (
+      {!readOnly && onAddNew && (
         <div className="space-y-4">
           {/* Top Row: Search */}
           <div className="flex flex-col sm:flex-row gap-4 items-center">
@@ -258,17 +259,12 @@ export const OperationComptableListView: React.FC<OperationComptableListViewProp
             </div>
           </div>
 
-          {/* Bottom Row: Action buttons (New left, Refresh right) */}
+          {/* Bottom Row: Action buttons */}
           <div className="flex items-center justify-between">
             {onAddNew && (
               <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="mr-2 h-4 w-4" />
                 Nouvelle Opération
-              </Button>
-            )}
-            {onRefresh && (
-              <Button onClick={onRefresh} variant="outline" size="icon">
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
             )}
           </div>
@@ -284,15 +280,7 @@ export const OperationComptableListView: React.FC<OperationComptableListViewProp
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={readOnly ? 1 : 2} className="text-center py-10">
-                  <div className="flex justify-center items-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filteredOperations.length === 0 ? (
+            {filteredOperations.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={readOnly ? 1 : 2} className="text-center py-10 text-gray-400 border-2 border-dashed rounded-lg">
                   Aucune opération trouvée.

@@ -10,9 +10,9 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, RefreshCw, Layers, ChevronRight, ChevronDown, Tag } from "lucide-react";
+import { Plus, Pencil, Trash2, Layers, ChevronRight, ChevronDown, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { toast } from 'sonner';
 import { useCompose } from '@/hooks/use-compose-store';
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,6 @@ interface AnalyticsListViewProps {
     onView?: (id: string) => void;
     onDelete: (axe: AxeAnalytique) => void;
     onAddNew: () => void;
-    onRefresh: () => void;
 }
 
 export function AnalyticsListView({
@@ -51,8 +50,7 @@ export function AnalyticsListView({
     onEdit,
     onView,
     onDelete,
-    onAddNew,
-    onRefresh
+    onAddNew
 }: AnalyticsListViewProps) {
     const [expandedAxes, setExpandedAxes] = useState<string[]>([]);
     const { onOpen, onClose: closeCompose } = useCompose();
@@ -113,13 +111,7 @@ export function AnalyticsListView({
     };
 
     if (isLoading) {
-        return (
-            <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                ))}
-            </div>
-        );
+        return <CustomPageLoader message="Chargement des axes analytiques..." />;
     }
 
     return (
@@ -127,9 +119,6 @@ export function AnalyticsListView({
             <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-3 mb-4">
                 <h3 className="text-lg font-medium text-slate-800">Axes et Comptes Analytiques</h3>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={onRefresh}>
-                        <RefreshCw className="h-4 w-4 mr-2" /> Actualiser
-                    </Button>
                     <Button size="sm" onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
                         <Plus className="h-4 w-4 mr-2" /> Nouvel Axe
                     </Button>

@@ -20,7 +20,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { EcritureComptableDto } from '@/src/lib2/models/EcritureComptableDto';
-import { Edit, Trash2, Plus, Check, RefreshCw, Loader2, Search, Archive, FileText, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Archive, FileText, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { useNationalCurrency } from '@/hooks/use-national-currency';
@@ -45,7 +46,6 @@ interface EcritureComptableListViewProps {
   onDeleteEcriture: (ecriture: EcritureComptableDto) => void;
   onDeactivateEcriture?: (ecriture: EcritureComptableDto) => void;
   onAddNew?: () => void;
-  onRefresh?: () => void;
   selectedId?: string;
   readOnly?: boolean;
 }
@@ -103,7 +103,6 @@ export const EcritureComptableListView: React.FC<EcritureComptableListViewProps>
   onDeleteEcriture,
   onDeactivateEcriture,
   onAddNew,
-  onRefresh,
   selectedId,
   readOnly = false,
 }) => {
@@ -126,6 +125,8 @@ export const EcritureComptableListView: React.FC<EcritureComptableListViewProps>
     });
   }, [ecritures, searchQuery]);
 
+  if (isLoading) return <CustomPageLoader message="Chargement des écritures..." />;
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -145,17 +146,12 @@ export const EcritureComptableListView: React.FC<EcritureComptableListViewProps>
             </div>
           </div>
 
-          {/* Bottom Row: Actions (New left, Refresh right) */}
+          {/* Bottom Row: Actions */}
           <div className="flex items-center justify-between">
             {onAddNew && (
               <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
                 <Plus className="mr-2 h-4 w-4" />
                 Nouvelle Écriture
-              </Button>
-            )}
-            {onRefresh && (
-              <Button onClick={onRefresh} variant="outline" size="icon">
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
               </Button>
             )}
           </div>
@@ -177,13 +173,7 @@ export const EcritureComptableListView: React.FC<EcritureComptableListViewProps>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={readOnly ? 6 : 7} className="text-center py-10 text-gray-400 font-medium italic">
-                  Chargement des écritures...
-                </TableCell>
-              </TableRow>
-            ) : filteredEcritures.length === 0 ? (
+            {filteredEcritures.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={readOnly ? 6 : 7} className="text-center py-10 text-gray-400 font-medium italic">
                   Aucune écriture trouvée.

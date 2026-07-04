@@ -163,7 +163,7 @@ function generateUniteCode(libelle: string): string {
         .toUpperCase();
     if (initials.length >= 2) return initials.slice(0, 6);
     const compact = libelle.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-    return compact.slice(0, 4) || "UO";
+    return compact.slice(0, 4) || "UNOE";
 }
 
 function Modal({
@@ -252,7 +252,7 @@ function Modal({
                                 disabled={blocked}
                             >
                                 <option value="PHYSIQUE">Physique (heure, kg…)</option>
-                                <option value="MONETAIRE">Monétaire (% CA, % coût…)</option>
+                                <option value="MONETAIRE">Monétaire (% chiffre d&apos;affaires, % coût…)</option>
                             </select>
                         </div>
                     </div>

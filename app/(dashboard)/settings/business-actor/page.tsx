@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2,
   UserSquare,
   Phone,
   Globe,
@@ -12,6 +11,7 @@ import {
   Building,
   CalendarDays,
 } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BusinessActorsService } from "@/src/lib/services/BusinessActorsService";
 import { BusinessActor } from "@/src/lib/models/BusinessActor";
@@ -62,16 +62,7 @@ export default function BusinessActorSettingsPage() {
   }, []);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
-          <p className="text-sm text-muted-foreground animate-pulse">
-            Chargement de votre profil professionnel...
-          </p>
-        </div>
-      </div>
-    );
+    return <CustomPageLoader message="Chargement de votre profil professionnel..." />;
   }
 
   if (!actor) {

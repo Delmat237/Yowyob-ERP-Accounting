@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
 import { toast } from "sonner";
 import { UsersService } from "@/src/lib/services/UsersService";
 import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
@@ -39,10 +40,13 @@ export function useUserProfile(options?: { loadOrganization?: boolean }) {
   const initialLoadDone = useRef(false);
 
   const load = useCallback(
-    async (notifyOnError = false) => {
+    async (options?: AutoRefreshOptions & { notifyOnError?: boolean }) => {
       const sessionUser = useAuth.getState().user ?? readStoredUser();
+      const notifyOnError = options?.notifyOnError ?? false;
 
-      setLoading(true);
+      if (!options?.silent) {
+        setLoading(true);
+      }
       setError(false);
       try {
         const data = await UsersService.getMe();
@@ -72,7 +76,9 @@ export function useUserProfile(options?: { loadOrganization?: boolean }) {
           toast.error("Impossible de charger le profil depuis l'API.");
         }
       } finally {
-        setLoading(false);
+        if (!options?.silent) {
+          setLoading(false);
+        }
       }
     },
     [loadOrganization],
@@ -88,8 +94,10 @@ export function useUserProfile(options?: { loadOrganization?: boolean }) {
   useEffect(() => {
     if (initialLoadDone.current) return;
     initialLoadDone.current = true;
-    void load(false);
+    void load({ notifyOnError: false });
   }, [load]);
+
+  useAutoRefresh(load, [load]);
 
   const username = (profile as User & { username?: string })?.username;
   const initials =
@@ -109,6 +117,6 @@ export function useUserProfile(options?: { loadOrganization?: boolean }) {
     error,
     initials,
     fullName,
-    refresh: () => load(true),
+    refresh: () => load({ notifyOnError: true }),
   };
 }

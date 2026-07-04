@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { BookOpen, PieChart, Loader2, Save } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -62,11 +63,7 @@ export default function AccountingSubscriptionPage() {
     };
 
     if (loading && !loaded) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            </div>
-        );
+        return <CustomPageLoader message="Chargement de l'abonnement..." />;
     }
 
     return (

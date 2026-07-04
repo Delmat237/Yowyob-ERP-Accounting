@@ -6,7 +6,7 @@ import { Client } from "@/types/core";
 import { Search, Plus, User, FileText, Banknote, ShoppingBasket } from "lucide-react";
 import { CustomerForm } from "./customer-form";
 import { getClients, createClient, updateClient, deleteClient } from "@/lib/api";
-import { Skeleton } from "../ui/skeleton";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 type ActiveView = 'profile' | 'main' | 'accounting' | 'products';
 
@@ -135,6 +135,8 @@ export function CustomerManagementView() {
         );
     };
 
+    if (isLoading) return <CustomPageLoader message="Chargement des clients..." />;
+
     return (
         <div className="h-screen bg-gray-50 flex">
             <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
@@ -165,10 +167,7 @@ export function CustomerManagementView() {
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {isLoading ? (
-                        <div className="p-4 space-y-3">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-                    ) : (
-                        filteredClients.map((client) => (
+                    {filteredClients.map((client) => (
                             <div key={client.id} onClick={() => handleSelectClient(client)} className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${selectedClient?.id === client.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}>
                                 <div className="flex items-center justify-between mb-1">
                                     <h3 className="font-medium text-gray-900 truncate pr-2">{client.companyName}</h3>
@@ -177,8 +176,7 @@ export function CustomerManagementView() {
                                 <p className="text-sm text-gray-600">{client.code}</p>
                                 <p className="text-xs text-gray-500 mt-1">{client.contactPerson}</p>
                             </div>
-                        ))
-                    )}
+                    ))}
                 </div>
             </div>
 

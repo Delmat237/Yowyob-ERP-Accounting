@@ -29,8 +29,8 @@ export default function ImputationRationnellePage() {
 
     const chartData = processedData.map(r => ({
         name: r.centre,
-        "CF Imputées": r.cfImputees,
-        "CF Réelles": r.chFixes,
+        "Charges fixes imputées": r.cfImputees,
+        "Charges fixes réelles": r.chFixes,
         "Activité": r.coeff * 100
     }));
 
@@ -52,11 +52,11 @@ export default function ImputationRationnellePage() {
                             <thead className="bg-muted/50 border-b border-border">
                                 <tr>
                                     <th className="px-4 py-3 text-left font-semibold text-muted-foreground">Centre</th>
-                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Activité N.</th>
-                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Activité R.</th>
+                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Activité normale</th>
+                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Activité réelle</th>
                                     <th className="px-4 py-3 text-center font-semibold text-indigo-600">Coeff. (AR/AN)</th>
-                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">CF Réelles</th>
-                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">CF Imputées</th>
+                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Charges fixes réelles</th>
+                                    <th className="px-4 py-3 text-right font-semibold text-muted-foreground">Charges fixes imputées</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -98,7 +98,7 @@ export default function ImputationRationnellePage() {
                 </div>
 
                 <div className="bg-card rounded-2xl border border-border p-5 shadow-sm space-y-6">
-                    <h3 className="text-sm font-bold text-foreground">Comparaison CF Réelles vs CF Imputées</h3>
+                    <h3 className="text-sm font-bold text-foreground">Comparaison charges fixes réelles vs charges fixes imputées</h3>
                     <ChartContainer height={300}>
                         <BarChart data={chartData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
@@ -106,8 +106,8 @@ export default function ImputationRationnellePage() {
                             <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
                             <RechartsTooltip formatter={(val: number | string, name: string) => [name.includes('Activité') ? `${val}%` : formatCurrency(val as number), name]} />
                             <Legend />
-                            <Bar dataKey="CF Réelles" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} opacity={0.6} />
-                            <Bar dataKey="CF Imputées" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="Charges fixes réelles" fill="hsl(var(--muted-foreground))" radius={[4, 4, 0, 0]} opacity={0.6} />
+                            <Bar dataKey="Charges fixes imputées" fill="#4f46e5" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ChartContainer>
                 </div>

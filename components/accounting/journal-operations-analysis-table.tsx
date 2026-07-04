@@ -11,7 +11,7 @@ import {
     TableCell,
 } from '@/components/ui/table';
 import { OperationComptableDto } from '@/src/lib2/models/OperationComptableDto';
-import { Loader2 } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 
 interface JournalOperationsAnalysisTableProps {
     operations: OperationComptableDto[];
@@ -74,12 +74,7 @@ export const JournalOperationsAnalysisTable: React.FC<JournalOperationsAnalysisT
     }, [operations, accountMap]);
 
     if (isLoading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                <p className="italic text-sm">Chargement de l'analyse des opérations...</p>
-            </div>
-        );
+        return <CustomPageLoader message="Chargement de l'analyse des opérations..." />;
     }
 
     if (flattenedRows.length === 0) {

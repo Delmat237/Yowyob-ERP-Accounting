@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccountingSettingService, AccountingSettingDto } from "@/src/lib2/services/AccountingSettingService";
 import { Loader2, Save } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 export default function AccountingSettingsPage() {
     const [settings, setSettings] = useState<AccountingSettingDto[]>([]);
@@ -67,11 +68,7 @@ export default function AccountingSettingsPage() {
     };
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-            </div>
-        );
+        return <CustomPageLoader message="Chargement des paramètres comptables..." />;
     }
 
     return (

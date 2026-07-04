@@ -17,6 +17,7 @@ import {
   Shield
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -213,14 +214,7 @@ export default function UsersSettingsPage() {
   });
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
-          <p className="text-sm text-muted-foreground animate-pulse">Chargement des collaborateurs...</p>
-        </div>
-      </div>
-    );
+    return <CustomPageLoader message="Chargement des collaborateurs..." />;
   }
 
   return (

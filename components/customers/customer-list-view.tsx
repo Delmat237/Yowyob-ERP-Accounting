@@ -5,9 +5,9 @@ import { Client } from '@/types/core';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { RefreshCw, Archive, Edit, Trash2, PenSquare } from 'lucide-react';
+import { Archive, Edit, Trash2, PenSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Badge } from '../ui/badge';
 
@@ -18,7 +18,6 @@ interface CustomerListViewProps {
     onEditClient: (id: string) => void;
     onDeleteClient: (client: Client) => void;
     onAddNew: () => void;
-    onRefresh: () => void;
 }
 
 const RowActions = ({ client, onEdit, onDelete }: { client: Client, onEdit: (id: string) => void, onDelete: (client: Client) => void }) => {
@@ -46,7 +45,9 @@ const RowActions = ({ client, onEdit, onDelete }: { client: Client, onEdit: (id:
     );
 };
 
-export function CustomerListView({ clients, isLoading, onSelectClient, onEditClient, onDeleteClient, onAddNew, onRefresh }: CustomerListViewProps) {
+export function CustomerListView({ clients, isLoading, onSelectClient, onEditClient, onDeleteClient, onAddNew }: CustomerListViewProps) {
+    if (isLoading) return <CustomPageLoader message="Chargement des clients..." />;
+
     const columns: ColumnDef<Client>[] = [
         {
             id: 'select',
@@ -88,20 +89,9 @@ export function CustomerListView({ clients, isLoading, onSelectClient, onEditCli
                     <PenSquare className="mr-2 h-4 w-4" />
                     Nouveau Client
                 </Button>
-                <div className="flex gap-2">
-                    <Button onClick={onRefresh} variant="outline" size="icon">
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
-                </div>
             </div>
             <div className="rounded-md border">
-                {isLoading ? (
-                    <div className="p-4 space-y-4">
-                        {Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                    </div>
-                ) : (
-                    <DataTable columns={columns} data={clients} />
-                )}
+                <DataTable columns={columns} data={clients} />
             </div>
         </div>
     );
