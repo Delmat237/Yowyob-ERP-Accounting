@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PositionFiscale, OperationType } from '@/types/accounting';
-import { Edit, Trash2, Plus, RefreshCw, Search, Receipt, ShoppingCart, Upload, Download, Percent, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Receipt, ShoppingCart, Upload, Download, Percent } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 
@@ -14,7 +15,6 @@ interface PositionFiscaleListViewProps {
   onEdit: (id: string) => void;
   onDelete: (position: PositionFiscale) => void;
   onAddNew: () => void;
-  onRefresh: () => void;
 }
 
 // Helper pour les icônes et labels
@@ -48,7 +48,6 @@ export const PositionFiscaleListView: React.FC<PositionFiscaleListViewProps> = (
   onEdit,
   onDelete,
   onAddNew,
-  onRefresh,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -57,21 +56,16 @@ export const PositionFiscaleListView: React.FC<PositionFiscaleListViewProps> = (
     operationTypeLabels[pos.typeOperation].toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (isLoading) return <CustomPageLoader message="Chargement des positions fiscales..." />;
+
   return (
     <div className="space-y-6">
-      {/* En-tête avec titre et bouton Actualiser */}
+      {/* En-tête */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-gray-900">Positions Fiscales</h2>
           <p className="text-gray-600">Gérez les positions fiscales pour vos opérations</p>
         </div>
-        <Button
-          variant="outline"
-          onClick={onRefresh}
-          className="border-gray-300 hover:bg-gray-50"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-        </Button>
       </div>
 
       {/* Barre de recherche et bouton Nouvelle Position */}
@@ -149,13 +143,7 @@ export const PositionFiscaleListView: React.FC<PositionFiscaleListViewProps> = (
             </div>
 
             <div className="divide-y divide-gray-100">
-              {isLoading ? (
-                <div className="h-40 flex items-center justify-center py-8">
-                  <div className="flex justify-center items-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                </div>
-              ) : filteredPositions.length === 0 ? (
+              {filteredPositions.length === 0 ? (
                 <div className="h-40 flex items-center justify-center py-8">
                   <div className="flex flex-col items-center justify-center">
                     <Search className="h-8 w-8 text-gray-300 mb-2" />
@@ -245,7 +233,7 @@ export const PositionFiscaleListView: React.FC<PositionFiscaleListViewProps> = (
         </div>
 
         {/* Footer de la liste */}
-        {!isLoading && filteredPositions.length > 0 && (
+        {filteredPositions.length > 0 && (
           <div className="bg-gray-50 border-t px-4 py-2">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
               <div className="text-xs text-gray-700">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { Devise } from '@/types/accounting';
 import { CurrencyManagementService } from '@/src/lib2/services/CurrencyManagementService';
 import { ExchangeRateManagementService } from '@/src/lib2/services/ExchangeRateManagementService';
@@ -32,8 +33,8 @@ export default function DevisesPage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchDevises = useCallback(async () => {
-    setIsLoading(true);
+  const fetchDevises = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
       const [currenciesRes, ratesRes] = await Promise.all([
@@ -78,13 +79,15 @@ export default function DevisesPage() {
       });
       setError('Impossible de charger les devises. Veuillez vérifier votre connexion internet.');
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchDevises();
+    void fetchDevises();
   }, [fetchDevises]);
+
+  useAutoRefresh(fetchDevises, [fetchDevises]);
 
   const handleSave = async (data: Devise) => {
     try {
@@ -234,7 +237,6 @@ export default function DevisesPage() {
           onEdit={handleEditDevise}
           onDelete={confirmDelete}
           onAddNew={handleAddNew}
-          onRefresh={fetchDevises}
           onUpdateRate={handleUpdateRate}
         />
 

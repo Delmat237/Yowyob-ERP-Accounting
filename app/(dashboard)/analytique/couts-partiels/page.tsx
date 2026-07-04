@@ -128,9 +128,9 @@ export default function CoutsPartielsPage() {
             {/* KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                    { label: "CA Total", val: caGlobal, color: "text-emerald-700" },
+                    { label: "Chiffre d'affaires total", val: caGlobal, color: "text-emerald-700" },
                     { label: "Charges Variables", val: cvGlobal, color: "text-cyan-700" },
-                    { label: "MCV Globale", val: mcvGlobal, color: "text-indigo-700" },
+                    { label: "Marge sur coûts variables globale", val: mcvGlobal, color: "text-indigo-700" },
                     { label: "Résultat Analytique", val: resultatGlobal, color: resultatGlobal >= 0 ? "text-emerald-700" : "text-rose-600" },
                 ].map((k) => (
                     <div key={k.label} className="bg-card rounded-2xl border border-border p-4 shadow-sm">
@@ -153,7 +153,7 @@ export default function CoutsPartielsPage() {
             {/* ── Direct Costing ── */}
             {tab === "Direct Costing" && (
                 <div className="space-y-4">
-                    <p className="text-xs text-muted-foreground italic">Cliquez sur une valeur CA ou CV pour la modifier directement.</p>
+                    <p className="text-xs text-muted-foreground italic">Cliquez sur une valeur de chiffre d&apos;affaires ou de charges variables pour la modifier directement.</p>
                     <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
                         <div className="p-4 border-b border-border bg-muted/20">
                             <h3 className="text-sm font-bold">Compte de Résultat Différentiel (Direct Costing Simple)</h3>
@@ -169,22 +169,22 @@ export default function CoutsPartielsPage() {
                                 </thead>
                                 <tbody>
                                     <tr className="border-b border-border/50">
-                                        <td className="px-4 py-3 font-medium">Chiffre d&apos;Affaires (CA)</td>
+                                        <td className="px-4 py-3 font-medium">Chiffre d&apos;affaires</td>
                                         {data.map((p) => <td key={p.id} className="px-4 py-3 text-right"><EditableCell value={p.CA} onSave={(v) => updateField(p.id, "CA", v)} /></td>)}
                                         <td className="px-4 py-3 text-right font-mono bg-muted/30 font-bold">{formatCurrency(caGlobal)}</td>
                                     </tr>
                                     <tr className="border-b border-border/50 text-cyan-700">
-                                        <td className="px-4 py-3">Charges Variables (CV)</td>
+                                        <td className="px-4 py-3">Charges variables</td>
                                         {data.map((p) => <td key={p.id} className="px-4 py-3 text-right"><EditableCell value={p.CV} onSave={(v) => updateField(p.id, "CV", v)} /></td>)}
                                         <td className="px-4 py-3 text-right font-mono bg-cyan-50/50">{formatCurrency(cvGlobal)}</td>
                                     </tr>
                                     <tr className="border-b-2 border-border font-bold">
-                                        <td className="px-4 py-3 text-indigo-700">Marge sur Coûts Variables (MCV)</td>
+                                        <td className="px-4 py-3 text-indigo-700">Marge sur coûts variables</td>
                                         {data.map((p) => <td key={p.id} className="px-4 py-3 text-right font-mono text-indigo-700">{formatCurrency(p.CA - p.CV)}</td>)}
                                         <td className="px-4 py-3 text-right font-mono bg-indigo-50 text-indigo-700">{formatCurrency(mcvGlobal)}</td>
                                     </tr>
                                     <tr className="border-b-2 border-border text-rose-700">
-                                        <td className="px-4 py-3 font-bold">Charges Fixes Globales (CF)</td>
+                                        <td className="px-4 py-3 font-bold">Charges fixes globales</td>
                                         {data.map((p) => <td key={p.id} className="px-4 py-3 text-right font-mono text-muted-foreground/30">—</td>)}
                                         <td className="px-4 py-3 text-right font-mono bg-rose-50 font-bold">{formatCurrency(CF_COMMUNES + cvSpecGlobal)}</td>
                                     </tr>
@@ -207,8 +207,8 @@ export default function CoutsPartielsPage() {
                                 <div key={p.id} className="bg-card rounded-2xl border border-border p-4 shadow-sm">
                                     <p className="text-xs font-semibold text-muted-foreground uppercase">{p.produit}</p>
                                     <div className="flex items-end justify-between mt-2">
-                                        <div><p className="text-xs text-muted-foreground">MCV</p><p className="text-lg font-bold text-indigo-700">{formatCurrency(mcv)}</p></div>
-                                        <div className="text-right"><p className="text-xs text-muted-foreground">Taux MCV</p><p className="text-lg font-bold text-primary">{taux.toFixed(1)}%</p></div>
+                                        <div><p className="text-xs text-muted-foreground">Marge sur coûts variables</p><p className="text-lg font-bold text-indigo-700">{formatCurrency(mcv)}</p></div>
+                                        <div className="text-right"><p className="text-xs text-muted-foreground">Taux de marge sur coûts variables</p><p className="text-lg font-bold text-primary">{taux.toFixed(1)}%</p></div>
                                     </div>
                                     <div className="mt-2 h-2 w-full bg-secondary rounded-full overflow-hidden">
                                         <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${Math.min(100, Math.max(0, taux))}%` }} />
@@ -223,7 +223,7 @@ export default function CoutsPartielsPage() {
             {/* ── Marge sur Coût Spécifique ── */}
             {tab === "Marge sur Coût Spécifique" && (
                 <div className="space-y-4">
-                    <p className="text-xs text-muted-foreground italic">Cliquez sur CA, CV ou Coût Spécifique pour modifier inline.</p>
+                    <p className="text-xs text-muted-foreground italic">Cliquez sur le chiffre d&apos;affaires, les charges variables ou le coût spécifique pour modifier inline.</p>
                     <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
                         <div className="p-4 border-b border-border bg-muted/20">
                             <h3 className="text-sm font-bold">Direct Costing Évolué (Coûts Spécifiques)</h3>
@@ -239,17 +239,17 @@ export default function CoutsPartielsPage() {
                                 </thead>
                                 <tbody>
                                     <tr className="border-b border-border/50">
-                                        <td className="px-4 py-3 font-medium">Chiffre d&apos;Affaires (CA)</td>
+                                        <td className="px-4 py-3 font-medium">Chiffre d&apos;affaires</td>
                                         {data.map((p) => <td key={p.id} className="px-4 py-3 text-right"><EditableCell value={p.CA} onSave={(v) => updateField(p.id, "CA", v)} /></td>)}
                                         <td className="px-4 py-3 text-right font-mono bg-muted/30 font-bold">{formatCurrency(caGlobal)}</td>
                                     </tr>
                                     <tr className="border-b border-border/50 text-cyan-700">
-                                        <td className="px-4 py-3">Charges Variables (CV)</td>
+                                        <td className="px-4 py-3">Charges variables</td>
                                         {data.map((p) => <td key={p.id} className="px-4 py-3 text-right"><EditableCell value={p.CV} onSave={(v) => updateField(p.id, "CV", v)} /></td>)}
                                         <td className="px-4 py-3 text-right font-mono bg-cyan-50/50">{formatCurrency(cvGlobal)}</td>
                                     </tr>
                                     <tr className="border-b-2 border-border font-bold">
-                                        <td className="px-4 py-3 text-indigo-700">Marge sur Coûts Variables (MCV)</td>
+                                        <td className="px-4 py-3 text-indigo-700">Marge sur coûts variables</td>
                                         {data.map((p) => <td key={p.id} className="px-4 py-3 text-right font-mono text-indigo-700">{formatCurrency(p.CA - p.CV)}</td>)}
                                         <td className="px-4 py-3 text-right font-mono bg-indigo-50 text-indigo-700">{formatCurrency(mcvGlobal)}</td>
                                     </tr>
@@ -305,8 +305,8 @@ export default function CoutsPartielsPage() {
                             <h3 className="text-sm font-bold">Paramètres de simulation</h3>
                             {[
                                 { label: "Prix de Vente Unitaire (PV)", val: simPrix, set: setSimPrix },
-                                { label: "Coût Variable Unitaire (CVU)", val: simCV, set: setSimCV },
-                                { label: "Charges Fixes Totales (CF)", val: simCF, set: setSimCF },
+                                { label: "Coût variable unitaire", val: simCV, set: setSimCV },
+                                { label: "Charges fixes totales", val: simCF, set: setSimCF },
                             ].map(({ label, val, set }) => (
                                 <div key={label}>
                                     <label className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1 block">{label}</label>
@@ -322,7 +322,7 @@ export default function CoutsPartielsPage() {
                                 {isFinite(seuilRentabilite) && seuilRentabilite > 0 ? Math.ceil(seuilRentabilite).toLocaleString() : "—"} unités
                             </p>
                             <p className="text-sm text-emerald-600 mt-0.5">
-                                soit {isFinite(seuilRentabilite) ? formatCurrency(seuilRentabilite * simPrix) : "—"} de CA
+                                soit {isFinite(seuilRentabilite) ? formatCurrency(seuilRentabilite * simPrix) : "—"} de chiffre d&apos;affaires
                             </p>
                             <div className="mt-3 flex items-center gap-2"><Activity className="h-4 w-4 text-emerald-500" />
                                 <span className="text-xs text-emerald-600">Marge unitaire : {formatCurrency(simPrix - simCV)}</span>
@@ -333,17 +333,17 @@ export default function CoutsPartielsPage() {
                             <p className="text-xs font-bold text-indigo-800 uppercase">Seuil (données réelles)</p>
                             <p className="text-lg font-bold text-indigo-700 mt-1">{formatCurrency(seuilCA)}</p>
                             <p className="text-xs text-indigo-600 mt-0.5">
-                                CF communes ({formatCurrency(CF_COMMUNES)}) ÷ Taux MCV ({(tauxMcvGlobal * 100).toFixed(1)}%)
+                                Charges fixes communes ({formatCurrency(CF_COMMUNES)}) ÷ taux de marge sur coûts variables ({(tauxMcvGlobal * 100).toFixed(1)}%)
                             </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
                             <div className="bg-card border border-border rounded-xl p-4">
-                                <p className="text-xs text-muted-foreground">Taux MCV simul.</p>
+                                <p className="text-xs text-muted-foreground">Taux de marge sur coûts variables simulé</p>
                                 <p className="text-lg font-bold text-indigo-600">{simPrix > 0 ? (((simPrix - simCV) / simPrix) * 100).toFixed(1) : 0}%</p>
                             </div>
                             <div className="bg-card border border-border rounded-xl p-4">
-                                <p className="text-xs text-muted-foreground">Taux MCV réel</p>
+                                <p className="text-xs text-muted-foreground">Taux de marge sur coûts variables réel</p>
                                 <p className="text-lg font-bold text-primary">{(tauxMcvGlobal * 100).toFixed(1)}%</p>
                             </div>
                         </div>
@@ -361,13 +361,13 @@ export default function CoutsPartielsPage() {
                                         <Tooltip formatter={(v: number) => formatCurrency(v)} labelFormatter={(l) => `Quantité : ${l}`} />
                                         <ReferenceLine x={Math.round(seuilRentabilite)} stroke="hsl(var(--destructive))" strokeDasharray="5 5"
                                             label={{ position: "top", value: "Seuil", fontSize: 10, fill: "hsl(var(--destructive))" }} />
-                                        <Line type="monotone" dataKey="CA" name="Chiffre d'Affaires" stroke="#10b981" strokeWidth={2} dot={false} />
+                                        <Line type="monotone" dataKey="CA" name="Chiffre d'affaires" stroke="#10b981" strokeWidth={2} dot={false} />
                                         <Line type="monotone" dataKey="CTotal" name="Coût Total" stroke="#ef4444" strokeWidth={2} dot={false} />
                                     </LineChart>
                                 </ChartContainer>
                             ) : (
                                 <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                                    Paramètres invalides — PV doit être supérieur à CVU
+                                    Paramètres invalides — le prix de vente doit être supérieur au coût variable unitaire
                                 </div>
                             )}
                         </div>

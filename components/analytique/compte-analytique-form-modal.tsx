@@ -119,7 +119,7 @@ export function CompteAnalytiqueForm({ initial, onCancel, onSubmit }: CompteAnal
       <div className="flex items-start gap-2 px-3 py-2.5 bg-emerald-50 border border-emerald-100 rounded-lg text-xs text-emerald-800">
         <GitBranch className="h-4 w-4 flex-shrink-0 mt-0.5" />
         <p>
-          Paramétrage opérationnel du compte analytique : liaisons CG, type de section, etc.
+          Paramétrage opérationnel du compte analytique : liaisons comptabilité générale, type de section, etc.
           La nomenclature de base se définit dans le <strong>Plan analytique</strong>.
         </p>
       </div>
@@ -152,7 +152,7 @@ export function CompteAnalytiqueForm({ initial, onCancel, onSubmit }: CompteAnal
         <div>
           <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
             <Link2 className="h-4 w-4 text-slate-500" />
-            Compte comptable CG miroir *
+            Compte comptable miroir (comptabilité générale) *
           </label>
           <p className="text-xs text-slate-500 mt-0.5 mb-2">
             Liaison avec un compte de la comptabilité générale (comptes comptables, classes 6 et 7).
@@ -203,7 +203,7 @@ export function CompteAnalytiqueForm({ initial, onCancel, onSubmit }: CompteAnal
             </div>
             <div className="flex-1 flex items-center px-3 py-2 font-mono text-sm bg-slate-50 text-slate-700 min-h-[38px]">
               {numeroSuffixe90 || (
-                <span className="text-slate-400 italic">Sélectionnez un compte CG miroir…</span>
+                <span className="text-slate-400 italic">Sélectionnez un compte miroir de la comptabilité générale…</span>
               )}
             </div>
           </div>
@@ -223,7 +223,7 @@ export function CompteAnalytiqueForm({ initial, onCancel, onSubmit }: CompteAnal
         )}
         <p className="text-xs text-slate-500 mt-1">
           {classe90
-            ? "Le numéro est généré automatiquement à partir du compte CG miroir (90 + 4 premiers chiffres du compte CG)."
+            ? "Le numéro est généré automatiquement à partir du compte miroir de la comptabilité générale (90 + 4 premiers chiffres du compte)."
             : `Doit commencer par ${classe} et comporter au moins 4 chiffres (classes OHADA 90 à 99).`}
         </p>
         {numeroMismatch && (

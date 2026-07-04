@@ -4,6 +4,7 @@ import type { AccountingChoice } from '@/lib/accounting-choice';
 import {
   ANALYTIQUE_DASHBOARD_PATH,
   GENERALE_DASHBOARD_PATH,
+  isDashboardPath,
 } from '@/lib/accounting-dashboard-routes';
 
 /** Routes CG sous /accounting encore accessibles depuis l'espace analytique (API). */
@@ -153,10 +154,15 @@ export function getRedirectForWorkspaceViolation(
 
 /** Module latéral actif selon la route (correspondance la plus spécifique). */
 export function resolveActiveModuleForPath(pathname: string): ModuleKey | null {
+  if (isDashboardPath(pathname)) {
+    return 'dashboard';
+  }
+
   let bestKey: ModuleKey | null = null;
   let bestLen = -1;
 
   for (const key of Object.keys(modules) as ModuleKey[]) {
+    if (key === 'dashboard') continue;
     for (const link of modules[key].sidebarLinks) {
       const { href } = link;
       const matches = pathname === href || pathname.startsWith(`${href}/`);

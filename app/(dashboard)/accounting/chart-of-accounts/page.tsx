@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { PlanComptableDto } from '@/src/lib2/models/PlanComptableDto';
 import { AccountingPlanComptableService } from '@/src/lib2/services/AccountingPlanComptableService';
 import { AccountListView } from '@/components/accounting/account-list-view';
@@ -31,8 +32,8 @@ export default function ChartOfAccountsPage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchAccounts = useCallback(async () => {
-    setIsLoading(true);
+  const fetchAccounts = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
       const response = await AccountingPlanComptableService.getAllPlanComptables();
@@ -56,13 +57,15 @@ export default function ChartOfAccountsPage() {
       });
       setError('Impossible de charger les comptes. Veuillez vérifier votre connexion internet.');
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAccounts();
+    void fetchAccounts();
   }, [fetchAccounts]);
+
+  useAutoRefresh(fetchAccounts, [fetchAccounts]);
 
   const handleSave = async (data: PlanComptableDto) => {
     try {
@@ -254,7 +257,6 @@ export default function ChartOfAccountsPage() {
           onEditAccount={handleEditAccount}
           onDeleteAccount={confirmDelete}
           onAddNew={handleAddNew}
-          onRefresh={fetchAccounts}
           onInitPlan={handleInitPlan}
           onImport={() => setIsImportOpen(true)}
           selectedId={selectedAccountId || undefined}

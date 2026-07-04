@@ -20,6 +20,7 @@ import {
 import { LoginModal } from './login-modal';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { useRedirectIfAuthenticated } from '@/hooks/use-auth-redirect';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 
 export function LandingPage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -31,11 +32,7 @@ export function LandingPage() {
   // Vérification en cours ou redirection : on n'affiche pas la landing
   // (évite un flash de la page publique pour un utilisateur connecté).
   if (guestStatus !== 'allowed') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600" />
-      </div>
-    );
+    return <CustomPageLoader message="Vérification de la session..." />;
   }
 
   const features = [
@@ -229,12 +226,6 @@ export function LandingPage() {
       classic: false,
     },
     {
-      feature: "Tableau de répartition des coûts",
-      ksm: true,
-      odoo: 'partial',
-      classic: false,
-    },
-    {
       feature: "Coûts complets et coûts partiels",
       ksm: true,
       odoo: 'partial',
@@ -283,12 +274,6 @@ export function LandingPage() {
       classic: false,
     },
     {
-      feature: "Tableau budget versus réalisé par axe et par compte",
-      ksm: true,
-      odoo: 'partial',
-      classic: false,
-    },
-    {
       feature: "Balance par compte analytique",
       ksm: true,
       odoo: 'partial',
@@ -304,6 +289,36 @@ export function LandingPage() {
       feature: "Concordance comptabilité générale et comptabilité analytique",
       ksm: true,
       odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Écritures analytiques autonomes (saisie manuelle ou import comptabilité générale)",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Journaux analytiques configurables (type, centre source, reflet)",
+      ksm: true,
+      odoo: false,
+      classic: false,
+    },
+    {
+      feature: "Virements inter-centres avec imputation négative / positive",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Contrôle budgétaire en temps réel à la saisie",
+      ksm: true,
+      odoo: 'partial',
+      classic: false,
+    },
+    {
+      feature: "Validation des écritures analytiques en brouillon",
+      ksm: true,
+      odoo: 'partial',
       classic: false,
     },
     {

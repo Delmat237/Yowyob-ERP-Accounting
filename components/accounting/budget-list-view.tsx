@@ -11,7 +11,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
-import { Plus, RefreshCw, Search, Edit, Trash2, Loader2, Lock, Eye, CheckCircle } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Lock, Eye, CheckCircle } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -67,7 +68,6 @@ interface BudgetListViewProps {
     onView?: (id: string) => void;
     onDelete: (budget: BudgetItem) => void;
     onAddNew: () => void;
-    onRefresh: () => void;
     onLock: (id: string) => void;
     onValidate?: (id: string) => void;
 }
@@ -103,7 +103,6 @@ export const BudgetListView: React.FC<BudgetListViewProps> = ({
     onView,
     onDelete,
     onAddNew,
-    onRefresh,
     onLock,
     onValidate,
 }) => {
@@ -118,6 +117,8 @@ export const BudgetListView: React.FC<BudgetListViewProps> = ({
         const matchType = filterType === 'ALL' || b.type === filterType;
         return matchSearch && matchType;
     });
+
+    if (isLoading) return <CustomPageLoader message="Chargement des budgets..." />;
 
     return (
         <div className="space-y-6">
@@ -146,9 +147,6 @@ export const BudgetListView: React.FC<BudgetListViewProps> = ({
                     </Select>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={onRefresh} className="border-gray-300">
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
                     <PermissionGuard feature="budgets" action="create">
                         <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700 shadow-sm">
                             <Plus className="h-4 w-4 mr-2" />
@@ -198,13 +196,7 @@ export const BudgetListView: React.FC<BudgetListViewProps> = ({
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading ? (
-                                <TableRow>
-                                    <TableCell colSpan={9} className="h-24 text-center">
-                                        <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto" />
-                                    </TableCell>
-                                </TableRow>
-                            ) : filtered.length === 0 ? (
+                            {filtered.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={9} className="h-40 text-center text-gray-500">
                                         Aucun budget trouvé

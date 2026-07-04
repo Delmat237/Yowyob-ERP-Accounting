@@ -195,9 +195,9 @@ export default function ConcordancePage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Concordance CG / CA</h1>
+                    <h1 className="text-2xl font-bold">Concordance comptabilité générale / analytique</h1>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                        Rapprochement des résultats CG et CA via les différences d&apos;incorporation
+                        Rapprochement des résultats de la comptabilité générale et de la comptabilité analytique via les différences d&apos;incorporation
                     </p>
                 </div>
                 {/* Sélecteur de période */}
@@ -220,14 +220,14 @@ export default function ConcordancePage() {
                 <div className="bg-muted/30 border border-border rounded-xl p-3 flex items-center gap-3 text-sm">
                     <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <span className="text-muted-foreground">
-                        Période CG liée :
+                        Période comptabilité générale liée :
                         <strong className="text-foreground ml-1">{periodeCG.code} — {periodeCG.libelle}</strong>
                     </span>
                     <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full border ${periodeCG.cloturee ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
                         {periodeCG.cloturee ? "Clôturée" : "Ouverte"}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                        CG : Charges {formatCurrency(periodeCG.totalChargesCG)} · Produits {formatCurrency(periodeCG.totalProduitsCG)}
+                        Comptabilité générale : charges {formatCurrency(periodeCG.totalChargesCG)} · produits {formatCurrency(periodeCG.totalProduitsCG)}
                     </span>
                 </div>
             )}
@@ -247,7 +247,7 @@ export default function ConcordancePage() {
                     {/* Détail CG */}
                     <div className="mt-3 pt-3 border-t border-cyan-200 space-y-1 relative z-10">
                         <div className="flex justify-between text-xs text-cyan-700">
-                            <span>Charges CG</span>
+                            <span>Charges comptabilité générale</span>
                             <span className="font-mono">{formatCurrency(periodeCG?.totalChargesCG ?? 0)}</span>
                         </div>
                         <div className="flex justify-between text-xs text-cyan-700">
@@ -380,7 +380,7 @@ export default function ConcordancePage() {
                     <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
                     <p>
                         La concordance est validée. Le résultat analytique reconstitué ({formatCurrency(resultCA)}) correspond
-                        au résultat CG ({formatCurrency(resultCG)}) après retraitements.
+                        au résultat de la comptabilité générale ({formatCurrency(resultCG)}) après retraitements.
                     </p>
                 </div>
             ) : (

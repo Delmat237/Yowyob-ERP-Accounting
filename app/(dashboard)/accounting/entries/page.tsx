@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { EcritureComptableDto } from '@/src/lib2/models/EcritureComptableDto';
 import { AccountingEntriesService } from '@/src/lib2/services/AccountingEntriesService';
 import { AccountingJournalManagementService } from '@/src/lib2/services/AccountingJournalManagementService';
@@ -31,8 +32,8 @@ export default function EcritureComptablePage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchAndSetEcritures = useCallback(async () => {
-    setIsLoading(true);
+  const fetchAndSetEcritures = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     try {
       const [entriesRes, journalsRes, accountsRes] = await Promise.all([
         AccountingEntriesService.getAll1(),
@@ -59,13 +60,15 @@ export default function EcritureComptablePage() {
       console.error("Failed to fetch ecritures or journals:", error);
       setEcritures([]);
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchAndSetEcritures();
+    void fetchAndSetEcritures();
   }, [fetchAndSetEcritures]);
+
+  useAutoRefresh(fetchAndSetEcritures, [fetchAndSetEcritures]);
 
   const handleSave = async (data: EcritureComptableDto) => {
     const isNew = !data.id;
@@ -212,7 +215,6 @@ export default function EcritureComptablePage() {
           onDeleteEcriture={setEcritureToDelete}
           onDeactivateEcriture={setEcritureToDeactivate}
           onAddNew={() => handleOpenCompose()}
-          onRefresh={fetchAndSetEcritures}
         />
 
         {ecritureToDelete && (

@@ -13,7 +13,8 @@ import {
     TableCell,
 } from '@/components/ui/table';
 import { ExerciceComptableDto } from '@/src/lib2/models/ExerciceComptableDto';
-import { Edit, Lock, RefreshCw, Search, Plus } from 'lucide-react';
+import { Edit, Lock, Search, Plus } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { PermissionGuard } from '@/components/auth/permission-guard';
@@ -25,7 +26,6 @@ interface ExerciceComptableListViewProps {
     onEditExercice: (id: string) => void;
     onCloseExercice: (id: string) => void;
     onAddNew: () => void;
-    onRefresh: () => void;
     selectedId?: string;
 }
 
@@ -73,7 +73,6 @@ export const ExerciceComptableListView: React.FC<ExerciceComptableListViewProps>
     onEditExercice,
     onCloseExercice,
     onAddNew,
-    onRefresh,
     selectedId,
 }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -89,6 +88,8 @@ export const ExerciceComptableListView: React.FC<ExerciceComptableListViewProps>
             return matchesSearch;
         });
     }, [exercices, searchQuery]);
+
+    if (isLoading) return <CustomPageLoader message="Chargement des exercices..." />;
 
     return (
         <div className="space-y-4">
@@ -108,7 +109,7 @@ export const ExerciceComptableListView: React.FC<ExerciceComptableListViewProps>
                     </div>
                 </div>
 
-                {/* Bottom Row: Action buttons (New left, Refresh right) */}
+                {/* Bottom Row: Action buttons */}
                 <div className="flex items-center justify-between">
                     <PermissionGuard feature="periods" action="lock">
                         <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
@@ -116,9 +117,6 @@ export const ExerciceComptableListView: React.FC<ExerciceComptableListViewProps>
                             Nouvel Exercice
                         </Button>
                     </PermissionGuard>
-                    <Button onClick={onRefresh} variant="outline" size="icon">
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
                 </div>
             </div>
 
@@ -136,11 +134,7 @@ export const ExerciceComptableListView: React.FC<ExerciceComptableListViewProps>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="text-center py-10 text-gray-400 font-medium italic">Chargement des exercices...</TableCell>
-                            </TableRow>
-                        ) : filteredExercices.length === 0 ? (
+                        {filteredExercices.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-10 text-gray-400 font-medium italic">Aucun exercice trouvé.</TableCell>
                             </TableRow>

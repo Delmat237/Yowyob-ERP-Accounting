@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
-  Loader2,
   Building2,
   Mail,
   Globe,
@@ -15,6 +14,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
@@ -77,16 +77,7 @@ export default function CompanySettingsPage() {
   }, [orgId]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
-          <p className="text-sm text-muted-foreground animate-pulse">
-            Chargement de l'organisation...
-          </p>
-        </div>
-      </div>
-    );
+    return <CustomPageLoader message="Chargement de l'organisation..." />;
   }
 
   if (!orgId) {

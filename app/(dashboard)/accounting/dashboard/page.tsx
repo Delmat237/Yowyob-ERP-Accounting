@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import {
   Card,
   CardContent,
@@ -141,8 +142,8 @@ export default function AccountingDashboard() {
   const [periodsList, setPeriodsList] = useState<any[]>([]);
 
   /* ── fetch ── */
-  const fetchDashboardData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchDashboardData = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     try {
       /* 1. Periods */
       const periodsRes = await AccountingPeriodsService.getAllPeriodeComptables();
@@ -337,11 +338,12 @@ export default function AccountingDashboard() {
       console.error("Dashboard Fetch Error:", error);
       toast.error("Erreur lors de la mise à jour du tableau de bord");
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchDashboardData(); }, [fetchDashboardData]);
+  useEffect(() => { void fetchDashboardData(); }, [fetchDashboardData]);
+  useAutoRefresh(fetchDashboardData, [fetchDashboardData]);
 
   if (isLoading && kpis.totalRevenue === 0 && kpis.totalDebit === 0) {
     return <CustomPageLoader />;
@@ -389,15 +391,6 @@ export default function AccountingDashboard() {
           </div>
           <p className="text-sm text-slate-500 mt-1">{roleConfig.subtitle}</p>
         </div>
-        <Button
-          onClick={fetchDashboardData}
-          variant="outline"
-          disabled={isLoading}
-          className="h-10 px-5 border-slate-300 bg-white hover:bg-slate-50 text-slate-700 rounded-xl shadow-sm flex items-center gap-2"
-        >
-          <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-          Actualiser
-        </Button>
       </div>
 
       {/* ── KPI Row ── */}

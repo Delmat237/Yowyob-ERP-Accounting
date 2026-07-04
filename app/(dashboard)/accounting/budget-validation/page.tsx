@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +13,12 @@ import {
     Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-    CheckCircle, XCircle, Search, RefreshCw, ShieldCheck,
+    CheckCircle, XCircle, Search, ShieldCheck,
     Building2, Calendar, Layers, AlertTriangle, Eye, CheckCheck, Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { cn } from '@/lib/utils';
 import type { BudgetItem, BudgetType } from '@/components/accounting/budget-list-view';
 import { AccountingBudgetsService } from '@/src/lib2/services/AccountingBudgetsService';
@@ -53,8 +55,8 @@ export default function BudgetValidationPage() {
     const [rejectReason, setRejectReason] = useState('');
     const [validatingId, setValidatingId] = useState<string | null>(null);
 
-    const loadBrouillons = useCallback(async () => {
-        setIsLoading(true);
+    const loadBrouillons = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) setIsLoading(true);
         try {
             const response = await AccountingBudgetsService.getAllBudgets();
             const drafts = (response.data ?? [])
@@ -66,13 +68,15 @@ export default function BudgetValidationPage() {
             console.error('Failed to load draft budgets:', error);
             toast.error('Impossible de charger les budgets en brouillon.');
         } finally {
-            setIsLoading(false);
+            if (!options?.silent) setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        loadBrouillons();
+        void loadBrouillons();
     }, [loadBrouillons]);
+
+    useAutoRefresh(loadBrouillons, [loadBrouillons]);
 
     const filtered = brouillons.filter((b) =>
         b.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -165,6 +169,10 @@ export default function BudgetValidationPage() {
         }
     };
 
+    if (isLoading && brouillons.length === 0) {
+        return <CustomPageLoader message="Chargement des brouillons..." />;
+    }
+
     return (
         <PermissionGuard
             feature="budgets"
@@ -215,9 +223,6 @@ export default function BudgetValidationPage() {
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={loadBrouillons} className="border-gray-200">
-                                    <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                                </Button>
                                 {selectedIds.size > 0 && (
                                     <Button
                                         size="sm"
@@ -234,12 +239,7 @@ export default function BudgetValidationPage() {
                     </div>
 
                     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden overflow-x-auto">
-                        {isLoading && brouillons.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-20">
-                                <Loader2 className="h-10 w-10 animate-spin text-blue-600 mb-3" />
-                                <p className="text-sm text-gray-500">Chargement des brouillons...</p>
-                            </div>
-                        ) : filtered.length === 0 ? (
+                        {filtered.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-center">
                                 <CheckCircle className="h-12 w-12 text-green-300 mb-4" />
                                 <p className="text-lg font-semibold text-gray-600">Aucun budget en brouillon</p>

@@ -106,13 +106,13 @@ export function CentreAnalytiqueForm({ initial, onCancel, onSubmit }: CentreAnal
     >
       <div className="space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1">
-          Contexte comptable (synchronisé CG)
+          Contexte comptable (synchronisé comptabilité générale)
         </h3>
         <div className="flex items-start gap-2 px-3 py-2.5 bg-indigo-50 border border-indigo-100 rounded-lg text-xs text-indigo-800">
           <Link2 className="h-4 w-4 flex-shrink-0 mt-0.5" />
           <p>
             L&apos;exercice et la période analytiques reprennent ceux de la comptabilité générale.
-            Ils ne se créent pas ici : ouverture et clôture se font uniquement en CG.
+            Ils ne se créent pas ici : ouverture et clôture se font uniquement en comptabilité générale.
           </p>
         </div>
         {loadingContexte ? (
@@ -137,7 +137,7 @@ export function CentreAnalytiqueForm({ initial, onCancel, onSubmit }: CentreAnal
             <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
             <p>
               Aucun exercice ou période ouverte en comptabilité générale.
-              Ouvrez un exercice et une période en CG avant de créer un centre d&apos;analyse.
+              Ouvrez un exercice et une période en comptabilité générale avant de créer un centre d&apos;analyse.
             </p>
           </div>
         )}
@@ -272,7 +272,7 @@ export function CentreAnalytiqueForm({ initial, onCancel, onSubmit }: CentreAnal
               className="mt-1 w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
               value={form.assietteFrais ?? ""}
               onChange={(e) => setForm({ ...form, assietteFrais: e.target.value })}
-              placeholder="Ex: Montant CG"
+              placeholder="Ex: Montant comptabilité générale"
             />
           </div>
         </div>

@@ -9,7 +9,6 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import {
   Package,
-  Loader2,
   FileText,
   Activity,
   Edit,
@@ -18,6 +17,7 @@ import {
 } from 'lucide-react';
 import { PlanComptableDto } from '@/src/lib2/models/PlanComptableDto';
 import { CompteDto } from '@/src/lib2/models/CompteDto';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { AccountingPlanComptableService } from '@/src/lib2/services/AccountingPlanComptableService';
 import { AccountingComptesService } from '@/src/lib2/services/AccountingComptesService';
 import {
@@ -96,6 +96,10 @@ export const AccountDetailView: React.FC<AccountDetailViewProps> = ({
     onSave(data);
     if (account) setIsEditing(false);
   };
+
+  if (isLoadingComptes) {
+    return <CustomPageLoader message="Chargement des comptes..." />;
+  }
 
   if (!isEditing && account) {
     return (
@@ -177,16 +181,7 @@ export const AccountDetailView: React.FC<AccountDetailViewProps> = ({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoadingComptes ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12">
-                        <div className="flex flex-col items-center gap-3">
-                          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                          <p className="text-sm text-gray-500 font-medium">Chargement des comptes...</p>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ) : comptesCrees.length === 0 ? (
+                  {comptesCrees.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-12 text-gray-400">
                         <div className="flex flex-col items-center gap-2">

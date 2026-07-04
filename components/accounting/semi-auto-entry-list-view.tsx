@@ -11,6 +11,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 
@@ -50,14 +51,7 @@ export function SemiAutoEntryListView({
     };
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-12">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-500">Chargement des factures...</p>
-                </div>
-            </div>
-        );
+        return <CustomPageLoader message="Chargement des factures..." />;
     }
 
     if (invoices.length === 0) {

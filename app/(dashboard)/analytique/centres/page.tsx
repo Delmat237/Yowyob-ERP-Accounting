@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { mockCentres, CentreAnalyse } from "@/lib/analytique/mock-data";
-import { Plus, RefreshCw, Search, ArrowRight } from "lucide-react";
+import { Plus, Search, ArrowRight } from "lucide-react";
 import { CentresAnalyseList } from "@/components/analytique/centres-analyse-list";
 import { CentreAnalytiqueForm } from "@/components/analytique/centre-form-modal";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
@@ -129,9 +129,6 @@ export default function CentresAnalysePage() {
                         </button>
                     ))}
                 </div>
-                <button onClick={() => setCentres(mockCentres)} className="flex items-center gap-2 px-3 py-2 border border-border rounded-xl text-sm text-muted-foreground hover:bg-secondary transition-colors">
-                    <RefreshCw className="h-4 w-4" />
-                </button>
             </div>
 
             <CentresAnalyseList

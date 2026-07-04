@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { CompteDto } from '@/src/lib2/models/CompteDto';
 import { AccountingComptesService } from '@/src/lib2/services/AccountingComptesService';
 import { SupplierListView } from '@/components/suppliers/supplier-list-view';
@@ -31,8 +32,8 @@ export default function SuppliersPage() {
 
     const { onOpen, onClose: closeCompose } = useCompose();
 
-    const fetchAndSetSuppliers = useCallback(async () => {
-        setIsLoading(true);
+    const fetchAndSetSuppliers = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) setIsLoading(true);
         setError(null);
         try {
             const res = await AccountingComptesService.getSupplierAccounts();
@@ -46,13 +47,15 @@ export default function SuppliersPage() {
             setError("Impossible de charger les fournisseurs. Veuillez vérifier votre connexion.");
             toast.error("Erreur lors de la récupération des fournisseurs");
         } finally {
-            setIsLoading(false);
+            if (!options?.silent) setIsLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchAndSetSuppliers();
+        void fetchAndSetSuppliers();
     }, [fetchAndSetSuppliers]);
+
+    useAutoRefresh(fetchAndSetSuppliers, [fetchAndSetSuppliers]);
 
     const handleSave = async (data: CompteDto) => {
         try {
@@ -212,7 +215,6 @@ export default function SuppliersPage() {
                     onEditSupplier={handleEditSupplier}
                     onDeleteSupplier={(s) => { if (s.id) confirmDelete(s.id) }}
                     onAddNew={handleAddNew}
-                    onRefresh={fetchAndSetSuppliers}
                 />
 
                 <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

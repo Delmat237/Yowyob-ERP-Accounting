@@ -1,7 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
-import { mockGlobalConfig, GlobalConfigAnalytique, MethodeStock } from '@/lib/analytique/mock-data';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { mockGlobalConfig, MethodeStock } from '@/lib/analytique/mock-data';
+import {
+    getAnalytiqueConfig,
+    saveAnalytiqueConfig,
+    type AnalytiqueConfig,
+} from '@/lib/analytique/analytique-config-store';
+import { importFluxDepuisCG } from '@/lib/analytique/import-flux-cg';
+import { cn } from '@/lib/utils';
 import {
     Settings,
     Coins,
@@ -13,27 +21,55 @@ import {
     ShieldCheck,
     Database,
     Zap,
-    Scale
+    Scale,
+    FileClock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ConfigurationPage() {
-    const [config, setConfig] = useState<GlobalConfigAnalytique>(mockGlobalConfig);
+    const router = useRouter();
+    const [config, setConfig] = useState<AnalytiqueConfig>(() => getAnalytiqueConfig());
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setConfig(getAnalytiqueConfig());
+    }, []);
 
     const handleSave = () => {
         setIsSaving(true);
-        // Simulation d'API
+        const previous = getAnalytiqueConfig();
+        saveAnalytiqueConfig(config);
+        const justEnabled =
+            config.importComptabiliteGeneraleActive && !previous.importComptabiliteGeneraleActive;
+
+        if (justEnabled) {
+            const { created, ignored } = importFluxDepuisCG();
+            if (created.length > 0) {
+                toast.success(`${created.length} écriture(s) importée(s)`, {
+                    description: "Redirection vers la validation…",
+                });
+                router.push("/analytique/ecritures/validation");
+                setIsSaving(false);
+                return;
+            }
+            if (ignored > 0) {
+                toast.info("Import activé — aucune nouvelle ligne incorporable.", {
+                    description: `${ignored} ligne(s) non incorporable(s) ignorée(s).`,
+                });
+            }
+        }
+
         setTimeout(() => {
             setIsSaving(false);
             toast.success("Configurations enregistrées avec succès", {
                 description: "Les paramètres globaux de l'exercice ont été mis à jour."
             });
-        }, 800);
+        }, 400);
     };
 
     const handleReset = () => {
-        setConfig(mockGlobalConfig);
+        const reset: AnalytiqueConfig = { ...mockGlobalConfig, importComptabiliteGeneraleActive: false };
+        setConfig(reset);
     };
 
     return (
@@ -69,6 +105,63 @@ export default function ConfigurationPage() {
                         )}
                         Enregistrer
                     </button>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 text-foreground font-bold">
+                    <FileClock className="h-5 w-5 text-indigo-500" />
+                    <h2>Écritures analytiques</h2>
+                </div>
+                <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <p className="text-sm font-bold text-foreground">Import comptabilité générale</p>
+                            <p className="text-xs text-muted-foreground mt-1 max-w-xl">
+                                Active l&apos;import des charges incorporables depuis la comptabilité générale.
+                                Les écritures importées sont envoyées en validation. La saisie manuelle reste
+                                toujours disponible.
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-3 shrink-0">
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={config.importComptabiliteGeneraleActive}
+                                onClick={() =>
+                                    setConfig({
+                                        ...config,
+                                        importComptabiliteGeneraleActive: !config.importComptabiliteGeneraleActive,
+                                    })
+                                }
+                                className={cn(
+                                    "relative w-11 h-6 rounded-full transition-colors shrink-0",
+                                    config.importComptabiliteGeneraleActive ? "bg-indigo-600" : "bg-muted",
+                                )}
+                            >
+                                <span
+                                    className={cn(
+                                        "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform shadow",
+                                        config.importComptabiliteGeneraleActive && "translate-x-5",
+                                    )}
+                                />
+                            </button>
+                            <span
+                                className={cn(
+                                    "text-sm font-medium min-w-[4.5rem]",
+                                    config.importComptabiliteGeneraleActive
+                                        ? "text-indigo-700"
+                                        : "text-muted-foreground",
+                                )}
+                            >
+                                {config.importComptabiliteGeneraleActive ? "Activé" : "Désactivé"}
+                            </span>
+                        </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-4 italic">
+                        Enregistrez pour appliquer. À la première activation, l&apos;import est lancé automatiquement
+                        puis vous êtes redirigé vers la validation.
+                    </p>
                 </div>
             </div>
 
@@ -144,7 +237,11 @@ export default function ConfigurationPage() {
                                             : "bg-white border-border text-muted-foreground hover:bg-secondary"
                                         }`}
                                 >
-                                    {m === "CUMP" ? "CUMP (Moyen)" : m}
+                                    {m === "CUMP"
+                                        ? "Coût unitaire moyen pondéré"
+                                        : m === "FIFO"
+                                          ? "Premier entré, premier sorti"
+                                          : "Dernier entré, premier sorti"}
                                 </button>
                             ))}
                         </div>
@@ -163,8 +260,8 @@ export default function ConfigurationPage() {
                     <div className="bg-card rounded-2xl border border-border p-6 shadow-sm space-y-6">
                         <div className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-border hover:bg-secondary/20 transition-colors">
                             <div className="flex-1">
-                                <label className="text-sm font-bold text-foreground block">Verrouillage Strict CG</label>
-                                <p className="text-xs text-muted-foreground mt-1">Bloquer automatiquement la saisie dès que la période CG correspondante est clôturée.</p>
+                                <label className="text-sm font-bold text-foreground block">Verrouillage strict comptabilité générale</label>
+                                <p className="text-xs text-muted-foreground mt-1">Bloquer automatiquement la saisie dès que la période correspondante de la comptabilité générale est clôturée.</p>
                             </div>
                             <label className="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" className="sr-only peer" checked={config.bloquerApresClotureCG}
@@ -175,7 +272,7 @@ export default function ConfigurationPage() {
 
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Jours de Grâce après Clôture CG</label>
+                                <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">Jours de grâce après clôture comptabilité générale</label>
                                 <span className="text-xs font-mono font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-100">{config.joursGraceCloture} jours</span>
                             </div>
                             <input
@@ -185,7 +282,7 @@ export default function ConfigurationPage() {
                                 onChange={(e) => setConfig({ ...config, joursGraceCloture: parseInt(e.target.value) })}
                             />
                             <p className="text-[10px] text-muted-foreground bg-muted/50 p-3 rounded-xl border border-dashed border-border">
-                                <Clock className="h-3 w-3 inline mr-1" /> Délai accordé au Responsable Analytique pour finaliser les ventilations après l&apos;arrêt des comptes en CG.
+                                <Clock className="h-3 w-3 inline mr-1" /> Délai accordé au responsable analytique pour finaliser les ventilations après l&apos;arrêt des comptes en comptabilité générale.
                             </p>
                         </div>
 

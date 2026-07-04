@@ -12,13 +12,13 @@ import {
     FileText,
     BadgeCheck,
     BadgeX,
-    Loader2,
     Save,
     Lock
 } from 'lucide-react';
 import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
 import { PeriodeComptableDto } from '@/src/lib2/models/PeriodeComptableDto';
 import { ExerciceComptableDto } from '@/src/lib2/models/ExerciceComptableDto';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import {
     Table,
     TableHeader,
@@ -88,6 +88,10 @@ export const ExerciceComptableDetailView: React.FC<ExerciceComptableDetailViewPr
     const onSubmit = (data: ExerciceComptableDto) => {
         onSave(data);
     };
+
+    if (isLoadingPeriodes) {
+        return <CustomPageLoader message="Chargement des périodes..." />;
+    }
 
     if (!isEditing && exercice) {
         return (
@@ -167,16 +171,7 @@ export const ExerciceComptableDetailView: React.FC<ExerciceComptableDetailViewPr
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {isLoadingPeriodes ? (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="text-center py-12">
-                                                <div className="flex flex-col items-center gap-3">
-                                                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                                                    <p className="text-sm text-gray-500 font-medium">Chargement des périodes...</p>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : periodes.length === 0 ? (
+                                    {periodes.length === 0 ? (
                                         <TableRow>
                                             <TableCell colSpan={5} className="text-center py-12 text-gray-400">
                                                 <div className="flex flex-col items-center gap-2">

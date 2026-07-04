@@ -4,7 +4,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Devise } from '@/types/accounting';
-import { Edit, Trash2, Plus, RefreshCw, Search, Info, Calculator, Archive, X, Check, ArrowRightLeft, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus, RefreshCw, Search, Info, Calculator, Archive, X, Check, ArrowRightLeft } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Input } from '@/components/ui/input';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 import {
@@ -22,7 +23,6 @@ interface DeviseListViewProps {
     onEdit: (id: string) => void;
     onDelete: (devise: Devise) => void;
     onAddNew: () => void;
-    onRefresh: () => void;
     onUpdateRate: (id: string) => void;
 }
 
@@ -32,7 +32,6 @@ export const DeviseListView: React.FC<DeviseListViewProps> = ({
     onEdit,
     onDelete,
     onAddNew,
-    onRefresh,
     onUpdateRate,
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -43,6 +42,8 @@ export const DeviseListView: React.FC<DeviseListViewProps> = ({
     );
 
     const nationalCurrency = devises.find(d => d.estNationale);
+
+    if (isLoading) return <CustomPageLoader message="Chargement des devises..." />;
 
     return (
         <div className="space-y-6">
@@ -61,13 +62,6 @@ export const DeviseListView: React.FC<DeviseListViewProps> = ({
                 </div>
 
                 <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={onRefresh}
-                        className="border-gray-300 hover:bg-gray-50"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                    </Button>
                     <PermissionGuard feature="devises" action="create">
                         <Button
                             onClick={onAddNew}
@@ -80,7 +74,7 @@ export const DeviseListView: React.FC<DeviseListViewProps> = ({
                 </div>
             </div>
 
-            {!nationalCurrency && !isLoading && (
+            {!nationalCurrency && (
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
                     <div className="p-1 bg-blue-100 rounded text-blue-600">
                         <Info className="h-4 w-4" />
@@ -144,16 +138,7 @@ export const DeviseListView: React.FC<DeviseListViewProps> = ({
                             </TableHeader>
 
                             <TableBody>
-                                {isLoading ? (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="h-24 text-center">
-                                            <div className="flex justify-center items-center py-4">
-                                                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                                            </div>
-                                            <span className="sr-only">Chargement...</span>
-                                        </TableCell>
-                                    </TableRow>
-                                ) : filteredDevises.length === 0 ? (
+                                {filteredDevises.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-48 text-center py-12">
                                             <div className="flex flex-col items-center justify-center">
@@ -289,7 +274,7 @@ export const DeviseListView: React.FC<DeviseListViewProps> = ({
                 </div>
 
                 {/* Footer du tableau */}
-                {!isLoading && filteredDevises.length > 0 && (
+                {filteredDevises.length > 0 && (
                     <div className="bg-gray-50 border-t px-6 py-3">
                         <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
                             <div className="text-sm text-gray-700">

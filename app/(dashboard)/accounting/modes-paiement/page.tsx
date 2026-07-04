@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { ModePaiement } from '@/types/accounting';
 import { ModePaiementListView } from '@/components/accounting/mode-paiement-list-view';
 import { ModePaiementForm } from '@/components/accounting/settings/mode-paiement-form';
@@ -33,20 +34,21 @@ export default function ModesPaiementPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const fetchModes = useCallback(async () => {
-    setIsLoading(true);
+  const fetchModes = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     // Simulate fetch
     setTimeout(() => {
       setModes(mockModes);
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }, 500);
   }, []);
 
-  // Initial fetch handled by mock state, but kept for future structure
   useEffect(() => {
-    // fetchModes();
+    void fetchModes();
   }, [fetchModes]);
+
+  useAutoRefresh(fetchModes, [fetchModes]);
 
   const handleSave = async (data: ModePaiement) => {
     try {
@@ -146,7 +148,6 @@ export default function ModesPaiementPage() {
           onEdit={handleEditMode}
           onDelete={confirmDelete}
           onAddNew={handleAddNew}
-          onRefresh={fetchModes}
         />
 
         <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
 import { PeriodeComptableDto } from '@/src/lib2/models/PeriodeComptableDto';
 import { ExerciceComptableDto } from '@/src/lib2/models/ExerciceComptableDto';
@@ -36,8 +37,8 @@ export default function PeriodsPage() {
 
     const { onOpen, onClose: closeCompose } = useCompose();
 
-    const fetchPeriodes = useCallback(async () => {
-        setIsLoading(true);
+    const fetchPeriodes = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) setIsLoading(true);
         setError(null);
         try {
             const response = await AccountingPeriodsService.getAllPeriodeComptables();
@@ -55,7 +56,7 @@ export default function PeriodsPage() {
             setError('Impossible de charger les périodes comptables. Veuillez vérifier votre connexion au serveur.');
             toast.error('Erreur lors du chargement', { description: reason });
         } finally {
-            setIsLoading(false);
+            if (!options?.silent) setIsLoading(false);
         }
     }, []);
 
@@ -70,10 +71,15 @@ export default function PeriodsPage() {
         }
     }, []);
 
-    useEffect(() => {
-        fetchPeriodes();
-        fetchExercices();
+    const loadPeriodsData = useCallback(async (options?: AutoRefreshOptions) => {
+        await Promise.all([fetchPeriodes(options), fetchExercices()]);
     }, [fetchPeriodes, fetchExercices]);
+
+    useEffect(() => {
+        void loadPeriodsData();
+    }, [loadPeriodsData]);
+
+    useAutoRefresh(loadPeriodsData, [loadPeriodsData]);
 
     const handleSave = async (data: PeriodeComptableDto) => {
         try {
@@ -235,7 +241,6 @@ export default function PeriodsPage() {
                     onEditPeriode={handleEditPeriode}
                     onClosePeriode={confirmClose}
                     onAddNew={handleAddNew}
-                    onRefresh={fetchPeriodes}
                     selectedId={selectedPeriodeId || undefined}
                 />
 

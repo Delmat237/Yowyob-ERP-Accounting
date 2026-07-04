@@ -83,7 +83,7 @@ export function PlanCompteAnalytiqueForm({
         <Library className="h-4 w-4 flex-shrink-0 mt-0.5" />
         <p>
           Ce formulaire définit la <strong>nomenclature</strong> du plan analytique (numéro, intitulé,
-          validité). Les liaisons CG miroir et types de section se configurent dans{" "}
+          validité). Les liaisons comptabilité générale miroir et types de section se configurent dans{" "}
           <strong>Comptes analytiques</strong>.
         </p>
       </div>

@@ -9,6 +9,7 @@ import { LoginModal } from '@/components/landing/login-modal';
 // Liens de navigation principaux. Les ancres pointent vers la page d'accueil
 // (préfixe "/#...") afin de fonctionner depuis n'importe quelle page marketing.
 const navLinks = [
+  { label: 'Accueil', href: '/' },
   { label: 'Fonctionnalités', href: '/#features' },
   { label: 'Solutions', href: '/#comparison' },
   { label: 'Tarifs', href: '/pricing' },

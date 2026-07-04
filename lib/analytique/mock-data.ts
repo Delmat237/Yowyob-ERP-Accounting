@@ -419,25 +419,25 @@ export const mockAxes: AxeAnalytique[] = [
 
 export const mockCentres: CentreAnalyse[] = [
     {
-        id: "c1", code: "CA-PROD", libelle: "Production", nature: "CENTRE_PRINCIPAL",
+        id: "c1", code: "CENT-PROD", libelle: "Production", nature: "CENTRE_PRINCIPAL",
         uniteOeuvre: "Heure Machine", axeId: "1", actif: true,
         compteAnalytiqueId: "c8", // 923100 Atelier Production
         responsable: "Jean Martin", budgetAlloue: 5000000, typePrestation: "INTERNE"
     },
     {
-        id: "c2", code: "CA-DIST", libelle: "Distribution", nature: "CENTRE_PRINCIPAL",
+        id: "c2", code: "CENT-DIST", libelle: "Distribution", nature: "CENTRE_PRINCIPAL",
         uniteOeuvre: "Unité vendue", axeId: "1", actif: true,
         compteAnalytiqueId: "c7", // 922100 Activité Trottinettes (simplifié pour le mock)
         responsable: "Alice Dubois", budgetAlloue: 2000000, typePrestation: "EXTERNE"
     },
     {
-        id: "c3", code: "CA-ADM", libelle: "Administration", nature: "CENTRE_PRINCIPAL",
-        uniteOeuvre: "Montant CG", axeId: "1", actif: true,
+        id: "c3", code: "CENT-ADM", libelle: "Bureau Administration", nature: "CENTRE_PRINCIPAL",
+        uniteOeuvre: "Montant comptabilité générale", axeId: "1", actif: true,
         compteAnalytiqueId: "c5", // 921000 Direction Générale
         responsable: "Directeur Financier", budgetAlloue: 1500000, typePrestation: "INTERNE"
     },
-    { id: "c4", code: "CA-ENT", libelle: "Entretien", nature: "CENTRE_AUXILIAIRE", uniteOeuvre: "Heure travail", axeId: "1", actif: true },
-    { id: "c5", code: "CA-LOG", libelle: "Logistique", nature: "CENTRE_AUXILIAIRE", uniteOeuvre: "Km parcouru", axeId: "2", actif: true },
+    { id: "c4", code: "CENT-ENT", libelle: "Entretien", nature: "CENTRE_AUXILIAIRE", uniteOeuvre: "Heure travail", axeId: "1", actif: true },
+    { id: "c5", code: "CENT-LOG", libelle: "Logistique", nature: "CENTRE_AUXILIAIRE", uniteOeuvre: "Km parcouru", axeId: "2", actif: true },
 ];
 
 export const mockCharges: ChargeAnalytique[] = [
@@ -694,7 +694,7 @@ export const mockUnitesOeuvre: UniteOeuvre[] = [
         volumePrevuPeriode: 800, description: "Heures de travail ouvrier direct"
     },
     {
-        id: "uo4", code: "CA", libelle: "Chiffre d'Affaires", nature: "MONETAIRE",
+        id: "uo4", code: "CHIFF-AFF", libelle: "Chiffre d'Affaires", nature: "MONETAIRE",
         uniteMesure: "FCFA", centresLies: ["c2"], hasCalculs: false,
         volumePrevuPeriode: 10000000, description: "Montant des ventes HT"
     },

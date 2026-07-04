@@ -56,7 +56,7 @@ export default function IncorporationsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground">Incorporations des Charges</h1>
-                    <p className="text-sm text-muted-foreground mt-0.5">Règles de traitement analytique des comptes CG</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">Règles de traitement analytique des comptes de la comptabilité générale</p>
                 </div>
                 <div className="flex items-center gap-2">
                     <button className="flex items-center gap-2 px-3 py-2 border border-border rounded-xl text-sm font-medium hover:bg-secondary transition-colors">
@@ -106,7 +106,7 @@ export default function IncorporationsPage() {
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="bg-muted/50 border-b border-border">
-                            <tr>{["Compte CG", "Libellé / Règle", "Validité", "Mode", "Justification", ""].map((h) => (
+                            <tr>{["Compte comptabilité générale", "Libellé / Règle", "Validité", "Mode", "Justification", ""].map((h) => (
                                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">{h}</th>
                             ))}</tr>
                         </thead>
@@ -163,7 +163,7 @@ export default function IncorporationsPage() {
                 <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                 <div className="space-y-1">
                     <p className="font-bold uppercase tracking-wider text-[10px]">Consignes OHADA / Melyon</p>
-                    <p>Une seule règle par nature de compte CG. Si une charge est <strong>Non incorporable</strong>, elle doit être justifiée (ex: charges exceptionnelles). Si elle est <strong>Substituée</strong>, l&apos;écart d&apos;incorporation sera porté au débit ou crédit du compte de classe 97.</p>
+                    <p>Une seule règle par nature de compte de la comptabilité générale. Si une charge est <strong>Non incorporable</strong>, elle doit être justifiée (ex: charges exceptionnelles). Si elle est <strong>Substituée</strong>, l&apos;écart d&apos;incorporation sera porté au débit ou crédit du compte de classe 97.</p>
                 </div>
             </div>
         </div>
@@ -233,7 +233,7 @@ function Modal({
             <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
                     <div className="space-y-4">
                         <div>
-                            <label className="text-sm font-bold text-foreground block mb-1.5">Compte CG à traiter *</label>
+                            <label className="text-sm font-bold text-foreground block mb-1.5">Compte comptabilité générale à traiter *</label>
                             <p className="text-xs text-muted-foreground mb-2">
                                 Comptes de charges (classe 6) issus de la comptabilité générale.
                             </p>

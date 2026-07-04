@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { JournalComptableDto } from '@/src/lib2/models/JournalComptableDto';
 import { AccountingJournalManagementService } from '@/src/lib2/services/AccountingJournalManagementService';
 import { JournalComptableListView } from '@/components/accounting/journal-comptable-list-view';
@@ -29,8 +30,8 @@ export default function JournalComptablePage() {
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
-  const fetchJournals = useCallback(async () => {
-    setIsLoading(true);
+  const fetchJournals = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
       const response = await AccountingJournalManagementService.getAllJournals();
@@ -51,13 +52,15 @@ export default function JournalComptablePage() {
       });
       setError('Impossible de charger les journaux comptables. Veuillez vérifier votre connexion internet.');
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchJournals();
+    void fetchJournals();
   }, [fetchJournals]);
+
+  useAutoRefresh(fetchJournals, [fetchJournals]);
 
   const handleSave = async (data: JournalComptableDto) => {
     try {
@@ -226,7 +229,6 @@ export default function JournalComptablePage() {
           onEditJournal={handleEditJournal}
           onDeleteJournal={confirmDelete}
           onAddNew={handleAddNew}
-          onRefresh={fetchJournals}
           selectedId={selectedJournalId || undefined}
         />
 

@@ -13,7 +13,8 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { PeriodeComptableDto } from '@/src/lib2/models/PeriodeComptableDto';
-import { Edit, Lock, RefreshCw, Search, Plus } from 'lucide-react';
+import { Edit, Lock, Search, Plus } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { ExerciceComptableDto } from '@/src/lib2/models/ExerciceComptableDto';
@@ -26,7 +27,6 @@ interface PeriodeComptableListViewProps {
   onEditPeriode: (id: string) => void;
   onClosePeriode: (id: string) => void;
   onAddNew: () => void;
-  onRefresh: () => void;
   exercices?: ExerciceComptableDto[];
   selectedId?: string;
 }
@@ -75,7 +75,6 @@ export const PeriodeComptableListView: React.FC<PeriodeComptableListViewProps> =
   onEditPeriode,
   onClosePeriode,
   onAddNew,
-  onRefresh,
   exercices = [],
   selectedId,
 }) => {
@@ -98,6 +97,8 @@ export const PeriodeComptableListView: React.FC<PeriodeComptableListViewProps> =
     });
   }, [periodes, searchQuery]);
 
+  if (isLoading) return <CustomPageLoader message="Chargement des périodes..." />;
+
   return (
     <div className="space-y-4">
       {/* Toolbar with search, filters, and buttons */}
@@ -116,7 +117,7 @@ export const PeriodeComptableListView: React.FC<PeriodeComptableListViewProps> =
           </div>
         </div>
 
-        {/* Bottom Row: Action buttons (New left, Refresh right) */}
+        {/* Bottom Row: Action buttons */}
         <div className="flex items-center justify-between">
           <PermissionGuard feature="periods" action="lock">
             <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
@@ -124,9 +125,6 @@ export const PeriodeComptableListView: React.FC<PeriodeComptableListViewProps> =
               Nouvelle Période
             </Button>
           </PermissionGuard>
-          <Button onClick={onRefresh} variant="outline" size="icon">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
       </div>
 
@@ -144,13 +142,7 @@ export const PeriodeComptableListView: React.FC<PeriodeComptableListViewProps> =
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-10 text-gray-400 font-medium italic">
-                  Chargement des périodes...
-                </TableCell>
-              </TableRow>
-            ) : filteredPeriodes.length === 0 ? (
+            {filteredPeriodes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-10 text-gray-400 font-medium italic">Aucune période trouvée.</TableCell>
               </TableRow>

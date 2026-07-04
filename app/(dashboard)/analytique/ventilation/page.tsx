@@ -121,7 +121,7 @@ function VentilationModal({
                         </p>
                         <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <label className="text-sm font-medium">Compte CG *</label>
+                                <label className="text-sm font-medium">Compte comptabilité générale *</label>
                                 <select
                                     className="mt-1 w-full text-sm border border-border rounded-xl px-3 py-2 bg-input"
                                     value={form.compteCG ?? "601"}
@@ -155,7 +155,7 @@ function VentilationModal({
                             <Lock className="h-4 w-4 flex-shrink-0 mt-0.5" />
                             <div>
                                 <p className="font-bold">Charge non incorporable</p>
-                                <p className="text-xs mt-0.5">Ce compte (6x) est classé non incorporable. Il ne sera PAS ventilé en analytique et ne figurera que dans le tableau de concordance CG/CA.</p>
+                                <p className="text-xs mt-0.5">Ce compte (6x) est classé non incorporable. Il ne sera PAS ventilé en analytique et ne figurera que dans le tableau de concordance comptabilité générale / analytique.</p>
                             </div>
                         </div>
                     )}
@@ -325,7 +325,7 @@ export default function VentilationPage() {
                 <div>
                     <h1 className="text-2xl font-bold">Ventilation Analytique</h1>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                        Import sélectif des charges CG et ventilation multi-axes — seules les charges incorporables transitent en CA
+                        Import sélectif des charges de la comptabilité générale et ventilation multi-axes — seules les charges incorporables transitent en comptabilité analytique
                     </p>
                 </div>
                 <button
@@ -340,8 +340,8 @@ export default function VentilationPage() {
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex gap-3">
                 <Info className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-indigo-800">
-                    <p className="font-bold mb-1">Principe de séparation CG/CA</p>
-                    <p>Les charges proviennent de la <strong>Comptabilité Générale</strong> (comptes 6xx). Seules celles marquées <strong>incorporables</strong> sont ventilées sur les axes et centres analytiques. Les charges <strong>non incorporables</strong> (intérêts 661, exceptionnel 671…) restent uniquement dans la CG et apparaissent dans le tableau de concordance.</p>
+                    <p className="font-bold mb-1">Principe de séparation comptabilité générale / analytique</p>
+                    <p>Les charges proviennent de la <strong>Comptabilité Générale</strong> (comptes 6xx). Seules celles marquées <strong>incorporables</strong> sont ventilées sur les axes et centres analytiques. Les charges <strong>non incorporables</strong> (intérêts 661, exceptionnel 671…) restent uniquement dans la comptabilité générale et apparaissent dans le tableau de concordance.</p>
                 </div>
             </div>
 
@@ -470,7 +470,7 @@ export default function VentilationPage() {
                                 <div className="px-4 py-3 bg-rose-50/40">
                                     <p className="text-xs text-rose-600 flex items-center gap-1.5">
                                         <Lock className="h-3.5 w-3.5" />
-                                        Cette charge ne transite pas en comptabilité analytique. Elle apparaît uniquement dans le tableau de concordance CG/CA.
+                                        Cette charge ne transite pas en comptabilité analytique. Elle apparaît uniquement dans le tableau de concordance comptabilité générale / analytique.
                                     </p>
                                 </div>
                             )}

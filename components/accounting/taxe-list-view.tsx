@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TaxeDto } from '@/src/lib2/models/TaxeDto';
-import { Edit, Trash2, Plus, RefreshCw, Search, Loader2 } from 'lucide-react';
+import { Edit, Trash2, Plus, Search } from 'lucide-react';
+import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { PermissionGuard } from '@/components/auth/permission-guard';
 
 interface TaxeListViewProps {
@@ -24,7 +25,6 @@ interface TaxeListViewProps {
   onEdit: (id: string) => void;
   onDelete: (taxe: TaxeDto) => void;
   onAddNew: () => void;
-  onRefresh: () => void;
 }
 
 const RowActions = ({ taxe, onEdit, onDelete }: {
@@ -66,7 +66,6 @@ export const TaxeListView: React.FC<TaxeListViewProps> = ({
   onEdit,
   onDelete,
   onAddNew,
-  onRefresh,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -78,6 +77,8 @@ export const TaxeListView: React.FC<TaxeListViewProps> = ({
       (taxe.compte_deductible && taxe.compte_deductible.includes(searchTerm))
     );
   });
+
+  if (isLoading) return <CustomPageLoader message="Chargement des taxes..." />;
 
   return (
     <div className="space-y-4">
@@ -95,7 +96,7 @@ export const TaxeListView: React.FC<TaxeListViewProps> = ({
           </div>
         </div>
 
-        {/* Bottom Row: Action buttons (New left, Refresh right) */}
+        {/* Bottom Row: Action buttons */}
         <div className="flex items-center justify-between w-full">
           <PermissionGuard feature="taxes" action="create">
             <Button onClick={onAddNew} className="bg-blue-600 hover:bg-blue-700">
@@ -103,9 +104,6 @@ export const TaxeListView: React.FC<TaxeListViewProps> = ({
               Nouvelle Taxe
             </Button>
           </PermissionGuard>
-          <Button onClick={onRefresh} variant="outline" size="icon" className="h-10 w-10">
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
         </div>
       </div>
 
@@ -122,15 +120,7 @@ export const TaxeListView: React.FC<TaxeListViewProps> = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-10">
-                  <div className="flex justify-center items-center">
-                    <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : filteredTaxes.length === 0 ? (
+            {filteredTaxes.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-10 text-gray-400 font-medium italic">
                   Aucune taxe trouvée.

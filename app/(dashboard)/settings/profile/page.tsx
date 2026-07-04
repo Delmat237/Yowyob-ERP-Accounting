@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Loader2, User, Mail, Shield, ShieldCheck, KeyRound, Save, Pencil } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,14 +169,7 @@ export default function ProfilePage() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-3">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-600 mx-auto" />
-          <p className="text-sm text-muted-foreground animate-pulse">Chargement de votre profil...</p>
-        </div>
-      </div>
-    );
+    return <CustomPageLoader message="Chargement de votre profil..." />;
   }
 
   const displayFirstName = isEditing ? draft.firstName : form.firstName;
@@ -317,13 +311,6 @@ export default function ProfilePage() {
                   </strong>
                 </span>
               </div>
-
-              {profile?.id && (
-                <div className="flex items-center gap-2.5 text-sm text-gray-500 font-mono text-[11px] select-all">
-                  <span className="font-sans text-gray-600 font-normal">ID Utilisateur :</span>
-                  <span>{profile.id}</span>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>

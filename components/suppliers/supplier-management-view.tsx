@@ -6,7 +6,7 @@ import { Supplier } from "@/types/core";
 import { Search, Plus, User, FileText, Banknote, ShoppingBasket } from "lucide-react";
 import { SupplierForm } from "./supplier-form";
 import { getSuppliers, createSupplier, updateSupplier, deleteSupplier } from "@/lib/api";
-import { Skeleton } from "@/components/ui/skeleton";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 
@@ -79,6 +79,8 @@ export function SupplierManagementView({ initialSuppliers }: { initialSuppliers:
         }
     };
 
+    if (isLoading) return <CustomPageLoader message="Chargement des fournisseurs..." />;
+
     return (
         <div className="h-full flex gap-4">
             <div className="w-1/3 flex flex-col gap-4">
@@ -94,10 +96,7 @@ export function SupplierManagementView({ initialSuppliers }: { initialSuppliers:
                         </div>
                     </CardHeader>
                     <CardContent className="p-2 flex-grow overflow-y-auto">
-                        {isLoading ? (
-                            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
-                        ) : (
-                            filteredSuppliers.map((supplier) => (
+                        {filteredSuppliers.map((supplier) => (
                                 <div key={supplier.id} onClick={() => handleSelectSupplier(supplier)} 
                                 className={`p-3 border-b cursor-pointer hover:bg-accent ${selectedSupplier?.id === supplier.id ? 'bg-primary/10' : ''}`}>
                                     <div className="flex justify-between items-start">
@@ -106,8 +105,7 @@ export function SupplierManagementView({ initialSuppliers }: { initialSuppliers:
                                     </div>
                                     <p className="text-sm text-muted-foreground">{supplier.code}</p>
                                 </div>
-                            ))
-                        )}
+                            ))}
                     </CardContent>
                 </Card>
             </div>

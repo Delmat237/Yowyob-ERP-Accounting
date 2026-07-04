@@ -1,9 +1,10 @@
 // components/accounting/role-assignment-view.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Shield, UserCheck, Building2, AlertTriangle } from 'lucide-react';
+import { Shield, UserCheck, Building2, AlertTriangle } from 'lucide-react';
+import { useAutoRefresh } from '@/hooks/use-auto-refresh';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -36,7 +37,7 @@ export const RoleAssignmentView: React.FC = () => {
     const currentOrgId = (user as any)?.organizationId ?? null;
     const currentOrgName = (user as any)?.company ?? null;
 
-    const loadUsers = () => {
+    const loadUsers = useCallback(() => {
         const stored = localStorage.getItem('mock_users');
         if (stored) {
             try {
@@ -45,11 +46,13 @@ export const RoleAssignmentView: React.FC = () => {
                 setAllUsers([]);
             }
         }
-    };
+    }, []);
 
     useEffect(() => {
         loadUsers();
-    }, []);
+    }, [loadUsers]);
+
+    useAutoRefresh(loadUsers, [loadUsers]);
 
     // Filtrer : uniquement les utilisateurs de la même organisation, sauf soi-même
     const sameOrgUsers = allUsers.filter((u) => {
@@ -131,15 +134,11 @@ export const RoleAssignmentView: React.FC = () => {
                 ))}
             </div>
 
-            {/* Refresh */}
+            {/* Utilisateurs */}
             <div className="flex justify-between items-center">
                 <p className="text-sm text-gray-500">
                     {sameOrgUsers.length} utilisateur(s) dans votre organisation
                 </p>
-                <Button variant="outline" size="sm" onClick={loadUsers} className="border-gray-300">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Actualiser
-                </Button>
             </div>
 
             {/* Table */}

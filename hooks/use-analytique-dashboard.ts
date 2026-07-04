@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
 import { AccountingAnalyticsService } from "@/src/lib2/services/AccountingAnalyticsService";
 import { AccountingBudgetsService } from "@/src/lib2/services/AccountingBudgetsService";
 import { AccountingPeriodsService } from "@/src/lib2/services/AccountingPeriodsService";
@@ -32,17 +33,31 @@ export interface BudgetBarChart {
     realise: number;
 }
 
+export interface BudgetAlerte {
+    id: string;
+    nom: string;
+    type: string;
+    taux: number;
+    statut: "depassement" | "alerte" | "ok";
+    montantAlloue: number;
+    montantConsomme: number;
+}
+
 export interface AnalytiqueDashboardState {
     loading: boolean;
     partialError: boolean;
     axesTotal: number;
     axesActifs: number;
+    budgets: BudgetDto[];
+    budgetsAnnuel: number;
+    budgetsMensuel: number;
     budgetsAnalytiques: BudgetDto[];
     budgetAlloue: number;
     budgetConsomme: number;
     budgetTaux: number;
     budgetParAxe: BudgetAxeChart[];
     budgetBarData: BudgetBarChart[];
+    alertesBudgets: BudgetAlerte[];
     periodes: PeriodeResume[];
     periodeEnCours: string | null;
     periodesOuvertes: number;
@@ -55,12 +70,16 @@ const EMPTY: AnalytiqueDashboardState = {
     partialError: false,
     axesTotal: 0,
     axesActifs: 0,
+    budgets: [],
+    budgetsAnnuel: 0,
+    budgetsMensuel: 0,
     budgetsAnalytiques: [],
     budgetAlloue: 0,
     budgetConsomme: 0,
     budgetTaux: 0,
     budgetParAxe: [],
     budgetBarData: [],
+    alertesBudgets: [],
     periodes: [],
     periodeEnCours: null,
     periodesOuvertes: 0,
@@ -68,8 +87,32 @@ const EMPTY: AnalytiqueDashboardState = {
     vsRealise: null,
 };
 
-function isAnalyticalBudget(b: BudgetDto): boolean {
-    return b.type === "ANALYTIQUE" || (b.axeIds?.length ?? 0) > 0;
+function budgetTauxConsommation(b: BudgetDto): number {
+    const alloue = b.montantAlloue ?? 0;
+    const consomme = b.montantConsomme ?? 0;
+    if (alloue <= 0) return 0;
+    return (consomme / alloue) * 100;
+}
+
+function buildAlertesBudgets(budgets: BudgetDto[]): BudgetAlerte[] {
+    return budgets
+        .map((b) => {
+            const taux = budgetTauxConsommation(b);
+            const seuil = b.seuilAlerte ?? 80;
+            const statut: BudgetAlerte["statut"] =
+                taux > 100 ? "depassement" : taux >= seuil ? "alerte" : "ok";
+            return {
+                id: b.id ?? b.code ?? b.nom ?? "",
+                nom: b.nom ?? b.libelle ?? b.code ?? "Budget",
+                type: b.type ?? "—",
+                taux,
+                statut,
+                montantAlloue: b.montantAlloue ?? 0,
+                montantConsomme: b.montantConsomme ?? 0,
+            };
+        })
+        .filter((a) => a.statut !== "ok")
+        .sort((a, b) => b.taux - a.taux);
 }
 
 function mapPeriodeStatut(p: PeriodeComptableDto): PeriodeStatut {
@@ -142,8 +185,10 @@ function pickActiveExercice(
 export function useAnalytiqueDashboard() {
     const [state, setState] = useState<AnalytiqueDashboardState>(EMPTY);
 
-    const load = useCallback(async () => {
-        setState((s) => ({ ...s, loading: true }));
+    const load = useCallback(async (options?: AutoRefreshOptions) => {
+        if (!options?.silent) {
+            setState((s) => ({ ...s, loading: true }));
+        }
 
         let partialError = false;
         let axes: AxeAnalytiqueDto[] = [];
@@ -166,7 +211,7 @@ export function useAnalytiqueDashboard() {
         }
 
         if (budgetsRes.status === "fulfilled") {
-            budgets = (budgetsRes.value.data ?? []).filter(isAnalyticalBudget);
+            budgets = budgetsRes.value.data ?? [];
         } else {
             partialError = true;
         }
@@ -194,7 +239,7 @@ export function useAnalytiqueDashboard() {
 
         const periodesResume: PeriodeResume[] = periodes.map((p) => ({
             id: p.id ?? p.code,
-            libelle: p.code,
+            libelle: p.code || "Période",
             statut: mapPeriodeStatut(p),
             dateDebut: p.dateDebut,
             dateFin: p.dateFin,
@@ -209,12 +254,16 @@ export function useAnalytiqueDashboard() {
             partialError,
             axesTotal: axes.length,
             axesActifs: axes.filter((a) => a.actif).length,
-            budgetsAnalytiques: budgets,
+            budgets,
+            budgetsAnnuel: budgets.filter((b) => b.type === "EXERCICE").length,
+            budgetsMensuel: budgets.filter((b) => b.type === "PERIODE").length,
+            budgetsAnalytiques: budgets.filter((b) => b.type === "ANALYTIQUE" || (b.axeIds?.length ?? 0) > 0),
             budgetAlloue,
             budgetConsomme,
             budgetTaux: budgetAlloue > 0 ? (budgetConsomme / budgetAlloue) * 100 : 0,
             budgetParAxe: buildBudgetParAxe(budgets),
             budgetBarData: buildBudgetBarData(budgets),
+            alertesBudgets: buildAlertesBudgets(budgets),
             periodes: periodesResume,
             periodeEnCours: enCours?.libelle ?? null,
             periodesOuvertes: periodesResume.filter((p) => p.statut === "OUVERT").length,
@@ -224,8 +273,10 @@ export function useAnalytiqueDashboard() {
     }, []);
 
     useEffect(() => {
-        load();
+        void load();
     }, [load]);
+
+    useAutoRefresh(load, [load]);
 
     return { ...state, refresh: load };
 }
