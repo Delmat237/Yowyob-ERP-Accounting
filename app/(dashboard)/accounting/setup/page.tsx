@@ -83,6 +83,16 @@ export default function AccountingSetupPage() {
 
     const anySelected = Object.values(selections).some(Boolean);
 
+    // Un composant est « fait » s'il est déjà présent (ou vient d'être créé dans la session).
+    const isDone = (key: StepKey) => {
+        const s = statusByKey[key]?.status;
+        return s === "ALREADY_PRESENT" || s === "CREATED";
+    };
+    // Composants sélectionnés qui restent réellement à initialiser.
+    const pendingSelected = COMPONENTS.filter((c) => selections[c.key] && !isDone(c.key));
+    // Rien à faire : tous les composants sélectionnés sont déjà en place → bouton grisé.
+    const nothingToInitialize = anySelected && pendingSelected.length === 0;
+
     const handleRun = async () => {
         if (!anySelected) {
             toast.warning("Sélectionnez au moins un composant à initialiser.");
@@ -183,11 +193,19 @@ export default function AccountingSetupPage() {
                 {/* Action */}
                 <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
                     <p className="text-sm text-gray-500">
-                        {loadingStatus ? "Chargement de l'état…" : "Lancez l'initialisation pour l'organisation courante."}
+                        {loadingStatus
+                            ? "Chargement de l'état…"
+                            : nothingToInitialize
+                                ? "Tout est déjà initialisé pour cet exercice."
+                                : "Lancez l'initialisation pour l'organisation courante."}
                     </p>
-                    <Button onClick={handleRun} disabled={running || !anySelected} className="gap-2">
-                        {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                        {running ? "Initialisation…" : "Lancer l'initialisation"}
+                    <Button
+                        onClick={handleRun}
+                        disabled={running || loadingStatus || !anySelected || nothingToInitialize}
+                        className="gap-2"
+                    >
+                        {running ? <Loader2 className="h-4 w-4 animate-spin" /> : nothingToInitialize ? <CheckCircle2 className="h-4 w-4" /> : <Rocket className="h-4 w-4" />}
+                        {running ? "Initialisation…" : nothingToInitialize ? "Déjà initialisé" : "Lancer l'initialisation"}
                     </Button>
                 </div>
             </div>
