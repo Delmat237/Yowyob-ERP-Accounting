@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, User, Mail, Shield, ShieldCheck, KeyRound, Save, Pencil } from "lucide-react";
+import { Loader2, User, Mail, Shield, ShieldCheck, KeyRound, Save, Pencil, Camera, Trash2 } from "lucide-react";
 import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
 import { UsersService } from "@/src/lib/services/UsersService";
@@ -36,6 +36,24 @@ function buildInitials(firstName: string, lastName: string, email: string) {
   return email?.[0]?.toUpperCase() || "?";
 }
 
+/** Taille max d'une photo de profil (2 Mo). */
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
+
+/** Clé de stockage de l'avatar, isolée par utilisateur. */
+function avatarStorageKey(userId?: string) {
+  return `profile_avatar_${userId || "current"}`;
+}
+
+/** Lit un fichier image en data URL (base64), pour affichage et persistance locale. */
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ProfilePage() {
   const { user: authUser, accountingRole, setUser } = useAuth();
   const [profile, setProfile] = useState<UserType | null>(null);
@@ -45,13 +63,61 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Identifiant courant : profil chargé, sinon utilisateur de session.
+  const userId = profile?.id ?? authUser?.id;
+
+  // Restaure l'avatar stocké localement une fois l'utilisateur connu.
+  useEffect(() => {
+    if (typeof window === "undefined" || !userId) return;
+    setAvatarUrl(localStorage.getItem(avatarStorageKey(userId)));
+  }, [userId]);
+
+  const handleAvatarPick = () => fileInputRef.current?.click();
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permet de resélectionner le même fichier
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez choisir un fichier image.");
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      toast.error("Image trop lourde (2 Mo maximum).");
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setAvatarUrl(dataUrl);
+      if (userId) localStorage.setItem(avatarStorageKey(userId), dataUrl);
+      toast.success("Photo de profil mise à jour.");
+    } catch {
+      toast.error("Impossible de lire l'image sélectionnée.");
+    }
+  };
+
+  const handleAvatarRemove = () => {
+    setAvatarUrl(null);
+    if (userId) localStorage.removeItem(avatarStorageKey(userId));
+    toast.success("Photo de profil supprimée.");
+  };
 
   const syncFormFromProfile = useCallback((data: UserType, actorName?: string) => {
     const actorParts = splitActorName(actorName);
+    const sessionUser = useAuth.getState().user;
+    // Le kernel ne porte PAS de prénom/nom sur le compte (UserAccount = username + email,
+    // pas de champ name), et l'acteur peut être absent (/actors/me 404). En dernier recours
+    // on dérive un nom lisible depuis le username (ex. "leonel.azangue" → Leonel / Azangue)
+    // pour éviter un profil vide, plutôt que de laisser les champs blancs.
+    const username = (data as { username?: string }).username;
+    const usernameParts = splitActorName(username?.replace(/[._-]+/g, " "));
     const next: ProfileForm = {
-      firstName: data.firstName || actorParts.firstName || "",
-      lastName: data.lastName || actorParts.lastName || "",
-      email: data.email || "",
+      firstName: data.firstName || actorParts.firstName || sessionUser?.firstName || usernameParts.firstName || "",
+      lastName: data.lastName || actorParts.lastName || sessionUser?.lastName || usernameParts.lastName || "",
+      email: data.email || sessionUser?.email || "",
     };
     setForm(next);
     setDraft(next);
@@ -221,15 +287,45 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-gray-100 shadow-sm rounded-xl bg-white md:col-span-1">
           <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
-            <Avatar className="h-24 w-24 border-2 border-blue-100 shadow-md">
-              <AvatarFallback className="bg-blue-600 text-white font-bold text-3xl">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="h-24 w-24 border-2 border-blue-100 shadow-md">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={fullName} className="object-cover" />}
+                <AvatarFallback className="bg-blue-600 text-white font-bold text-3xl">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={handleAvatarPick}
+                aria-label="Changer la photo de profil"
+                className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md ring-2 ring-white transition hover:bg-blue-700"
+              >
+                <Camera className="h-4 w-4" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
+            </div>
             <div className="space-y-1">
               <h2 className="text-lg font-bold text-gray-900">{fullName}</h2>
               <p className="text-xs text-muted-foreground break-all">{displayEmail}</p>
             </div>
+            {avatarUrl && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleAvatarRemove}
+                className="h-7 gap-1.5 text-xs text-gray-500 hover:text-red-600"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Retirer la photo
+              </Button>
+            )}
 
             <div className="w-full pt-4 border-t border-gray-50 flex flex-col gap-2">
               <span className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
