@@ -4,8 +4,10 @@ const MAX_WAIT_MS = 8000;
 function isMainContentPending(main: Element): boolean {
   const text = main.textContent?.trim() ?? '';
 
-  // CustomPageLoader plein écran (overlay fixed)
-  const fullscreenLoader = document.querySelector('[class*="fixed"][class*="inset-0"][class*="z-[9998]"]');
+  // CustomPageLoader plein écran (overlay fixed), en excluant le loader de transition global lui-même
+  const fullscreenLoader = document.querySelector(
+    '[class*="fixed"][class*="inset-0"][class*="z-[9998]"]:not(.navigation-loader)',
+  );
   if (fullscreenLoader && /chargement/i.test(fullscreenLoader.textContent ?? '')) {
     return true;
   }
