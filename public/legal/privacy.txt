@@ -1,0 +1,297 @@
+KIT SUITE MANAGER (KSM)
+Avis de confidentialite / Privacy Notice
+VERSION BÊTA PUBLIÉE - Version 1.0 - 7 juillet 2026 / 7 July 2026
+Applicable aux plateformes KSM sous le domaine yowyob.com, exploitees par YowYob Inc. Ltd, Yaounde, Cameroun.
+Publication URLs principales: https://ksm.yowyob.com et sous-domaines KSM associes.
+Mention bêta publiée: KSM est exploite progressivement par modules. Certaines fonctionnalites, integrations, performances et options de parametrage peuvent evoluer. Cette Notice protege les personnes concernees tout en precisant clairement les responsabilites de YowYob, des Clients/Partenaires et des administrateurs KSM.
+Clause fondamentale: tout stockage, export, copie, impression, cache, sauvegarde, synchronisation, webhook, API, outil tiers, serveur, disque, messagerie, tableur ou traitement effectue hors du Cloud YowYob est place sous la responsabilite exclusive du Client/Partenaire ou de l utilisateur qui le controle.
+Documents et politiques lies
+Termes et Conditions Generales d Utilisation et de Service KSM (CGU/ToU), version bêta publiée.
+Notice Cookies & Publicite KSM, version bêta publiée.
+Politique de confidentialite generale YowYob et conditions generales applicables aux plateformes yowyob.com.
+Contrats, bons de commande, accords de partenariat, DPA ou conditions additionnelles propres a un Client/Partenaire.
+Sommaire / Table of contents
+Section || Articles || Description
+Partie A - Francais || 1 a 24 || Notice principale, responsabilites, donnees, droits, securite, conservation et contact.
+Part B - English || 1 to 24 || Main notice, roles, data, rights, security, retention and contact.
+Annexe / Annex || A || Matrice indicative des modules KSM, donnees traitees et responsabilites.
+Partie A - Francais
+1. Introduction
+KSM - Kit Suite Manager est la suite ERP de YowYob Inc. Ltd destinee a assister les entreprises, PME, PMI, commerces, points de vente, partenaires et organisations dans la gestion de leurs ressources, operations, ventes, stocks, facturation, comptabilite, tresorerie, personnel, relations clients, documents, notifications, contenus et activites connexes.
+Le present Avis de confidentialite explique comment les donnees a caractere personnel et les donnees professionnelles associees a KSM peuvent etre collectees, utilisees, securisees, conservees, partagees ou supprimees lorsque vous utilisez les plateformes KSM et leurs utilitaires.
+Cet Avis doit etre lu avec les CGU/ToU KSM, la Notice Cookies & Publicite KSM, la Politique de confidentialite generale YowYob et tout contrat ou accord additionnel applicable.
+2. Qui sommes-nous et quel est notre role?
+KSM est fourni par YowYob Inc. Ltd, societe ayant son siege a Yaounde, Cameroun. Selon le contexte, YowYob peut agir comme responsable du traitement pour ses propres donnees de compte, support, facturation, securite, statistiques, marketing et exploitation de plateforme; ou comme sous-traitant/operateur technique lorsque KSM heberge et traite les donnees metier introduites par un Client/Partenaire pour son organisation.
+Le Client/Partenaire reste en principe responsable du traitement des donnees de ses propres clients, employes, fournisseurs, prospects, commerciaux, visiteurs, points de vente, comptables, caissiers, administrateurs, prestataires et autres personnes qu il gere dans KSM, sauf disposition contractuelle contraire.
+3. Portee de cet Avis
+Cet Avis s applique a ksm.yowyob.com et aux plateformes, sous-domaines, applications, API, PWA, interfaces mobiles, portails, utilitaires et services connectes a l ecosysteme KSM.
+Plateformes metier: ksm, cashier, pos, catalog, stockman, yowflash, crm, hrm, spare, billing, accounting, immo, shop, production, thirdparty et banking.
+Utilitaires et services transversaux: chat, event, kyoc, loyalty, blog, podcast, forum, search, webhook-dev, businessbook, notification et services techniques associes.
+Connecteurs, webhooks, APIs, exports, imports, rapports, tableaux de bord, journaux d audit, notifications, contenus publics et contenus reserves aux organisations clientes.
+Cet Avis ne s applique pas aux services tiers, plateformes externes, terminaux, logiciels, serveurs, systemes de stockage, comptes de messagerie, tableurs ou outils utilises en dehors du Cloud YowYob, meme lorsqu ils recoivent des donnees exportees depuis KSM.
+4. Definitions utiles
+Terme || Signification
+YowYob || YowYob Inc. Ltd, fournisseur de KSM et exploitant des plateformes sous yowyob.com.
+Client/Partenaire || Entreprise, organisation ou personne morale qui souscrit, administre ou exploite un espace KSM pour ses operations.
+Utilisateur || Toute personne physique utilisant KSM: administrateur, employe, client, fournisseur, commercial, caissier, manager, visiteur, prospect ou prestataire.
+Donnees Client || Donnees introduites, generees, importees ou administrees par un Client/Partenaire dans son espace KSM.
+Donnees personnelles || Toute information se rapportant a une personne physique identifiee ou identifiable.
+Cloud YowYob || Infrastructure, bases de donnees, services applicatifs, sauvegardes et environnements controles par YowYob pour fournir KSM.
+Hors Cloud YowYob || Tout emplacement, outil, support, API, serveur, terminal ou copie non controle directement par YowYob.
+5. Donnees que nous pouvons collecter ou traiter
+Les donnees traitees dependent des modules actives, des parametrages choisis par le Client/Partenaire et des informations que les utilisateurs saisissent, importent, publient ou synchronisent.
+Categorie || Exemples
+Compte et identite || Nom, prenom, email, telephone, login, role, profil, organisation, langue, preferences, statut du compte.
+Organisation et activite || Raison sociale, enseigne, registre, identifiants fiscaux, adresses, points de vente, magasins, postes, agences, equipes, catalogues.
+Transactions commerciales || Commandes, ventes, proformas, devis, factures, bons de livraison, remboursements, remises, modes de reglement, journaux de vente.
+Caisse et POS || Operations de caisse, sessions, mouvements, clotures, annulations, bordereaux, recus, postes de facturation, traces d action.
+Stock, production et immobilisations || Articles, familles, magasins, rayons, casiers, inventaires, mouvements, lots, transformation, production, maintenance, immobilisations.
+Comptabilite, facturation et tresorerie || Ecritures, journaux, comptes, pieces, echeanciers, rapprochements, donnees de banking/tresorerie, references de paiement.
+CRM, tiers et fidelite || Clients, fournisseurs, prospects, commerciaux, contacts, interactions, tickets, preferences, points de fidelite, historique relationnel.
+HRM || Donnees du personnel, fonctions, affectations, elements de paie ou de gestion RH lorsque le Client les active et les saisit.
+Documents et contenus || Fichiers KYOC, documents commerciaux, justificatifs, images, annonces, fiches businessbook, posts blog/forum, podcasts, messages chat, evenements.
+Donnees techniques || Adresse IP, appareil, navigateur, identifiants de session, logs, horodatages, erreurs, performance, securite, cookies, stockage local.
+Support et communication || Demandes d assistance, emails, messages, incidents, captures ou pieces jointes transmis volontairement au support YowYob.
+6. Sources des donnees
+Vous ou votre organisation: saisie directe, import, formulaire, API, webhook, fichier, message ou interaction dans KSM.
+Administrateurs KSM du Client/Partenaire: creation de comptes, roles, privileges, parametres, donnees metier, workflows et autorisations.
+Modules KSM: generation automatique de journaux, evenements, factures, traces, rapports, notifications, statistiques et alertes.
+Prestataires tiers: services de paiement, hebergement, communication, analytics, securite, messagerie, cartographie ou autres integrations autorisees.
+Appareils et navigateurs: logs techniques, cookies, stockage local, session, PWA, service workers et signaux de securite.
+7. Finalites de traitement
+YowYob utilise les donnees strictement dans les finalites necessaires a la fourniture, la securisation, l amelioration et la defense de KSM, ainsi qu aux obligations contractuelles, legales et commerciales associees.
+Creer, authentifier, securiser et administrer les comptes KSM.
+Fournir les modules ERP, POS, stock, caisse, catalogue, CRM, HRM, facturation, comptabilite, tresorerie, production, documents, notifications et services associes.
+Traiter les transactions, generer les documents, rapports, journaux, tableaux de bord, alertes, exports et historiques demandes par le Client/Partenaire.
+Maintenir les profils, privileges, controles d acces, journaux d audit, mesures anti-fraude et traces de securite.
+Assurer le support, la maintenance, les corrections, la qualite, les tests bêta, la resilience, la sauvegarde et la reprise apres incident.
+Produire des statistiques, mesures d usage, analyses agregées ou pseudonymisées, recommandations et ameliorations fonctionnelles.
+Diffuser ou mesurer, lorsque applicable, des communications, offres, contenus sponsorises ou visibilite partenaire dans les modules publics/commerciaux.
+Respecter les obligations legales, fiscales, comptables, judiciaires, administratives ou de cybersecurite applicables.
+Faire respecter les CGU/ToU KSM, prevenir les abus et proteger YowYob, les Clients/Partenaires, les utilisateurs et les tiers.
+8. Bases legales possibles
+Selon le type de donnees et le droit applicable, les traitements peuvent reposer sur une ou plusieurs bases: execution d un contrat, consentement, obligation legale, interet legitime, sauvegarde des droits, securite des systemes, defense en justice ou instructions documentees du Client/Partenaire lorsque YowYob agit comme sous-traitant.
+Lorsque le consentement est requis, vous pouvez le retirer selon les mecanismes prevus, sans affecter la liceite des traitements realises avant ce retrait.
+9. Repartition des responsabilites dans KSM
+Le Client/Partenaire determine les donnees qu il introduit dans KSM, les personnes concernees, les finalites metier, les roles, les privileges, la duree de conservation metier, les exports et les destinataires internes. A ce titre, il supporte la responsabilite principale de la liceite, de l exactitude et de la proportionnalite des Donnees Client.
+Acteur || Responsabilites principales
+YowYob - responsable du traitement || Comptes YowYob, gestion de la plateforme, facturation YowYob, support, securite, logs globaux, analytics de service, communication propre a YowYob.
+YowYob - sous-traitant/operateur technique || Hebergement, traitement, sauvegarde, maintenance et assistance des Donnees Client selon les instructions du Client/Partenaire et les CGU/contrats applicables.
+Client/Partenaire - responsable du traitement || Donnees de ses clients, employes, fournisseurs, prospects, operations, documents, fiscalite, comptabilite, paie, stockage externe, exports et decisions metier.
+Administrateurs KSM || Gestion des comptes, profils, privileges, habilitations, configurations, connecteurs, webhooks, exports, imports et restrictions internes.
+Utilisateurs finaux || Exactitude des donnees saisies, respect des droits des tiers, protection de leurs identifiants, usage loyal et licite de KSM.
+10. Donnees stockees hors du Cloud YowYob
+Toute donnee stockee, transferee, sauvegardee, exportee, imprimee, copiee, synchronisee, cachee ou traitee hors du Cloud YowYob est exclusivement sous la responsabilite du Client/Partenaire ou de l utilisateur qui en decide ou en controle le traitement.
+Cela inclut notamment les exports Excel/CSV/PDF, impressions, captures d ecran, pieces jointes email, telechargements, sauvegardes locales, terminaux POS, disques externes, comptes WhatsApp ou messagerie, logiciels comptables tiers, serveurs prives, scripts, connecteurs, webhooks, APIs externes, outils publicitaires, plateformes cloud tierces, systemes de paiement, tableurs et tout stockage non controle par YowYob.
+YowYob n est pas responsable de la perte, divulgation, alteration, reutilisation, conservation excessive, acces non autorise, non-conformite, litige, sanction ou dommage decoulant de traitements hors Cloud YowYob, sauf faute prouvee directement imputable a YowYob dans son propre environnement controle.
+Le Client/Partenaire doit informer les personnes concernees, obtenir les autorisations requises, securiser les exports, limiter les destinataires, tracer les acces, effacer les copies inutiles et respecter les lois applicables aux donnees qu il extrait ou transfere hors KSM.
+11. Donnees sensibles, professionnelles ou reglementees
+KSM peut contenir des donnees sensibles ou a risque eleve lorsque le Client/Partenaire choisit d y introduire des donnees RH, documents d identite, donnees financieres, donnees bancaires, donnees fiscales, informations de paie, documents confidentiels, donnees d employes, justificatifs, contrats ou informations commerciales strategiques.
+Le Client/Partenaire ne doit pas collecter ou televerser de donnees sensibles non necessaires a ses finalites licites.
+YowYob ne fournit pas de conseil fiscal, juridique, comptable, bancaire, social ou RH; KSM est un outil d assistance et de gestion.
+Les modules accounting, billing, banking, HRM, KYOC et POS ne remplacent pas les controles, validations et obligations professionnelles du Client/Partenaire.
+Les donnees de mineurs, de sante, biométriques ou autres donnees hautement sensibles ne doivent etre traitees dans KSM que si la loi le permet et si le Client/Partenaire dispose des garanties requises.
+12. Cookies, publicite et technologies similaires
+KSM peut utiliser des cookies, stockage local, stockage de session, caches PWA, pixels, balises, identifiants SDK et journaux techniques pour assurer les sessions, preferences, securite, analytics, performance, notifications, personnalisation, publicite et mesure de campagnes.
+Les details sont presentes dans la Notice Cookies & Publicite KSM. Les technologies non strictement necessaires peuvent etre soumises a consentement ou parametres de preference lorsque la loi l exige.
+13. Donnees agregées, statistiques et amelioration de KSM
+YowYob peut produire et utiliser des donnees agregées, statistiques, pseudonymisees ou desidentifiees pour mesurer l usage, ameliorer les modules, renforcer la securite, detecter les anomalies, optimiser l experience utilisateur, developper des fonctionnalites intelligentes et produire des indicateurs de marche ou de performance qui ne visent pas a identifier directement une personne.
+Lorsque des donnees sont utilisees pour des modeles, analyses ou fonctionnalites intelligentes, YowYob s efforce de limiter l usage aux informations necessaires et de privilegier l agregation, la pseudonymisation, la minimisation et les controles d acces.
+14. Partage des informations
+YowYob ne vend pas les donnees personnelles des utilisateurs comme fichiers nominatifs a des tiers. Des donnees peuvent etre partagees uniquement dans les cas necessaires ou autorises.
+Prestataires techniques: hebergement, sauvegarde, securite, monitoring, messagerie, support, analytics, paiement, notification et infrastructure.
+Clients/Partenaires: acces aux donnees de leur propre espace KSM selon les roles et privileges definis par eux.
+Tiers integres: APIs, webhooks, outils de paiement, outils publicitaires, systemes comptables ou services actives par le Client/Partenaire.
+Autorites competentes: lorsque la loi, une decision judiciaire, une demande administrative valable ou la protection des droits l exige.
+Operations d entreprise: fusion, restructuration, cession, financement, transfert d actifs ou operation similaire autorisee par la loi.
+Donnees agregées ou desidentifiees: statistiques, reporting, recherche, performance, visibilite partenaire ou amelioration de service.
+15. Paiements, Mobile Money et partenaires financiers
+Lorsque KSM facilite des paiements, abonnements, factures, tickets, reglements, avances, remboursements ou operations liees a la tresorerie, des donnees peuvent etre transmises a des prestataires de paiement, banques, operateurs Mobile Money, PSP, integrateurs ou partenaires financiers.
+Ces tiers peuvent agir comme responsables autonomes ou sous-traitants selon leur role et leurs conditions. YowYob n est pas responsable des traitements effectues dans les environnements ou comptes tiers, sauf obligation legale contraire.
+16. Transferts internationaux
+Les donnees peuvent etre traitees au Cameroun ou dans d autres pays ou se trouvent les infrastructures, prestataires, outils de support, services cloud, solutions de paiement ou partenaires techniques de YowYob. Lorsque la loi l exige, YowYob met en place des garanties contractuelles, organisationnelles ou techniques appropriees.
+Le Client/Partenaire est responsable des transferts internationaux qu il initie lui-meme, notamment par export, webhook, API, outil tiers, sauvegarde externe ou partage a des destinataires hors de son pays.
+17. Conservation des donnees
+Les durees de conservation varient selon la nature des donnees, les finalites, les parametrages du Client/Partenaire, les exigences legales, les besoins de preuve, les obligations comptables/fiscales et la securite de la plateforme.
+Categorie || Principe de conservation
+Comptes et profils || Pendant la duree du compte, puis selon les delais necessaires a la preuve, au support, a la securite et aux obligations legales.
+Donnees transactionnelles, comptables et fiscales || Selon les exigences legales applicables au Client/Partenaire et aux obligations de conservation de documents comptables, commerciaux et fiscaux.
+Logs de securite et audit || Pendant la duree necessaire a la securite, au diagnostic, a la prevention des fraudes, a la preuve et au respect des obligations legales.
+Support || Pendant le temps necessaire au traitement de la demande, au suivi qualite, a la preuve et a la defense des droits.
+Donnees agregées ou desidentifiees || Peuvent etre conservees plus longtemps lorsqu elles ne permettent pas raisonnablement d identifier une personne.
+Les demandes de suppression doivent tenir compte des contraintes legales, comptables, fiscales, contractuelles, securitaires et de sauvegarde. Une suppression dans l interface KSM ne supprime pas necessairement les copies deja exportees ou conservees hors Cloud YowYob par le Client/Partenaire.
+18. Securite
+YowYob met en oeuvre des mesures administratives, techniques et organisationnelles raisonnables pour proteger les donnees dans le Cloud YowYob contre les acces non autorises, pertes, alterations, usages abusifs ou divulgations non autorisees. Ces mesures peuvent inclure chiffrement en transit, controle d acces, profils et privileges, journalisation, sauvegarde, surveillance, segmentation, durcissement, controles d infrastructure et procedures internes.
+Aucun systeme numerique ne peut garantir une securite absolue. Le Client/Partenaire doit aussi appliquer ses propres mesures: gestion stricte des roles, mots de passe robustes, MFA lorsque disponible, formation des utilisateurs, controle des exports, verification des webhooks, protection des terminaux POS, suppression des comptes inutiles, revues d acces et sauvegardes conformes.
+19. Incidents de securite
+En cas d incident affectant le Cloud YowYob et susceptible d impacter des donnees personnelles, YowYob evaluera l incident et prendra les mesures raisonnables de confinement, correction et notification selon le droit applicable et les contrats conclus.
+Les incidents lies aux terminaux, mots de passe, administrateurs, exports, webhooks, API, serveurs, appareils, messageries, tableurs ou stockages hors Cloud YowYob relevent du Client/Partenaire, sauf preuve d une faute directement imputable a YowYob.
+20. Vos choix et droits
+Selon le droit applicable, vous pouvez disposer de droits d acces, rectification, effacement, opposition, limitation, portabilite, retrait du consentement et reclamation aupres d une autorite competente.
+Lorsque vos donnees sont traitees dans l espace KSM d un Client/Partenaire, YowYob peut vous orienter vers ce Client/Partenaire, car celui-ci determine souvent les finalites et moyens du traitement. YowYob cooperera raisonnablement lorsque le Client/Partenaire lui transmet une demande valide conforme a ses obligations.
+Pour exercer vos droits concernant les traitements propres a YowYob, contactez-nous via les coordonnees indiquees a la fin de cet Avis. Une verification d identite ou d autorite peut etre exigee.
+21. Enfants et mineurs
+KSM est principalement destine a des entreprises, organisations et professionnels. Il n est pas concu pour etre utilise directement par des enfants. Si un Client/Partenaire traite des donnees de mineurs dans KSM, il assume la responsabilite d obtenir les autorisations requises, d informer les representants legaux lorsque necessaire et de respecter la loi applicable.
+22. Fonctionnalites bêta et evolution du service
+En version bêta publiée, KSM peut faire l objet d evolutions de modules, schemas de donnees, interfaces, APIs, webhooks, mesures de securite, analytics, tableaux de bord, workflows et parametres. YowYob peut adapter cet Avis pour refleter ces evolutions, les exigences legales, les nouveaux risques ou les besoins de protection des utilisateurs et de la plateforme.
+23. Cadre legal de reference
+Cet Avis est redige en tenant compte du droit camerounais et des cadres applicables ou indicatifs, notamment la loi n 2024/017 du 23 decembre 2024 relative a la protection des donnees a caractere personnel au Cameroun, la loi n 2010/012 relative a la cybersecurite et a la cybercriminalite, la loi n 2010/021 regissant le commerce electronique, ainsi que les obligations OHADA/SYSCOHADA lorsque KSM est utilise pour la comptabilite, la facturation ou les pieces commerciales.
+Lorsque KSM est utilise dans d autres pays, le Client/Partenaire doit verifier et respecter les obligations locales applicables a ses traitements, ses utilisateurs et ses activites.
+24. Contact
+YowYob Inc. Ltd - Privacy / Data Protection
+Siege: Yaounde, Cameroun
+Email: privacy@yowyob.com / info@yowyob.com
+Contact web: https://yowyob.com/contact
+Telephone: +237 675 518 880 / +237 656 168 129
+Si vous estimez que vos droits ne sont pas respectes, vous pouvez saisir l autorite competente applicable, notamment l autorite camerounaise competente en matiere de protection des donnees et/ou de cybersecurite selon le cas.
+Part B - English
+1. Introduction
+KSM - Kit Suite Manager is the ERP suite of YowYob Inc. Ltd designed to help enterprises, SMEs, industrial SMEs, shops, points of sale, partners and organizations manage resources, operations, sales, stock, invoicing, accounting, treasury, staff, customer relations, documents, notifications, content and related activities.
+This Privacy Notice explains how personal data and related business data may be collected, used, secured, retained, shared or deleted when you use the KSM platforms and utilities.
+This Notice should be read together with the KSM Terms of Use/Terms of Service, the KSM Cookies & Ads Notice, the general YowYob Privacy Policy and any applicable contract or additional agreement.
+2. Who we are and what our role is
+KSM is provided by YowYob Inc. Ltd, headquartered in Yaounde, Cameroon. Depending on the context, YowYob may act as data controller for its own account, support, billing, security, statistics, marketing and platform operation data; or as processor/technical operator when KSM hosts and processes business data entered by a Client/Partner for its organization.
+The Client/Partner generally remains the controller for the data of its own customers, employees, suppliers, prospects, sales representatives, cashiers, administrators, service providers and other persons managed in KSM, unless a specific contract provides otherwise.
+3. Scope of this Notice
+This Notice applies to ksm.yowyob.com and to platforms, subdomains, applications, APIs, PWAs, mobile interfaces, portals, utilities and services connected to the KSM ecosystem.
+Business platforms: ksm, cashier, pos, catalog, stockman, yowflash, crm, hrm, spare, billing, accounting, immo, shop, production, thirdparty and banking.
+Cross-functional utilities: chat, event, kyoc, loyalty, blog, podcast, forum, search, webhook-dev, businessbook, notification and related technical services.
+Connectors, webhooks, APIs, exports, imports, reports, dashboards, audit logs, notifications, public content and organization-restricted content.
+This Notice does not apply to third-party services, external platforms, terminals, software, servers, storage systems, messaging accounts, spreadsheets or tools used outside the YowYob Cloud, even when they receive data exported from KSM.
+4. Useful definitions
+Term || Meaning
+YowYob || YowYob Inc. Ltd, provider of KSM and operator of platforms under yowyob.com.
+Client/Partner || Business, organization or legal entity subscribing to, administering or operating a KSM workspace for its operations.
+User || Any individual using KSM: administrator, employee, customer, supplier, sales representative, cashier, manager, visitor, prospect or service provider.
+Client Data || Data entered, generated, imported or administered by a Client/Partner in its KSM workspace.
+Personal data || Any information relating to an identified or identifiable natural person.
+YowYob Cloud || Infrastructure, databases, application services, backups and environments controlled by YowYob to provide KSM.
+Outside YowYob Cloud || Any location, tool, medium, API, server, terminal or copy not directly controlled by YowYob.
+5. Data we may collect or process
+The data processed depends on the modules enabled, the settings chosen by the Client/Partner and the information users enter, import, publish or synchronize.
+Category || Examples
+Account and identity || Name, email, phone, login, role, profile, organization, language, preferences, account status.
+Organization and business activity || Company name, trade name, registration, tax identifiers, addresses, points of sale, warehouses, posts, branches, teams, catalogues.
+Commercial transactions || Orders, sales, proformas, quotes, invoices, delivery notes, refunds, discounts, payment methods, sales journals.
+Cashier and POS || Cash operations, sessions, movements, closings, cancellations, slips, receipts, billing posts, action traces.
+Stock, production and fixed assets || Items, families, warehouses, shelves, bins, inventories, movements, lots, transformation, production, maintenance, fixed assets.
+Accounting, billing and treasury || Entries, journals, accounts, vouchers, schedules, reconciliations, banking/treasury data, payment references.
+CRM, third parties and loyalty || Customers, suppliers, prospects, sales representatives, contacts, interactions, tickets, preferences, loyalty points, relationship history.
+HRM || Staff data, functions, assignments, payroll or HR management items where enabled and entered by the Client.
+Documents and content || KYOC files, business documents, supporting documents, images, listings, businessbook profiles, blog/forum posts, podcasts, chat messages, events.
+Technical data || IP address, device, browser, session identifiers, logs, timestamps, errors, performance, security, cookies, local storage.
+Support and communications || Support requests, emails, messages, incidents, screenshots or attachments voluntarily sent to YowYob support.
+6. Sources of data
+You or your organization: direct entry, import, form, API, webhook, file, message or interaction in KSM.
+Client/Partner KSM administrators: account creation, roles, privileges, settings, business data, workflows and authorizations.
+KSM modules: automatic generation of logs, events, invoices, traces, reports, notifications, statistics and alerts.
+Third-party providers: payment, hosting, communication, analytics, security, messaging, mapping or other authorized integrations.
+Devices and browsers: technical logs, cookies, local storage, session, PWA, service workers and security signals.
+7. Purposes of processing
+YowYob uses data strictly for purposes necessary to provide, secure, improve and defend KSM, and to satisfy related contractual, legal and commercial obligations.
+Create, authenticate, secure and administer KSM accounts.
+Provide ERP, POS, stock, cashier, catalogue, CRM, HRM, billing, accounting, treasury, production, document, notification and related services.
+Process transactions and generate documents, reports, journals, dashboards, alerts, exports and histories requested by the Client/Partner.
+Maintain profiles, privileges, access controls, audit logs, anti-fraud measures and security traces.
+Provide support, maintenance, corrections, quality control, bêta testing, resilience, backup and incident recovery.
+Produce statistics, usage measurements, aggregated or pseudonymized analyses, recommendations and functional improvements.
+Deliver or measure, where applicable, communications, offers, sponsored content or partner visibility in public/commercial modules.
+Comply with legal, tax, accounting, judicial, administrative or cybersecurity obligations.
+Enforce the KSM ToU/Terms, prevent abuse and protect YowYob, Clients/Partners, users and third parties.
+8. Possible legal bases
+Depending on the type of data and applicable law, processing may rely on one or more bases: contract performance, consent, legal obligation, legitimate interest, protection of rights, system security, legal defense, or documented instructions from the Client/Partner when YowYob acts as processor.
+Where consent is required, you may withdraw it through the available mechanisms, without affecting the lawfulness of processing carried out before withdrawal.
+9. Allocation of responsibilities in KSM
+The Client/Partner determines the data it enters into KSM, the data subjects, the business purposes, the roles, privileges, business retention periods, exports and internal recipients. It therefore bears primary responsibility for the lawfulness, accuracy and proportionality of Client Data.
+Actor || Main responsibilities
+YowYob - controller || YowYob accounts, platform management, YowYob billing, support, security, global logs, service analytics, YowYob communications.
+YowYob - processor/technical operator || Hosting, processing, backup, maintenance and assistance of Client Data according to Client/Partner instructions and applicable ToU/contracts.
+Client/Partner - controller || Data of its customers, employees, suppliers, prospects, operations, documents, taxes, accounting, payroll, external storage, exports and business decisions.
+KSM administrators || Management of accounts, profiles, privileges, permissions, settings, connectors, webhooks, exports, imports and internal restrictions.
+End users || Accuracy of data entered, respect for third-party rights, protection of credentials, fair and lawful use of KSM.
+10. Data stored outside the YowYob Cloud
+Any data stored, transferred, backed up, exported, printed, copied, synchronized, cached or processed outside the YowYob Cloud is exclusively under the responsibility of the Client/Partner or the user who decides or controls such processing.
+This includes Excel/CSV/PDF exports, printouts, screenshots, email attachments, downloads, local backups, POS terminals, external drives, WhatsApp or messaging accounts, third-party accounting software, private servers, scripts, connectors, webhooks, external APIs, advertising tools, third-party cloud platforms, payment systems, spreadsheets and any storage not controlled by YowYob.
+YowYob is not responsible for any loss, disclosure, alteration, reuse, excessive retention, unauthorized access, non-compliance, dispute, penalty or damage arising from processing outside the YowYob Cloud, except for proven fault directly attributable to YowYob within its own controlled environment.
+The Client/Partner must inform data subjects, obtain required authorizations, secure exports, limit recipients, trace access, delete unnecessary copies and comply with laws applicable to the data it extracts or transfers outside KSM.
+11. Sensitive, professional or regulated data
+KSM may contain sensitive or high-risk data where the Client/Partner chooses to enter HR data, identity documents, financial data, banking data, tax data, payroll information, confidential documents, employee data, supporting documents, contracts or strategic commercial information.
+The Client/Partner must not collect or upload sensitive data that is not necessary for its lawful purposes.
+YowYob does not provide tax, legal, accounting, banking, social or HR advice; KSM is a management assistance tool.
+The accounting, billing, banking, HRM, KYOC and POS modules do not replace the Client/Partner's professional controls, validations and obligations.
+Children's data, health data, biometric data or other highly sensitive data should be processed in KSM only where permitted by law and where the Client/Partner has the required safeguards.
+12. Cookies, advertising and similar technologies
+KSM may use cookies, local storage, session storage, PWA caches, pixels, tags, SDK identifiers and technical logs to provide sessions, preferences, security, analytics, performance, notifications, personalization, advertising and campaign measurement.
+Details are provided in the KSM Cookies & Ads Notice. Technologies that are not strictly necessary may be subject to consent or preference settings where required by law.
+13. Aggregated data, statistics and KSM improvement
+YowYob may produce and use aggregated, statistical, pseudonymized or de-identified data to measure usage, improve modules, strengthen security, detect anomalies, optimize user experience, develop smart features and produce market or performance indicators that are not intended to directly identify a person.
+Where data is used for models, analyses or intelligent features, YowYob seeks to limit use to necessary information and to prioritize aggregation, pseudonymization, minimization and access controls.
+14. Sharing of information
+YowYob does not sell users' personal data as named files to third parties. Data may be shared only where necessary or permitted.
+Technical providers: hosting, backup, security, monitoring, messaging, support, analytics, payment, notification and infrastructure.
+Clients/Partners: access to data in their own KSM workspace according to roles and privileges defined by them.
+Integrated third parties: APIs, webhooks, payment tools, advertising tools, accounting systems or services enabled by the Client/Partner.
+Competent authorities: where required by law, a court decision, a valid administrative request or protection of rights.
+Corporate transactions: merger, restructuring, sale, financing, asset transfer or similar transaction permitted by law.
+Aggregated or de-identified data: statistics, reporting, research, performance, partner visibility or service improvement.
+15. Payments, Mobile Money and financial partners
+Where KSM facilitates payments, subscriptions, invoices, tickets, settlements, advances, refunds or treasury-related operations, data may be transmitted to payment providers, banks, Mobile Money operators, PSPs, integrators or financial partners.
+These third parties may act as independent controllers or processors depending on their role and terms. YowYob is not responsible for processing performed in third-party environments or accounts, unless applicable law provides otherwise.
+16. International transfers
+Data may be processed in Cameroon or in other countries where YowYob infrastructure, providers, support tools, cloud services, payment solutions or technical partners operate. Where required by law, YowYob implements appropriate contractual, organizational or technical safeguards.
+The Client/Partner is responsible for international transfers it initiates itself, including by export, webhook, API, third-party tool, external backup or sharing with recipients outside its country.
+17. Data retention
+Retention periods vary according to the nature of the data, purposes, Client/Partner settings, legal requirements, evidence needs, accounting/tax obligations and platform security.
+Category || Retention principle
+Accounts and profiles || For the duration of the account and then as needed for evidence, support, security and legal obligations.
+Transactional, accounting and tax data || According to legal requirements applicable to the Client/Partner and retention obligations for accounting, commercial and tax records.
+Security and audit logs || As long as necessary for security, diagnostics, fraud prevention, evidence and compliance with legal obligations.
+Support || As long as necessary to process the request, ensure quality follow-up, preserve evidence and defend rights.
+Aggregated or de-identified data || May be retained longer where it does not reasonably identify a person.
+Deletion requests must take into account legal, accounting, tax, contractual, security and backup constraints. Deletion in the KSM interface does not necessarily delete copies already exported or stored outside the YowYob Cloud by the Client/Partner.
+18. Security
+YowYob implements reasonable administrative, technical and organizational measures designed to protect data in the YowYob Cloud against unauthorized access, loss, alteration, misuse or unauthorized disclosure. These measures may include encryption in transit, access controls, profiles and privileges, logging, backup, monitoring, segmentation, hardening, infrastructure controls and internal procedures.
+No digital system can guarantee absolute security. The Client/Partner must also apply its own measures: strict role management, strong passwords, MFA where available, user training, export control, webhook verification, POS terminal protection, removal of unnecessary accounts, access reviews and compliant backups.
+19. Security incidents
+In the event of an incident affecting the YowYob Cloud and likely to impact personal data, YowYob will assess the incident and take reasonable containment, correction and notification measures in accordance with applicable law and contracts.
+Incidents related to terminals, passwords, administrators, exports, webhooks, APIs, servers, devices, messaging systems, spreadsheets or storage outside the YowYob Cloud are the responsibility of the Client/Partner, unless there is proof of a fault directly attributable to YowYob.
+20. Your choices and rights
+Depending on applicable law, you may have rights of access, rectification, erasure, objection, restriction, portability, withdrawal of consent and complaint to a competent authority.
+Where your data is processed in a Client/Partner KSM workspace, YowYob may direct you to that Client/Partner, because it often determines the purposes and means of processing. YowYob will reasonably cooperate when the Client/Partner forwards a valid request consistent with its obligations.
+To exercise your rights in relation to YowYob's own processing, contact us using the details at the end of this Notice. Verification of identity or authority may be required.
+21. Children and minors
+KSM is primarily intended for businesses, organizations and professionals. It is not designed to be used directly by children. If a Client/Partner processes minors' data in KSM, it is responsible for obtaining required authorizations, informing legal representatives where necessary and complying with applicable law.
+22. Beta features and service evolution
+As a published bêta version, KSM may undergo changes to modules, data schemas, interfaces, APIs, webhooks, security measures, analytics, dashboards, workflows and settings. YowYob may adapt this Notice to reflect such changes, legal requirements, new risks or the need to protect users and the platform.
+23. Reference legal framework
+This Notice is drafted with reference to Cameroonian law and applicable or indicative frameworks, including Law No. 2024/017 of 23 December 2024 relating to personal data protection in Cameroon, Law No. 2010/012 relating to cybersecurity and cybercrime, Law No. 2010/021 governing electronic commerce, and OHADA/SYSCOHADA obligations where KSM is used for accounting, invoicing or commercial records.
+Where KSM is used in other countries, the Client/Partner must verify and comply with local obligations applicable to its processing, users and activities.
+24. Contact
+YowYob Inc. Ltd - Privacy / Data Protection
+Head office: Yaounde, Cameroon
+Email: privacy@yowyob.com / info@yowyob.com
+Web contact: https://yowyob.com/contact
+Phone: +237 675 518 880 / +237 656 168 129
+If you believe your rights are not respected, you may contact the competent authority, including the competent Cameroonian authority for data protection and/or cybersecurity, as applicable.
+Annexe A - Matrice indicative des modules KSM / Annex A - Indicative KSM module matrix
+Cette annexe resume les donnees typiquement traitees par certains modules KSM. Elle ne limite pas la portee de l Avis: les donnees reelles dependent des parametrages, imports, usages et integrations du Client/Partenaire.
+Module || Donnees/finalites typiques || Responsabilite dominante
+ksm.yowyob.com || Console globale ERP, organisation, utilisateurs, roles, modules, tableaux de bord. || YowYob pour plateforme; Client/Partenaire pour Donnees Client.
+cashier.yowyob.com || Sessions de caisse, encaissements, clotures, recus, bordereaux, caissiers. || Client pour operations; YowYob pour hebergement et logs plateforme.
+pos.yowyob.com || Ventes point de vente, tickets, clients, produits, terminaux, modes de reglement. || Client pour transactions et terminaux; YowYob pour Cloud KSM.
+catalog.yowyob.com / shop.yowyob.com || Catalogues, produits, prix, images, disponibilite, boutique en ligne. || Client pour contenus commerciaux; YowYob pour diffusion technique.
+stockman.yowyob.com / spare.yowyob.com || Stock, inventaires, pieces de rechange, magasins, emplacements, mouvements. || Client pour exactitude et finalites stock; YowYob pour traitement Cloud.
+yowflash.yowyob.com || Ventes flash, annonces, images, contenus, commandes, interactions. || Client/vendeur pour offres; YowYob pour moderation et infrastructure.
+crm.yowyob.com / thirdparty.yowyob.com || Contacts, clients, prospects, fournisseurs, commerciaux, historique relationnel. || Client pour base de contacts et consentements; YowYob pour hebergement.
+hrm.yowyob.com || Personnel, fonctions, affectations, elements RH/paie selon parametrage. || Client/employeur responsable principal; YowYob sous-traitant technique.
+billing/accounting/banking/immo || Factures, ecritures, comptes, paiements, tresorerie, immobilisations, justificatifs. || Client pour conformite comptable/fiscale; YowYob fournit l outil.
+production.yowyob.com || Ordres, nomenclatures, operations de production, matieres, temps, controle. || Client pour processus industriel; YowYob pour support technique.
+chat/event/blog/podcast/forum || Messages, evenements, contenus publics ou prives, commentaires, fichiers. || Utilisateur/Client pour contenu; YowYob pour moderation et securite selon CGU.
+kyoc.yowyob.com || Documents securises, traces, controles, fichiers confidentiels. || Client pour documents charges et destinataires; YowYob pour mecanismes techniques.
+loyalty.yowyob.com || Programmes de fidelite, points, avantages, historiques clients. || Client pour regles et base clients; YowYob pour infrastructure.
+search.yowyob.com || Indexation, recherche unifiee, metadonnees, droits d acces. || YowYob pour moteur; Client pour donnees indexees et habilitations.
+webhook-dev.yowyob.com || Evenements, endpoints, payloads, integrations externes, logs. || Client pour destinataires externes et securite des endpoints; YowYob pour plateforme webhook.
+businessbook.yowyob.com || Fiches entreprises, visibilite, descriptions, contacts, categories, contenus publics. || Entreprise referencee/Client pour exactitude; YowYob pour annuaire et moderation.
+notification.yowyob.com || Emails, SMS, push, alertes, preferences, horodatages, statuts de livraison. || Client pour destinataires et finalites; YowYob pour routage technique.
+Principe de securisation: lorsqu une fonctionnalite, un export, un script, un connecteur, un webhook ou un outil tiers fait sortir les donnees du Cloud YowYob, le Client/Partenaire doit assurer la conformite, la securite, l information des personnes et la gestion des risques associes.
+© 2026 YowYob Inc. Ltd. Tous droits reserves / All rights reserved.
