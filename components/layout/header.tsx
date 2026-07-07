@@ -2,8 +2,7 @@
 
 import { UserNav } from "./user-nav";
 import { Button } from "../ui/button";
-import { Menu, Search, Settings, HelpCircle, BookOpen, FileText, ShieldCheck, BarChart3, FileClock, Layers } from "lucide-react";
-import { Input } from "../ui/input";
+import { Menu, Settings, HelpCircle, BookOpen, FileText, ShieldCheck, BarChart3, FileClock, Layers } from "lucide-react";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -116,16 +115,6 @@ export function Header() {
       </Button>
       <div className="font-semibold text-lg tracking-tight text-gray-700 mr-6 shrink-0">
         KSM
-      </div>
-
-      <div className="hidden sm:flex flex-1 max-w-2xl">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <Input
-            placeholder="Rechercher..."
-            className="w-full bg-[#eaf1fb] rounded-full pl-10 pr-4 py-2 h-12 border-transparent focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-200"
-          />
-        </div>
       </div>
 
       <div className="flex-1" />
