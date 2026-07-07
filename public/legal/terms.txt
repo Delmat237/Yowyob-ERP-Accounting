@@ -54,7 +54,7 @@ crm.yowyob.com || Relation clientèle / CRM || Clients, prospects, interactions,
 hrm.yowyob.com || Personnel / HRM || Personnel, contrats, présence, paie ou données RH selon configuration.
 spare.yowyob.com || Pièces de rechange / Spare parts || Assistance stock de rechange pour PME/PMI.
 billing.yowyob.com || Facturation / Billing || Devis, factures, avoirs, paiements, relances.
-accounting.yowyob.com || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
+accounting.yowyob.com/ || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
 immo.yowyob.com || Immobilisations / Fixed assets || Immobilisations, amortissements, suivi patrimonial.
 shop.yowyob.com || Boutique en ligne / e-Shop || Offre boutique en ligne liée au catalogue partenaire.
 production.yowyob.com || Production / Manufacturing || Fabrication, nomenclatures, ordres de production, PMI.
@@ -203,7 +203,7 @@ crm.yowyob.com || Relation clientèle / CRM || Clients, prospects, interactions,
 hrm.yowyob.com || Personnel / HRM || Personnel, contrats, présence, paie ou données RH selon configuration.
 spare.yowyob.com || Pièces de rechange / Spare parts || Assistance stock de rechange pour PME/PMI.
 billing.yowyob.com || Facturation / Billing || Devis, factures, avoirs, paiements, relances.
-accounting.yowyob.com || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
+accounting.yowyob.com/ || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
 immo.yowyob.com || Immobilisations / Fixed assets || Immobilisations, amortissements, suivi patrimonial.
 shop.yowyob.com || Boutique en ligne / e-Shop || Offre boutique en ligne liée au catalogue partenaire.
 production.yowyob.com || Production / Manufacturing || Fabrication, nomenclatures, ordres de production, PMI.
@@ -327,7 +327,7 @@ crm.yowyob.com || Relation clientèle / CRM || Clients, prospects, interactions,
 hrm.yowyob.com || Personnel / HRM || Personnel, contrats, présence, paie ou données RH selon configuration.
 spare.yowyob.com || Pièces de rechange / Spare parts || Assistance stock de rechange pour PME/PMI.
 billing.yowyob.com || Facturation / Billing || Devis, factures, avoirs, paiements, relances.
-accounting.yowyob.com || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
+accounting.yowyob.com/ || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
 immo.yowyob.com || Immobilisations / Fixed assets || Immobilisations, amortissements, suivi patrimonial.
 shop.yowyob.com || Boutique en ligne / e-Shop || Offre boutique en ligne liée au catalogue partenaire.
 production.yowyob.com || Production / Manufacturing || Fabrication, nomenclatures, ordres de production, PMI.
