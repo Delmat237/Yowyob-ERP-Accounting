@@ -34,17 +34,14 @@ export default function DashboardLayout({
     choice,
   });
 
+  if (!subscriptionLoaded) {
+    return <CustomPageLoader message="Chargement de l'espace..." />;
+  }
+
   if (!showContent) {
     // Le contenu est masqué tant qu'un choix d'espace (CG/CA) est requis mais non fait.
-    // On monte quand même la modale de choix ici : sinon elle ne serait rendue que dans
-    // la branche « contenu visible » plus bas, l'utilisateur ne pourrait jamais choisir,
-    // et l'écran resterait bloqué indéfiniment sur « Chargement de l'espace... ».
-    return (
-      <>
-        <CustomPageLoader message="Chargement de l'espace..." />
-        <AccountingChoiceModal />
-      </>
-    );
+    // On monte la modale de choix ici sans loader bloquant par-dessus.
+    return <AccountingChoiceModal />;
   }
 
   return (
