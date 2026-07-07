@@ -10,7 +10,7 @@ export const legalDocuments = {
     description:
       "Conditions générales d'utilisation et de service de KSM - Kit Suite Manager, version bêta publiée.",
     textFile: 'terms.txt',
-    docxFile: 'terms.docx',
+    pdfFile: 'terms.pdf',
     icon: FileText,
   },
   privacy: {
@@ -20,7 +20,7 @@ export const legalDocuments = {
     description:
       'Traitements de données personnelles, responsabilités, sécurité, conservation et droits dans KSM.',
     textFile: 'privacy.txt',
-    docxFile: 'privacy.docx',
+    pdfFile: 'privacy.pdf',
     icon: ShieldCheck,
   },
   cookies: {
@@ -30,7 +30,7 @@ export const legalDocuments = {
     description:
       'Cookies, stockage local, analytics, publicité, choix utilisateur et technologies similaires dans KSM.',
     textFile: 'cookies.txt',
-    docxFile: 'cookies.docx',
+    pdfFile: 'cookies.pdf',
     icon: Cookie,
   },
 } as const;
