@@ -6,8 +6,8 @@ import { AuthInitializer } from "@/components/auth-initializer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "KSM Pro",
-  description: "Solution de gestion commerciale",
+  title: "KSM ACCOUNTING ERP",
+  description: "Solution de gestion comptable",
 };
 
 export default function RootLayout({

@@ -34,10 +34,9 @@ interface RegisterFormData {
     firstName: string;
     lastName: string;
     email: string;
-    company: string;
+    organizationCode: string;
     password: string;
     confirmPassword: string;
-    role: string;
 }
 
 type AuthUser = {
@@ -251,13 +250,104 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }
     };
 
-    const handleRegister = async () => {
+    const handleRegister = async (data: RegisterFormData) => {
         setIsLoading(true);
         setRegisterError(null);
         try {
-            const message =
-                "L'inscription n'est pas encore exposée par le backend local. Utilisez un compte de test mock pour vous connecter.";
-            setRegisterError(message);
+            if (data.password !== data.confirmPassword) {
+                setRegisterError("Les mots de passe ne correspondent pas.");
+                return;
+            }
+
+            // Étape 1 : Découvrir les contextes d'inscription associés au code d'organisation
+            const discoverSignUpRes = await fetch(`${apiBase()}/api/kernel/auth/discover-sign-up-contexts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ organizationCode: data.organizationCode }),
+            });
+
+            if (!discoverSignUpRes.ok) {
+                const body = await discoverSignUpRes.json().catch(() => ({}));
+                if (discoverSignUpRes.status === 404) {
+                    setRegisterError("Code d'organisation invalide ou introuvable. Veuillez vérifier le code avec votre responsable.");
+                } else {
+                    setRegisterError(body?.message || "Impossible de valider le code d'organisation.");
+                }
+                return;
+            }
+
+            const signUpContextsData = await discoverSignUpRes.json();
+            const signUpContexts = signUpContextsData.data || signUpContextsData;
+            
+            const selectionToken = signUpContexts.selectionToken;
+            const contexts = signUpContexts.contexts || [];
+
+            if (!selectionToken || contexts.length === 0) {
+                setRegisterError("Aucun contexte d'inscription disponible pour ce code d'organisation.");
+                return;
+            }
+
+            // On prend le premier contexte retourné par le Kernel
+            const targetContext = contexts[0];
+
+            // Étape 2 : Créer le compte utilisateur dans le tenant et l'organisation correspondante
+            const signUpRes = await fetch(`${apiBase()}/api/kernel/auth/sign-up`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tenantId: targetContext.tenantId,
+                    signUpSelectionToken: selectionToken,
+                    contextId: targetContext.contextId,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    username: data.email, // On utilise l'email comme username
+                    email: data.email,
+                    password: data.password,
+                    socialProvider: "LOCAL",
+                    accountType: "EMPLOYEE",
+                    businessType: "INDIVIDUAL"
+                }),
+            });
+
+            if (!signUpRes.ok) {
+                const body = await signUpRes.json().catch(() => ({}));
+                if (signUpRes.status === 409) {
+                    setRegisterError("Un compte existe déjà avec cette adresse email.");
+                } else {
+                    setRegisterError(body?.message || "Échec de l'inscription. Veuillez réessayer.");
+                }
+                return;
+            }
+
+            // Étape 3 : Connexion automatique de l'utilisateur après création du compte
+            const discoverRes = await fetch(`${apiBase()}/api/auth/discover-contexts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: data.email, password: data.password }),
+            });
+
+            if (!discoverRes.ok) {
+                setActiveTab('login');
+                setRegisterError(null);
+                toast.success("Compte créé avec succès ! Connectez-vous maintenant.");
+                return;
+            }
+
+            const discovered = await discoverRes.json() as DiscoverContextsResponse;
+            const options = buildOptions(discovered.contexts ?? []);
+            if (options.length === 0) {
+                setActiveTab('login');
+                toast.success("Compte créé ! Connectez-vous pour accéder à votre espace.");
+                return;
+            }
+
+            if (options.length === 1) {
+                await completeSelection(discovered.selectionToken, options[0]);
+            } else {
+                setPendingSelection({ selectionToken: discovered.selectionToken, options });
+                setActiveTab('login');
+                setIsLoading(false);
+            }
         } catch (error: unknown) {
             setRegisterError(getErrorMessage(error, "Une erreur est survenue lors de l'inscription."));
         } finally {
@@ -391,6 +481,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     <TabsContent value="register" className="space-y-4 mt-6">
                         {registerError && <ErrorBanner message={registerError} />}
                         <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
+                            {/* Identité */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="firstName">Prénom</Label>
@@ -415,6 +506,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Email */}
                             <div className="space-y-2">
                                 <Label htmlFor="registerEmail">Email</Label>
                                 <Input
@@ -430,33 +523,29 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <p className="text-sm text-red-600">{registerForm.formState.errors.email.message}</p>
                                 )}
                             </div>
+
+                            {/* Code d'organisation */}
                             <div className="space-y-2">
-                                <Label htmlFor="company">Entreprise</Label>
-                                <Input
-                                    id="company"
-                                    placeholder="Nom de votre entreprise"
-                                    {...registerForm.register('company', { required: 'Entreprise requise' })}
-                                />
-                                {registerForm.formState.errors.company && (
-                                    <p className="text-sm text-red-600">{registerForm.formState.errors.company.message}</p>
+                                <Label htmlFor="organizationCode">Code d'organisation</Label>
+                                <div className="relative">
+                                    <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                    <Input
+                                        id="organizationCode"
+                                        placeholder="Ex : KSM-CPTA-LA"
+                                        className="pl-10"
+                                        {...registerForm.register('organizationCode', { required: "Code d'organisation requis" })}
+                                    />
+                                </div>
+                                {registerForm.formState.errors.organizationCode && (
+                                    <p className="text-sm text-red-600">{registerForm.formState.errors.organizationCode.message}</p>
                                 )}
+                                <p className="text-xs text-muted-foreground">
+                                    Ce code vous est fourni par votre responsable. Il identifie l'organisation à rejoindre.
+                                    Votre rôle sera attribué par un administrateur après votre inscription.
+                                </p>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="role">Rôle (Profil souhaité)</Label>
-                                <select
-                                    id="role"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    {...registerForm.register('role', { required: 'Veuillez sélectionner un rôle' })}
-                                >
-                                    <option value="" disabled>Sélectionnez votre rôle</option>
-                                    <option value="AIDE_COMPTABLE">Aide-comptable</option>
-                                    <option value="COMPTABLE">Comptable</option>
-                                    <option value="RESPONSABLE_COMPTABLE">Responsable comptable</option>
-                                </select>
-                                {registerForm.formState.errors.role && (
-                                    <p className="text-sm text-red-600">{registerForm.formState.errors.role.message}</p>
-                                )}
-                            </div>
+
+                            {/* Mot de passe */}
                             <div className="space-y-2">
                                 <Label htmlFor="registerPassword">Mot de passe</Label>
                                 <div className="relative">
@@ -486,6 +575,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <p className="text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
                                 )}
                             </div>
+
+                            {/* Confirmation mot de passe */}
                             <div className="space-y-2">
                                 <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
                                 <div className="relative">
@@ -515,6 +606,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <p className="text-sm text-red-600">{registerForm.formState.errors.confirmPassword.message}</p>
                                 )}
                             </div>
+
                             <Button
                                 type="submit"
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm"
