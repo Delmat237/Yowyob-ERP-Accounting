@@ -226,6 +226,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             localStorage.setItem('organization_id',
                 option.organizationId || response.user?.organizationId
                     || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
+            localStorage.setItem('organization_name', option.label || 'KSM');
             OpenAPI.TOKEN = response.token;
             setUser(response.user);
 

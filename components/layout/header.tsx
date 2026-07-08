@@ -1,5 +1,5 @@
 "use client";
-
+import React, { useState, useEffect } from "react";
 import { UserNav } from "./user-nav";
 import { Button } from "../ui/button";
 import { Menu, Settings, HelpCircle, BookOpen, FileText, ShieldCheck, BarChart3, FileClock, Layers } from "lucide-react";
@@ -95,6 +95,16 @@ export function Header() {
   const { toggle, toggleMobile } = useSidebar();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { accountingRole } = useAuth();
+  const [orgName, setOrgName] = useState<string>("KSM");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const name = localStorage.getItem("organization_name");
+      if (name) {
+        setOrgName(name);
+      }
+    }
+  }, []);
 
   const helpContent = accountingRole
     ? HELP_CONTENT[accountingRole as keyof typeof HELP_CONTENT]
@@ -113,8 +123,8 @@ export function Header() {
       <Button variant="ghost" size="icon" className="mr-2" onClick={handleMenuClick}>
         <Menu className="h-5 w-5 text-gray-600" />
       </Button>
-      <div className="font-semibold text-lg tracking-tight text-gray-700 mr-6 shrink-0">
-        KSM
+      <div className="font-semibold text-lg tracking-tight text-gray-700 mr-6 shrink-0 max-w-[200px] truncate" title={orgName}>
+        {orgName}
       </div>
 
       <div className="flex-1" />
