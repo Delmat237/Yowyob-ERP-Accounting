@@ -304,7 +304,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     email: data.email,
                     password: data.password,
                     socialProvider: "LOCAL",
-                    accountType: "EMPLOYEE",
+                    accountType: "PROSPECT",
                     businessType: "INDIVIDUAL"
                 }),
             });
@@ -319,7 +319,23 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 return;
             }
 
-            // Étape 3 : Connexion automatique de l'utilisateur après création du compte
+            // Étape 3 : Vérifier le statut retourné par le Kernel
+            const signUpBody = await signUpRes.json().catch(() => ({}));
+            const signUpStatus = signUpBody?.data?.status;
+
+            // Si le Kernel demande une vérification email, on redirige vers login avec message clair
+            if (signUpStatus === 'EMAIL_VERIFICATION_REQUIRED') {
+                setActiveTab('login');
+                setRegisterError(null);
+                toast.success(
+                    "✅ Compte créé ! Un email de vérification a été envoyé à " + data.email +
+                    ". Vérifiez votre boîte mail avant de vous connecter.",
+                    { duration: 8000 }
+                );
+                return;
+            }
+
+            // Étape 4 : Connexion automatique si le compte est directement actif
             const discoverRes = await fetch(`${apiBase()}/api/auth/discover-contexts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
