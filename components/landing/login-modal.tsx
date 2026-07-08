@@ -224,7 +224,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 response.tenantId || option.tenantId || process.env.NEXT_PUBLIC_TENANT_ID || '');
             localStorage.setItem('organization_id',
                 option.organizationId || response.user?.organizationId
-                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
+                || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
             localStorage.setItem('organization_name', option.label || 'KSM');
             OpenAPI.TOKEN = response.token;
             setUser(response.user);
@@ -278,7 +278,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             const signUpContextsData = await discoverSignUpRes.json();
             const signUpContexts = signUpContextsData.data || signUpContextsData;
-            
+
             const selectionToken = signUpContexts.selectionToken;
             const contexts = signUpContexts.contexts || [];
 
@@ -304,7 +304,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     email: data.email,
                     password: data.password,
                     socialProvider: "LOCAL",
-                    accountType: "BUSINESS",
+                    accountType: "PROSPECT",
                     businessType: "INDIVIDUAL"
                 }),
             });
@@ -425,71 +425,71 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 </Button>
                             </div>
                         ) : (
-                        <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="votre@email.com"
-                                        className="pl-10"
-                                        {...loginForm.register('email', {
-                                            required: 'Email requis',
-                                            pattern: { value: /^\S+@\S+$/i, message: 'Email invalide' }
-                                        })}
-                                    />
+                            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="votre@email.com"
+                                            className="pl-10"
+                                            {...loginForm.register('email', {
+                                                required: 'Email requis',
+                                                pattern: { value: /^\S+@\S+$/i, message: 'Email invalide' }
+                                            })}
+                                        />
+                                    </div>
+                                    {loginForm.formState.errors.email && (
+                                        <p className="text-sm text-red-600">{loginForm.formState.errors.email.message}</p>
+                                    )}
                                 </div>
-                                {loginForm.formState.errors.email && (
-                                    <p className="text-sm text-red-600">{loginForm.formState.errors.email.message}</p>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Mot de passe</Label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                                    <Input
-                                        id="password"
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="Votre mot de passe"
-                                        className="pl-10 pr-10"
-                                        {...loginForm.register('password', { required: 'Mot de passe requis' })}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute right-1 top-1 h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        tabIndex={-1}
-                                    >
-                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Mot de passe</Label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                        <Input
+                                            id="password"
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="Votre mot de passe"
+                                            className="pl-10 pr-10"
+                                            {...loginForm.register('password', { required: 'Mot de passe requis' })}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-1 top-1 h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+                                    {loginForm.formState.errors.password && (
+                                        <p className="text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <label className="flex items-center space-x-2 text-sm">
+                                        <input type="checkbox" className="rounded" />
+                                        <span>Se souvenir de moi</span>
+                                    </label>
+                                    <Button variant="link" className="text-sm p-0 h-auto text-blue-600 hover:underline">
+                                        Mot de passe oublié ?
                                     </Button>
                                 </div>
-                                {loginForm.formState.errors.password && (
-                                    <p className="text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
-                                )}
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <label className="flex items-center space-x-2 text-sm">
-                                    <input type="checkbox" className="rounded" />
-                                    <span>Se souvenir de moi</span>
-                                </label>
-                                <Button variant="link" className="text-sm p-0 h-auto text-blue-600 hover:underline">
-                                    Mot de passe oublié ?
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Connexion...</>
+                                    ) : "Se connecter"}
                                 </Button>
-                            </div>
-                            <Button
-                                type="submit"
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? (
-                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Connexion...</>
-                                ) : "Se connecter"}
-                            </Button>
-                        </form>
+                            </form>
                         )}
                     </TabsContent>
 
