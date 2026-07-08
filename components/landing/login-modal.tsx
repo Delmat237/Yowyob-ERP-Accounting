@@ -304,7 +304,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     email: data.email,
                     password: data.password,
                     socialProvider: "LOCAL",
-                    accountType: "PROSPECT",
+                    accountType: "BUSINESS",
                     businessType: "INDIVIDUAL"
                 }),
             });
