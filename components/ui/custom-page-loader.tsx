@@ -4,11 +4,13 @@ import React from "react";
 
 export const CustomPageLoader = ({
   message = "Chargement des données...",
+  className = "",
 }: {
   message?: string;
+  className?: string;
 }) => {
   return (
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-white/60 backdrop-blur-sm">
+    <div className={`fixed inset-0 z-[9998] flex items-center justify-center bg-white/60 backdrop-blur-sm ${className}`}>
       <div className="flex flex-col items-center justify-center gap-6 px-4">
         <div className="relative flex items-center justify-center w-24 h-24">
           <svg

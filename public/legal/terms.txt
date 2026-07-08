@@ -1,0 +1,358 @@
+KSM - Kit Suite Manager
+Conditions Générales d’Utilisation et de Service / Terms of Use and Service
+VERSION BÊTA PUBLIÉE / BETA PUBLISHED VERSION
+Item || Value / Valeur
+Document || KSM ToU/CGU-CGS - Version bêta publiée / Beta Published Version
+Provider / Fournisseur || YowYob Inc. Ltd, Yaoundé, Cameroon
+Scope / Portée || KSM - Kit Suite Manager and associated KSM platforms under yowyob.com
+Version || 1.1
+Last updated / Dernière mise à jour || 7 July 2026 / 7 juillet 2026
+Publication status / Statut || Beta published version / Version bêta publiée
+Legal basis / Base documentaire || YowYob CGU-ToU V2, YowYob Privacy Policy, FarCal legal notices, KSM business architecture
+Important publication note / Note importante de publication
+This document is intended to be published as a KSM-specific legal notice and must be read together with the general YowYob Terms, the KSM Terms, the KSM Privacy Notice and the KSM Cookies & Ads Notice, as applicable. It is designed to protect YowYob Inc. Ltd to the maximum extent permitted by applicable law while remaining clear for Customers, Partners and End Users. / Le présent document est destiné à être publié comme notice juridique spécifique à KSM et doit être lu conjointement avec les conditions générales YowYob, les conditions KSM, l’avis de confidentialité KSM et la notice Cookies & Publicité KSM, selon le cas. Il vise à protéger YowYob Inc. Ltd dans la mesure maximale permise par le droit applicable, tout en restant lisible pour les Clients, Partenaires et Utilisateurs finaux.
+Table des matières synthétique / Summary table of contents
+1. Partie A - Français : portée, statut bêta, responsabilités, stockage hors Cloud YowYob, modules KSM, garanties, responsabilité.
+2. Part B - English: scope, beta status, responsibilities, storage outside YowYob Cloud, KSM modules, disclaimers, liability.
+3. Annexes bilingues : périmètre des plateformes, usage acceptable, support bêta, matrice de responsabilité des données.
+Partie A - Français
+1. Objet, portée et acceptation
+Les présentes Conditions Générales d’Utilisation et de Service KSM (les « Conditions KSM ») régissent l’accès et l’utilisation de KSM - Kit Suite Manager, ERP modulaire de YowYob Inc. Ltd, ainsi que des plateformes, APIs, applications, connecteurs, interfaces, contenus, notifications et services associés listés dans le présent document.
+En accédant à KSM, en créant un compte, en utilisant un module, en administrant un espace partenaire, en connectant une API ou un webhook, ou en autorisant un Utilisateur final à exploiter KSM, le Client/Partenaire accepte les présentes Conditions KSM, les CGU/CGS générales YowYob, l’Avis de confidentialité KSM, la Notice Cookies & Publicité KSM et toute politique spécifique applicable.
+Si le Client/Partenaire ou l’Utilisateur final n’accepte pas ces conditions, il doit cesser immédiatement toute utilisation de KSM et ne doit pas tenter d’accéder aux données, modules ou interfaces associées.
+2. Relation avec les conditions générales YowYob et hiérarchie documentaire
+Les présentes Conditions KSM complètent les Termes et Conditions Générales d’Utilisation et de Service YowYob applicables à l’ensemble des plateformes sous le domaine yowyob.com. Elles constituent des conditions spécifiques au système KSM.
+En cas de contradiction entre les CGU/CGS générales YowYob et les présentes Conditions KSM, les Conditions KSM prévalent pour l’utilisation de KSM, sauf disposition impérative contraire ou clause plus protectrice pour YowYob Inc. Ltd prévue dans les CGU/CGS générales.
+L’Avis de confidentialité KSM et la Notice Cookies & Publicité KSM font partie de l’environnement contractuel applicable. Les clauses relatives aux données, aux cookies, à la publicité, aux intégrations et à la responsabilité doivent être interprétées de manière cohérente et cumulative.
+3. Statut de version bêta publiée
+KSM est fourni, dans la présente phase, en version bêta publiée. Cela signifie que le système est accessible à des Clients/Partenaires, mais que certaines fonctionnalités, workflows, rapports, connecteurs, APIs, interfaces, tableaux de bord ou automatisations peuvent être expérimentaux, évolutifs, incomplets, temporairement indisponibles ou susceptibles de migration.
+Le statut bêta publiée ne retire pas le caractère contractuel des présentes Conditions, mais limite les engagements techniques, de disponibilité, de performance, de continuité et d’exactitude de YowYob dans la mesure maximale permise par la loi.
+Le Client/Partenaire reconnaît que toute décision commerciale, comptable, fiscale, financière, RH, logistique, industrielle ou juridique prise sur la base des données ou rapports KSM doit être validée par ses propres responsables, experts, comptables, conseils juridiques ou auditeurs.
+• YowYob peut modifier, corriger, retirer, remplacer, fusionner ou renommer des modules ou fonctionnalités bêta.
+• YowYob peut effectuer des opérations de maintenance, migration, optimisation, suspension préventive ou correction de sécurité sans obligation de service continu absolu.
+• Aucun résultat KSM ne constitue, à lui seul, une preuve comptable, fiscale, bancaire, RH, industrielle ou juridique définitive sans validation par le Client/Partenaire.
+4. Définitions essentielles
+• « YowYob » désigne YowYob Inc. Ltd, société exploitant KSM et les services associés sous le domaine yowyob.com.
+• « KSM » désigne Kit Suite Manager, système ERP modulaire comprenant les plateformes métier et utilitaires listées en annexe.
+• « Client/Partenaire » désigne toute entreprise, organisation, commerçant, PME/PMI, institution, administrateur d’espace ou entité utilisant KSM pour ses activités.
+• « Utilisateur final » désigne toute personne autorisée par un Client/Partenaire à accéder à un module KSM.
+• « Administrateur » désigne la personne désignée par le Client/Partenaire pour gérer les comptes, rôles, privilèges, accès, exports, intégrations et paramètres KSM.
+• « Données Client » désigne les données, documents, fichiers, pièces, transactions, écritures, stocks, fiches tiers, contenus et paramétrages fournis, générés ou importés par le Client/Partenaire ou ses Utilisateurs.
+• « Cloud YowYob » désigne l’environnement d’hébergement, de stockage, de sauvegarde, d’exploitation ou de traitement contrôlé par YowYob ou ses sous-traitants techniques autorisés pour KSM.
+• « Stockage hors Cloud YowYob » désigne tout stockage, export, copie, impression, téléchargement, synchronisation, transfert, cache, sauvegarde, email, messagerie, feuille de calcul, terminal POS, serveur, disque, outil tiers, webhook ou environnement non contrôlé par YowYob.
+5. Périmètre fonctionnel KSM
+KSM couvre des fonctions ERP et utilitaires destinées aux entreprises, PME/PMI, commerces, points de vente, catalogues, stock, facturation, comptabilité, trésorerie, RH, production, relation client, visibilité commerciale, e-commerce et communications opérationnelles.
+Les modules peuvent être activés, désactivés, groupés, renommés ou proposés selon le niveau de souscription, le territoire, l’état de déploiement, les contraintes légales, les besoins du Client/Partenaire et la stratégie de YowYob.
+Platform / Plateforme || Module || Main function / Fonction principale
+ksm.yowyob.com || Console globale KSM / Global KSM console || Accès transverse, paramétrage, administration, supervision.
+cashier.yowyob.com || Caisse / Cashier || Encaissements, décaissements, ouverture/fermeture de caisse, journaux.
+pos.yowyob.com || Points de vente / POS || Ventes comptoir, supermarchés, hypermarchés, terminaux et postes de facturation.
+catalog.yowyob.com || Catalogues partenaires / Partner catalogs || Fiches produits, prix, images, disponibilité, publication commerciale.
+stockman.yowyob.com || Stock intelligent / Smart stock || Stocks, inventaires, transferts, seuils, mouvements et analyses.
+yowflash.yowyob.com || Ventes flash / Flash sales || Campagnes, offres promotionnelles, visibilité et conversion.
+crm.yowyob.com || Relation clientèle / CRM || Clients, prospects, interactions, suivi commercial.
+hrm.yowyob.com || Personnel / HRM || Personnel, contrats, présence, paie ou données RH selon configuration.
+spare.yowyob.com || Pièces de rechange / Spare parts || Assistance stock de rechange pour PME/PMI.
+billing.yowyob.com || Facturation / Billing || Devis, factures, avoirs, paiements, relances.
+accounting.yowyob.com || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
+immo.yowyob.com || Immobilisations / Fixed assets || Immobilisations, amortissements, suivi patrimonial.
+shop.yowyob.com || Boutique en ligne / e-Shop || Offre boutique en ligne liée au catalogue partenaire.
+production.yowyob.com || Production / Manufacturing || Fabrication, nomenclatures, ordres de production, PMI.
+thirdparty.yowyob.com || Tiers / Third parties || Fournisseurs, clients, commerciaux, prospects et contacts.
+banking.yowyob.com || Trésorerie / Treasury operations || Suivi de trésorerie, rapprochements et opérations internes des PME/PMI.
+chat.yowyob.com || Chat KSM || Échanges entre acteurs et partenaires KSM.
+event.yowyob.com || Événements / Events || Événements, invitations, inscriptions, campagnes associées.
+kyoc.yowyob.com || Sécurité documentaire / Document security || Contrôle documentaire, preuve technique, suivi et protection de documents.
+loyalty.yowyob.com || Fidélisation / Loyalty || Points, avantages, programmes client.
+blog.yowyob.com || Blog || Publications éditoriales et commerciales.
+podcast.yowyob.com || Podcast || Contenus audio et campagnes éditoriales.
+forum.yowyob.com || Forum || Discussions communautaires ou professionnelles.
+search.yowyob.com || Recherche unifiée / Unified search || Recherche transversale dans l’écosystème autorisé.
+webhook-dev.yowyob.com || Webhooks || Connecteurs, notifications machine-à-machine, intégrations.
+businessbook.yowyob.com || Annuaire d’entreprises / Business directory || Visibilité des partenaires, fiches d’entreprise, référencement.
+notification.yowyob.com || Notifications || Alertes e-mail, SMS, push, in-app et événements système.
+6. Création de compte, administration et privilèges
+L’accès à KSM peut nécessiter la création d’un compte Client/Partenaire, d’un espace organisationnel, d’un tenant, d’un compte administrateur et de comptes Utilisateurs. Le Client/Partenaire doit fournir des informations exactes, complètes et à jour.
+Le Client/Partenaire est seul responsable de la désignation de ses Administrateurs, de la gestion des rôles, droits, profils, privilèges, niveaux de visibilité, validations, mots de passe, clés API, webhooks, terminaux, appareils et accès réseau.
+Toute action effectuée via un compte autorisé, un jeton d’API, une session, un terminal, un webhook ou une intégration configurée par le Client/Partenaire est présumée avoir été autorisée par ce dernier, sauf preuve contraire légalement établie.
+• L’Administrateur doit appliquer le principe du moindre privilège et retirer sans délai les accès des employés, prestataires ou tiers qui ne sont plus habilités.
+• Le Client/Partenaire doit protéger ses identifiants, mots de passe, terminaux, clés API et dispositifs de caisse/POS.
+• YowYob peut imposer des exigences de sécurité, réinitialiser des accès ou suspendre des comptes en cas de risque.
+7. Licence d’utilisation
+Sous réserve du respect des présentes Conditions KSM et du paiement des frais applicables, YowYob accorde au Client/Partenaire une licence limitée, non exclusive, non transférable, révocable et strictement professionnelle d’accès et d’utilisation de KSM.
+Aucun droit de propriété n’est transféré au Client/Partenaire. Le Client/Partenaire ne peut pas revendre, sous-licencier, louer, copier, désassembler, contourner, extraire massivement, reproduire ou exploiter KSM hors du cadre autorisé sans accord écrit de YowYob.
+8. Obligations générales du Client/Partenaire et des Utilisateurs
+• Utiliser KSM uniquement à des fins licites, professionnelles et conformes aux lois applicables au Cameroun, dans l’espace OHADA/CEMAC et dans tout autre pays concerné.
+• S’assurer que les données, documents, produits, prix, factures, écritures, fiches employés, contenus publics, campagnes, communications et intégrations sont exacts, licites et autorisés.
+• Informer les employés, clients, prospects, fournisseurs et tiers concernés lorsque leurs données sont traitées dans KSM.
+• Obtenir les consentements, autorisations, mandats, habilitations ou bases légales nécessaires à l’utilisation de données personnelles, financières, RH, commerciales ou sensibles.
+• Respecter les règles fiscales, comptables, commerciales, sociales, douanières, de consommation, de concurrence, de publicité et de protection des données applicables.
+• Procéder à ses propres vérifications avant toute déclaration fiscale, clôture comptable, paiement, inventaire, décision RH, décision de production, opération de trésorerie ou communication commerciale.
+9. Clause centrale - données et stockage hors Cloud YowYob
+Le Client/Partenaire reconnaît expressément que YowYob ne contrôle que les environnements relevant du Cloud YowYob et des sous-traitants techniques autorisés par YowYob.
+Tout stockage, export, copie, téléchargement, impression, capture d’écran, sauvegarde locale, cache navigateur, cache PWA, synchronisation, partage, envoi par email, messagerie instantanée, transfert vers tableur, terminal POS, serveur du Client/Partenaire, appareil personnel, clé USB, outil tiers, webhook, API externe ou environnement situé hors du Cloud YowYob relève exclusivement de la responsabilité du Client/Partenaire ou de l’Utilisateur qui le contrôle.
+YowYob décline toute responsabilité pour la perte, corruption, divulgation, altération, utilisation abusive, accès non autorisé, fuite, non-conformité, erreur, litige ou dommage lié à des données ou documents stockés, traités, partagés ou conservés hors du Cloud YowYob.
+• Le Client/Partenaire doit sécuriser ses terminaux, navigateurs, réseaux locaux, exports, sauvegardes, impressions, fichiers PDF, tableurs, e-mails, systèmes tiers et endpoints webhooks.
+• Le Client/Partenaire doit définir ses propres politiques internes de conservation, archivage, accès, chiffrement, destruction, contrôle des impressions et gestion des appareils.
+• Le Client/Partenaire indemnisera YowYob contre toute réclamation, sanction, perte ou dommage résultant d’un stockage, transfert ou traitement hors Cloud YowYob.
+10. Données Client, contenus et responsabilité métier
+Le Client/Partenaire conserve la propriété de ses Données Client, sous réserve des droits nécessaires accordés à YowYob pour héberger, traiter, sauvegarder, afficher, sécuriser, transmettre, analyser techniquement et exploiter KSM conformément aux finalités du service.
+Le Client/Partenaire garantit disposer de tous les droits nécessaires sur les Données Client et assume seul la responsabilité de leur exactitude, licéité, qualité, conservation, mise à jour et usage métier.
+• Les données de stock, prix, caisse, facturation, comptabilité, trésorerie, RH, immobilisations, production et tiers doivent être vérifiées par le Client/Partenaire.
+• Les contenus publics tels que catalogues, offres, images, promotions, annonces, blogs, podcasts, forums, événements et fiches BusinessBook relèvent de la responsabilité éditoriale du Client/Partenaire lorsqu’ils sont fournis ou validés par lui.
+• YowYob peut retirer, limiter ou déréférencer tout contenu manifestement illicite, trompeur, frauduleux, dangereux, contraire à l’ordre public ou susceptible d’engager sa responsabilité.
+11. Modules financiers, comptables, fiscaux et bancaires
+Les modules billing, accounting, banking, cashier, POS, immo et treasury-related functions sont des outils d’assistance à la gestion. Ils ne remplacent pas le jugement professionnel d’un comptable, auditeur, fiscaliste, conseil juridique, établissement bancaire ou autorité compétente.
+KSM peut intégrer des logiques inspirées des pratiques OHADA/SYSCOHADA ou des usages commerciaux locaux selon configuration. Toutefois, la conformité finale des écritures, déclarations, états financiers, justificatifs, factures, impôts, rapports, rapprochements et documents réglementaires demeure exclusivement sous la responsabilité du Client/Partenaire.
+• YowYob n’est pas une banque, un établissement de crédit, un établissement de microfinance, un cabinet comptable, un commissaire aux comptes, un conseil fiscal ou un officier public.
+• Les soldes de caisse, stocks, marges, écritures, rapprochements, factures et tableaux de bord doivent être contrôlés avant toute utilisation officielle.
+• Les erreurs de paramétrage comptable, taux de taxe, devises, règles de facturation, profils d’accès ou interfaces d’export relèvent de la responsabilité du Client/Partenaire.
+12. Modules RH, CRM, tiers et données personnelles
+Les modules HRM, CRM, thirdparty, loyalty, chat, event, notification et search peuvent traiter des données relatives à des employés, clients, prospects, fournisseurs, commerciaux, visiteurs ou autres tiers. Le Client/Partenaire doit disposer d’une base légale ou d’un consentement valable pour ces traitements.
+Le Client/Partenaire est responsable de l’information des personnes concernées, de la minimisation des données, des droits d’accès, rectification, suppression, opposition ou limitation, et de toute obligation légale applicable à ses propres traitements.
+13. Modules catalog, shop, yowflash, loyalty et visibilité commerciale
+Les modules catalog, shop, yowflash, loyalty, businessbook, blog, podcast, forum et event peuvent rendre certaines informations visibles au public ou à des communautés ciblées. Le Client/Partenaire est responsable des produits, services, prix, images, remises, garanties, conditions de vente, délais, stocks affichés, mentions obligatoires et communications commerciales publiées via ces modules.
+YowYob ne garantit pas l’absence d’erreur dans les informations fournies par les partenaires, la disponibilité réelle d’un produit, la conformité réglementaire d’une offre, la qualité d’un produit, ni l’exécution d’une vente ou livraison opérée par un Client/Partenaire ou un tiers.
+14. KYOC, documents, preuve technique et sécurité documentaire
+kyoc.yowyob.com peut fournir des fonctionnalités de sécurisation, vérification, suivi ou contrôle technique de documents. Ces fonctionnalités ne constituent pas nécessairement une certification officielle, une légalisation, une authentification notariale, une signature qualifiée ou une preuve irréfragable, sauf engagement écrit spécifique de YowYob.
+Le Client/Partenaire reste responsable de l’origine, du contenu, de la validité, de l’autorisation de partage, de la conservation et de l’usage juridique de ses documents.
+15. API, webhooks, intégrations et services tiers
+Les APIs, webhooks, connecteurs, exports, importations, SDKs, liens, scripts, modules tiers, passerelles de paiement, systèmes de messagerie, systèmes de comptabilité, outils de publicité, services cloud ou applications connectées à KSM peuvent impliquer des traitements hors contrôle direct de YowYob.
+Le Client/Partenaire est responsable de la sécurité de ses endpoints, secrets, clés, tokens, configurations, mappings, transformations de données, validations, logs, retries, files d’attente, erreurs et environnements tiers.
+• YowYob peut désactiver un webhook, une API ou une intégration en cas d’abus, surcharge, risque de sécurité, non-paiement, non-conformité ou atteinte au service.
+• YowYob ne répond pas des pertes ou erreurs résultant d’un service tiers, d’un paramétrage du Client/Partenaire, d’une panne réseau, d’un endpoint indisponible ou d’une clé compromise.
+• Tout transfert vers un outil tiers vaut reconnaissance que ce traitement externe relève du Client/Partenaire et non du Cloud YowYob.
+16. Paiements, abonnements, taxes et facturation
+L’accès à certains modules KSM peut être gratuit, inclus, promotionnel, bêta, limité, freemium, soumis à abonnement, commission, licence, frais d’intégration, frais de support ou tarification spécifique.
+Les prix, taxes, modalités de paiement, cycles de facturation, remises, périodes d’essai, interruptions pour non-paiement et remboursements éventuels sont indiqués dans l’offre commerciale, le bon de commande, la facture, les conditions spécifiques ou l’interface de souscription.
+Sauf disposition impérative contraire ou accord écrit de YowYob, les frais payés ne sont pas remboursables, notamment en cas de mauvaise configuration par le Client/Partenaire, non-utilisation, défaut de connexion, incompatibilité d’un outil tiers ou changement de besoin interne.
+17. Usage acceptable et conduites interdites
+• Accès non autorisé, intrusion, contournement de sécurité, scan abusif, exploitation de vulnérabilité, attaque DDoS ou perturbation du service.
+• Extraction massive, scraping, copie automatisée, revente ou constitution de base de données concurrente sans accord écrit.
+• Transmission de malware, spam, phishing, fausses notifications, contenus trompeurs, faux documents, fausses factures ou usurpation d’identité.
+• Utilisation de KSM pour des produits, services, transactions, contenus ou activités illicites, dangereux, frauduleux, contrefaits ou contraires à l’ordre public.
+• Tentative d’altération des journaux, preuves, audits, écritures, historiques, traces ou contrôles d’accès.
+• Utilisation abusive de la publicité, des notifications, forums, blogs, podcasts, programmes de fidélité ou messages commerciaux.
+18. Sécurité, disponibilité, maintenance et support bêta
+YowYob met en œuvre des mesures techniques et organisationnelles raisonnables pour protéger le Cloud YowYob et assurer la continuité des services KSM. Cependant, aucun système ne peut être garanti comme parfaitement sécurisé, exempt d’erreur ou disponible sans interruption.
+Pendant la phase bêta publiée, le support et les niveaux de service sont fournis sur la base d’efforts raisonnables, sauf accord écrit spécifique. Les interruptions, ralentissements, maintenances, mises à jour, corrections de sécurité ou migrations peuvent intervenir sans ouvrir droit à indemnité, crédit de service ou remboursement automatique.
+• Le Client/Partenaire doit signaler rapidement les incidents, accès suspects ou erreurs critiques.
+• YowYob peut appliquer des correctifs, limiter une fonctionnalité ou suspendre un accès pour protéger le service.
+• Les sauvegardes, restaurations, exports et plans de continuité hors Cloud YowYob restent sous la responsabilité du Client/Partenaire.
+19. Confidentialité, propriété intellectuelle et retours utilisateurs
+KSM, ses logiciels, interfaces, architectures, bases de code, marques, logos, workflows, designs, modèles, documentations, APIs, connecteurs, bases techniques et contenus édités par YowYob demeurent la propriété exclusive de YowYob ou de ses concédants.
+Le Client/Partenaire ne doit pas divulguer d’informations confidentielles de YowYob, contourner les protections techniques, reproduire l’architecture KSM, ni utiliser les marques YowYob sans autorisation.
+Tout retour, suggestion, correction, idée ou amélioration transmis à YowYob peut être utilisé librement par YowYob pour améliorer ses services, sans obligation de rémunération, sauf accord écrit contraire.
+20. Protection des données personnelles
+Le traitement des données personnelles dans KSM est décrit dans l’Avis de confidentialité KSM. Selon les traitements, YowYob peut agir comme responsable du traitement pour ses propres finalités, comme sous-traitant technique du Client/Partenaire, ou comme responsable conjoint lorsque cela est expressément prévu.
+Le Client/Partenaire demeure responsable des données personnelles qu’il collecte, importe, configure, exploite, publie, exporte ou partage au moyen de KSM, notamment les données de ses employés, clients, prospects, fournisseurs, visiteurs et partenaires.
+21. Suspension, limitation et résiliation
+YowYob peut suspendre, limiter ou résilier l’accès à KSM, à un module, à un compte, à un tenant, à une API ou à une intégration lorsque l’utilisation viole les présentes Conditions, crée un risque de sécurité, expose YowYob à une responsabilité, viole la loi, perturbe le service, implique un non-paiement ou porte atteinte aux droits de tiers.
+Le Client/Partenaire peut cesser d’utiliser KSM à tout moment, sous réserve de ses obligations de paiement, de conservation légale, de confidentialité, de suppression sécurisée, de restitution ou d’exportation de données selon l’accord applicable.
+22. Garanties exclues
+Dans la mesure maximale permise par la loi, KSM est fourni « en l’état », « selon disponibilité » et en version bêta publiée. YowYob ne garantit pas que KSM sera ininterrompu, exempt d’erreurs, parfaitement sécurisé, compatible avec tous les systèmes tiers, conforme à tous les besoins métiers spécifiques ou apte à produire des résultats juridiquement définitifs sans validation du Client/Partenaire.
+Les rapports, calculs, tableaux de bord, alertes, estimations, scores, rapprochements, analyses, prévisions, recommandations et exports KSM sont fournis comme outils d’assistance et non comme décisions automatiques imposées à l’entreprise.
+23. Limitation de responsabilité de YowYob
+Dans la mesure maximale permise par la loi, YowYob ne saurait être responsable des pertes indirectes, pertes de profit, pertes de chiffre d’affaires, pertes d’opportunité, pertes de clientèle, perte de réputation, pertes de données hors Cloud YowYob, erreurs de décision, sanctions administratives, fiscales ou sociales imputables au Client/Partenaire, litiges avec clients, employés, fournisseurs ou tiers, ou dommages consécutifs à une mauvaise configuration, un usage abusif, une intégration tierce, un stockage hors Cloud YowYob ou une violation des présentes Conditions.
+Lorsque la responsabilité de YowYob ne peut pas être exclue, sa responsabilité totale cumulée au titre de KSM est limitée au montant effectivement payé par le Client/Partenaire à YowYob pour le module concerné au cours des douze (12) mois précédant l’événement générateur, ou au montant minimal prévu par la loi applicable si celui-ci est supérieur.
+24. Indemnisation de YowYob
+Le Client/Partenaire accepte d’indemniser, défendre et tenir YowYob, ses dirigeants, employés, sous-traitants et partenaires indemnes contre toute réclamation, perte, sanction, dommage, coût, frais, action ou demande découlant de ses Données Client, contenus, produits, services, opérations, employés, clients, fournisseurs, intégrations, exports, stockages hors Cloud YowYob, violations de la loi, violations des présentes Conditions ou atteintes aux droits de tiers.
+25. Modifications
+YowYob peut mettre à jour les présentes Conditions KSM afin de tenir compte de l’évolution du service, des exigences de sécurité, des contraintes légales, des nouveaux modules, des changements opérationnels ou du statut bêta publiée. Les modifications substantielles seront communiquées par un moyen raisonnable, tel qu’un avis dans KSM, une notification, un email ou la mise à jour de la date de version.
+26. Droit applicable et règlement des litiges
+Les présentes Conditions KSM sont régies par le droit applicable en République du Cameroun, sous réserve des règles impératives applicables dans le pays du Client/Partenaire ou de l’Utilisateur final. Les parties s’efforceront de résoudre tout différend à l’amiable avant toute procédure formelle.
+À défaut de résolution amiable, les litiges relèvent des juridictions compétentes de Yaoundé, sauf disposition impérative contraire.
+27. Contact
+Pour toute question relative aux présentes Conditions KSM : YowYob Inc. Ltd, Yaoundé, Cameroun. Contact : https://yowyob.com/contact. Email général : info@yowyob.com. Questions de confidentialité : privacy@yowyob.com.
+Part B - English
+1. Purpose, scope and acceptance
+These KSM Terms of Use and Service (the “KSM Terms”) govern access to and use of KSM - Kit Suite Manager, YowYob Inc. Ltd’s modular ERP system, as well as the related platforms, APIs, applications, connectors, interfaces, content, notifications and services listed in this document.
+By accessing KSM, creating an account, using a module, administering a partner workspace, connecting an API or webhook, or authorizing an End User to use KSM, the Customer/Partner accepts these KSM Terms, the general YowYob Terms, the KSM Privacy Notice, the KSM Cookies & Ads Notice and any applicable service-specific policy.
+If the Customer/Partner or End User does not agree with these terms, they must immediately stop using KSM and must not attempt to access the related data, modules or interfaces.
+2. Relationship with general YowYob terms and document hierarchy
+These KSM Terms supplement the general YowYob Terms and Conditions of Service and Use applicable to platforms under yowyob.com. They are KSM-specific terms.
+In case of conflict between the general YowYob Terms and these KSM Terms, these KSM Terms prevail for the use of KSM, unless mandatory law provides otherwise or unless the general YowYob Terms contain a clause that is more protective of YowYob Inc. Ltd.
+The KSM Privacy Notice and the KSM Cookies & Ads Notice form part of the applicable contractual environment. Clauses concerning data, cookies, advertising, integrations and liability must be read coherently and cumulatively.
+3. Beta published status
+KSM is currently provided as a beta published version. This means the system is accessible to Customers/Partners, but certain features, workflows, reports, connectors, APIs, interfaces, dashboards or automations may be experimental, evolving, incomplete, temporarily unavailable or subject to migration.
+The beta published status does not remove the binding nature of these Terms, but it limits YowYob’s technical, availability, performance, continuity and accuracy commitments to the maximum extent permitted by law.
+The Customer/Partner acknowledges that any commercial, accounting, tax, financial, HR, logistics, production or legal decision made on the basis of KSM data or reports must be validated by its own managers, experts, accountants, legal advisers or auditors.
+• YowYob may change, correct, remove, replace, merge or rename beta modules or features.
+• YowYob may carry out maintenance, migration, optimization, preventive suspension or security remediation without any absolute continuous-service obligation.
+• No KSM output is, by itself, a final accounting, tax, banking, HR, industrial or legal record without validation by the Customer/Partner.
+4. Key definitions
+• “YowYob” means YowYob Inc. Ltd, the company operating KSM and related services under yowyob.com.
+• “KSM” means Kit Suite Manager, the modular ERP system comprising the business and utility platforms listed in the annex.
+• “Customer/Partner” means any company, organization, merchant, SME/SMI, institution, workspace administrator or entity using KSM for its activities.
+• “End User” means any person authorized by a Customer/Partner to access a KSM module.
+• “Administrator” means the person appointed by the Customer/Partner to manage accounts, roles, privileges, access, exports, integrations and KSM settings.
+• “Customer Data” means data, documents, files, records, transactions, accounting entries, stocks, third-party files, content and settings provided, generated or imported by the Customer/Partner or its Users.
+• “YowYob Cloud” means the hosting, storage, backup, operation or processing environment controlled by YowYob or its authorized technical processors for KSM.
+• “Storage outside YowYob Cloud” means any storage, export, copy, print, download, synchronization, transfer, cache, backup, email, messaging, spreadsheet, POS terminal, server, drive, third-party tool, webhook or environment not controlled by YowYob.
+5. KSM functional scope
+KSM covers ERP and utility functions for companies, SMEs/SMIs, shops, points of sale, catalogs, stock, billing, accounting, treasury, HR, production, customer relationship management, business visibility, e-commerce and operational communications.
+Modules may be enabled, disabled, bundled, renamed or offered depending on the subscription level, territory, deployment stage, legal constraints, Customer/Partner needs and YowYob’s strategy.
+Platform / Plateforme || Module || Main function / Fonction principale
+ksm.yowyob.com || Console globale KSM / Global KSM console || Accès transverse, paramétrage, administration, supervision.
+cashier.yowyob.com || Caisse / Cashier || Encaissements, décaissements, ouverture/fermeture de caisse, journaux.
+pos.yowyob.com || Points de vente / POS || Ventes comptoir, supermarchés, hypermarchés, terminaux et postes de facturation.
+catalog.yowyob.com || Catalogues partenaires / Partner catalogs || Fiches produits, prix, images, disponibilité, publication commerciale.
+stockman.yowyob.com || Stock intelligent / Smart stock || Stocks, inventaires, transferts, seuils, mouvements et analyses.
+yowflash.yowyob.com || Ventes flash / Flash sales || Campagnes, offres promotionnelles, visibilité et conversion.
+crm.yowyob.com || Relation clientèle / CRM || Clients, prospects, interactions, suivi commercial.
+hrm.yowyob.com || Personnel / HRM || Personnel, contrats, présence, paie ou données RH selon configuration.
+spare.yowyob.com || Pièces de rechange / Spare parts || Assistance stock de rechange pour PME/PMI.
+billing.yowyob.com || Facturation / Billing || Devis, factures, avoirs, paiements, relances.
+accounting.yowyob.com || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
+immo.yowyob.com || Immobilisations / Fixed assets || Immobilisations, amortissements, suivi patrimonial.
+shop.yowyob.com || Boutique en ligne / e-Shop || Offre boutique en ligne liée au catalogue partenaire.
+production.yowyob.com || Production / Manufacturing || Fabrication, nomenclatures, ordres de production, PMI.
+thirdparty.yowyob.com || Tiers / Third parties || Fournisseurs, clients, commerciaux, prospects et contacts.
+banking.yowyob.com || Trésorerie / Treasury operations || Suivi de trésorerie, rapprochements et opérations internes des PME/PMI.
+chat.yowyob.com || Chat KSM || Échanges entre acteurs et partenaires KSM.
+event.yowyob.com || Événements / Events || Événements, invitations, inscriptions, campagnes associées.
+kyoc.yowyob.com || Sécurité documentaire / Document security || Contrôle documentaire, preuve technique, suivi et protection de documents.
+loyalty.yowyob.com || Fidélisation / Loyalty || Points, avantages, programmes client.
+blog.yowyob.com || Blog || Publications éditoriales et commerciales.
+podcast.yowyob.com || Podcast || Contenus audio et campagnes éditoriales.
+forum.yowyob.com || Forum || Discussions communautaires ou professionnelles.
+search.yowyob.com || Recherche unifiée / Unified search || Recherche transversale dans l’écosystème autorisé.
+webhook-dev.yowyob.com || Webhooks || Connecteurs, notifications machine-à-machine, intégrations.
+businessbook.yowyob.com || Annuaire d’entreprises / Business directory || Visibilité des partenaires, fiches d’entreprise, référencement.
+notification.yowyob.com || Notifications || Alertes e-mail, SMS, push, in-app et événements système.
+6. Account creation, administration and privileges
+Access to KSM may require a Customer/Partner account, an organizational workspace, a tenant, an administrator account and User accounts. The Customer/Partner must provide accurate, complete and up-to-date information.
+The Customer/Partner is solely responsible for appointing Administrators and managing roles, rights, profiles, privileges, visibility levels, approvals, passwords, API keys, webhooks, terminals, devices and network access.
+Any action performed through an authorized account, API token, session, terminal, webhook or integration configured by the Customer/Partner is presumed to have been authorized by the Customer/Partner unless legally established otherwise.
+• The Administrator must apply the least-privilege principle and promptly revoke access for employees, contractors or third parties who are no longer authorized.
+• The Customer/Partner must protect credentials, passwords, terminals, API keys and cashier/POS devices.
+• YowYob may impose security requirements, reset access or suspend accounts in case of risk.
+7. License to use KSM
+Subject to compliance with these KSM Terms and payment of applicable fees, YowYob grants the Customer/Partner a limited, non-exclusive, non-transferable, revocable and strictly professional license to access and use KSM.
+No ownership rights are transferred to the Customer/Partner. The Customer/Partner may not resell, sublicense, rent, copy, disassemble, bypass, massively extract, reproduce or exploit KSM outside the authorized scope without YowYob’s written agreement.
+8. General obligations of Customers/Partners and Users
+• Use KSM only for lawful, professional purposes and in compliance with applicable laws in Cameroon, the OHADA/CEMAC area and any other relevant country.
+• Ensure that data, documents, products, prices, invoices, entries, employee records, public content, campaigns, communications and integrations are accurate, lawful and authorized.
+• Inform employees, customers, prospects, suppliers and relevant third parties when their data is processed in KSM.
+• Obtain the consents, authorizations, mandates, permissions or legal bases required for the use of personal, financial, HR, commercial or sensitive data.
+• Comply with applicable tax, accounting, commercial, labor, customs, consumer, competition, advertising and data protection rules.
+• Carry out its own checks before any tax filing, accounting closing, payment, inventory, HR decision, production decision, treasury operation or commercial communication.
+9. Core clause - data and storage outside YowYob Cloud
+The Customer/Partner expressly acknowledges that YowYob controls only environments that are part of the YowYob Cloud and YowYob’s authorized technical processors.
+Any storage, export, copy, download, print, screenshot, local backup, browser cache, PWA cache, synchronization, sharing, email transmission, instant messaging transfer, spreadsheet transfer, POS terminal, Customer/Partner server, personal device, USB drive, third-party tool, webhook, external API or environment located outside the YowYob Cloud is exclusively the responsibility of the Customer/Partner or the User who controls it.
+YowYob disclaims all liability for loss, corruption, disclosure, alteration, misuse, unauthorized access, leakage, non-compliance, error, dispute or damage related to data or documents stored, processed, shared or retained outside the YowYob Cloud.
+• The Customer/Partner must secure its terminals, browsers, local networks, exports, backups, prints, PDF files, spreadsheets, emails, third-party systems and webhook endpoints.
+• The Customer/Partner must define its own internal policies for retention, archiving, access, encryption, destruction, print control and device management.
+• The Customer/Partner shall indemnify YowYob against any claim, penalty, loss or damage arising from storage, transfer or processing outside the YowYob Cloud.
+10. Customer Data, content and business responsibility
+The Customer/Partner retains ownership of its Customer Data, subject to the rights required by YowYob to host, process, back up, display, secure, transmit, technically analyze and operate KSM in accordance with the service purposes.
+The Customer/Partner warrants that it has all necessary rights to Customer Data and is solely responsible for its accuracy, lawfulness, quality, retention, updating and business use.
+• Stock, price, cashier, billing, accounting, treasury, HR, fixed-asset, production and third-party data must be checked by the Customer/Partner.
+• Public content such as catalogs, offers, images, promotions, announcements, blogs, podcasts, forums, events and BusinessBook profiles is the editorial responsibility of the Customer/Partner when provided or approved by it.
+• YowYob may remove, restrict or delist any content that is manifestly illegal, misleading, fraudulent, dangerous, contrary to public order or likely to expose YowYob to liability.
+11. Financial, accounting, tax and banking-related modules
+The billing, accounting, banking, cashier, POS, immo and treasury-related functions are management assistance tools. They do not replace the professional judgment of an accountant, auditor, tax adviser, legal adviser, banking institution or competent authority.
+KSM may integrate logic inspired by OHADA/SYSCOHADA practices or local business usage depending on configuration. However, the final compliance of entries, filings, financial statements, supporting documents, invoices, taxes, reports, reconciliations and regulatory documents remains exclusively the Customer/Partner’s responsibility.
+• YowYob is not a bank, credit institution, microfinance institution, accounting firm, statutory auditor, tax adviser or public officer.
+• Cash balances, stocks, margins, entries, reconciliations, invoices and dashboards must be checked before any official use.
+• Errors in accounting setup, tax rates, currencies, invoicing rules, access profiles or export interfaces are the Customer/Partner’s responsibility.
+12. HR, CRM, third-party records and personal data
+The HRM, CRM, thirdparty, loyalty, chat, event, notification and search modules may process data relating to employees, customers, prospects, suppliers, sales representatives, visitors or other third parties. The Customer/Partner must have a valid legal basis or consent for such processing.
+The Customer/Partner is responsible for informing data subjects, data minimization, access, correction, deletion, objection or restriction rights, and any legal obligation applicable to its own processing activities.
+13. Catalog, shop, yowflash, loyalty and business visibility
+The catalog, shop, yowflash, loyalty, businessbook, blog, podcast, forum and event modules may make certain information visible to the public or targeted communities. The Customer/Partner is responsible for products, services, prices, images, discounts, warranties, sale terms, delivery times, displayed stocks, mandatory notices and commercial communications published through these modules.
+YowYob does not guarantee the absence of error in information provided by partners, the actual availability of a product, the regulatory compliance of an offer, product quality, or the execution of a sale or delivery operated by a Customer/Partner or third party.
+14. KYOC, documents, technical proof and document security
+kyoc.yowyob.com may provide document security, verification, tracking or technical control features. Such features do not necessarily constitute official certification, legalization, notarization, qualified signature or irrefutable evidence unless YowYob has made a specific written commitment.
+The Customer/Partner remains responsible for the origin, content, validity, authorization to share, retention and legal use of its documents.
+15. APIs, webhooks, integrations and third-party services
+APIs, webhooks, connectors, exports, imports, SDKs, links, scripts, third-party modules, payment gateways, messaging systems, accounting systems, advertising tools, cloud services or applications connected to KSM may involve processing outside YowYob’s direct control.
+The Customer/Partner is responsible for the security of its endpoints, secrets, keys, tokens, configurations, mappings, data transformations, validations, logs, retries, queues, errors and third-party environments.
+• YowYob may disable a webhook, API or integration in case of abuse, overload, security risk, non-payment, non-compliance or harm to the service.
+• YowYob is not responsible for losses or errors resulting from a third-party service, Customer/Partner configuration, network outage, unavailable endpoint or compromised key.
+• Any transfer to a third-party tool acknowledges that the external processing is the Customer/Partner’s responsibility and not part of the YowYob Cloud.
+16. Payments, subscriptions, taxes and billing
+Access to certain KSM modules may be free, included, promotional, beta, limited, freemium, subscription-based, commission-based, licensed, subject to integration fees, support fees or specific pricing.
+Prices, taxes, payment terms, billing cycles, discounts, trial periods, interruptions for non-payment and possible refunds are indicated in the commercial offer, purchase order, invoice, specific terms or subscription interface.
+Unless mandatory law or YowYob’s written agreement provides otherwise, fees paid are non-refundable, including in case of Customer/Partner misconfiguration, non-use, connection failure, third-party tool incompatibility or change in internal needs.
+17. Acceptable use and prohibited conduct
+• Unauthorized access, intrusion, security bypass, abusive scanning, vulnerability exploitation, DDoS attack or service disruption.
+• Mass extraction, scraping, automated copying, resale or creation of a competing database without written agreement.
+• Transmission of malware, spam, phishing, false notifications, misleading content, false documents, false invoices or impersonation.
+• Use of KSM for illegal, dangerous, fraudulent, counterfeit or public-order-infringing products, services, transactions, content or activities.
+• Attempting to alter logs, evidence, audits, accounting entries, histories, traces or access controls.
+• Abusive use of advertising, notifications, forums, blogs, podcasts, loyalty programs or commercial messages.
+18. Security, availability, maintenance and beta support
+YowYob implements reasonable technical and organizational measures to protect the YowYob Cloud and support KSM service continuity. However, no system can be guaranteed to be perfectly secure, error-free or uninterrupted.
+During the beta published phase, support and service levels are provided on a reasonable-efforts basis unless otherwise agreed in writing. Interruptions, slowdowns, maintenance, updates, security fixes or migrations do not automatically give rise to compensation, service credits or refunds.
+• The Customer/Partner must promptly report incidents, suspicious access or critical errors.
+• YowYob may apply fixes, restrict a feature or suspend access to protect the service.
+• Backups, restorations, exports and continuity plans outside the YowYob Cloud remain the Customer/Partner’s responsibility.
+19. Confidentiality, intellectual property and feedback
+KSM, its software, interfaces, architectures, code bases, trademarks, logos, workflows, designs, models, documentation, APIs, connectors, technical bases and content edited by YowYob remain the exclusive property of YowYob or its licensors.
+The Customer/Partner must not disclose YowYob confidential information, bypass technical protections, reproduce KSM architecture, or use YowYob marks without authorization.
+Any feedback, suggestion, correction, idea or improvement sent to YowYob may be freely used by YowYob to improve its services, without any payment obligation unless otherwise agreed in writing.
+20. Personal data protection
+Personal data processing in KSM is described in the KSM Privacy Notice. Depending on the processing, YowYob may act as controller for its own purposes, as technical processor for the Customer/Partner, or as joint controller where expressly provided.
+The Customer/Partner remains responsible for the personal data it collects, imports, configures, uses, publishes, exports or shares through KSM, including data relating to its employees, customers, prospects, suppliers, visitors and partners.
+21. Suspension, limitation and termination
+YowYob may suspend, restrict or terminate access to KSM, a module, an account, a tenant, an API or an integration where the use breaches these Terms, creates a security risk, exposes YowYob to liability, violates the law, disrupts the service, involves non-payment or infringes third-party rights.
+The Customer/Partner may stop using KSM at any time, subject to its payment, legal retention, confidentiality, secure deletion, return or data export obligations under the applicable agreement.
+22. Warranty disclaimers
+To the maximum extent permitted by law, KSM is provided “as is”, “as available” and as a beta published version. YowYob does not warrant that KSM will be uninterrupted, error-free, perfectly secure, compatible with all third-party systems, compliant with every specific business need, or capable of producing legally final outputs without Customer/Partner validation.
+KSM reports, calculations, dashboards, alerts, estimates, scores, reconciliations, analyses, forecasts, recommendations and exports are provided as assistance tools and not as automatic decisions imposed on the business.
+23. Limitation of YowYob liability
+To the maximum extent permitted by law, YowYob shall not be liable for indirect losses, loss of profit, loss of revenue, loss of opportunity, loss of customers, reputational damage, loss of data outside the YowYob Cloud, decision-making errors, administrative, tax or labor penalties attributable to the Customer/Partner, disputes with customers, employees, suppliers or third parties, or damages resulting from misconfiguration, misuse, third-party integration, storage outside YowYob Cloud or breach of these Terms.
+Where YowYob’s liability cannot be excluded, its aggregate liability for KSM is limited to the amount actually paid by the Customer/Partner to YowYob for the relevant module during the twelve (12) months preceding the event giving rise to the claim, or to the minimum amount required by applicable law if higher.
+24. Indemnification of YowYob
+The Customer/Partner agrees to indemnify, defend and hold harmless YowYob, its officers, employees, processors and partners from any claim, loss, penalty, damage, cost, expense, action or demand arising from its Customer Data, content, products, services, operations, employees, customers, suppliers, integrations, exports, storage outside YowYob Cloud, violations of law, breaches of these Terms or infringements of third-party rights.
+25. Changes
+YowYob may update these KSM Terms to reflect service evolution, security requirements, legal constraints, new modules, operational changes or beta published status. Material changes will be communicated by reasonable means, such as a notice in KSM, a notification, an email or an updated version date.
+26. Governing law and disputes
+These KSM Terms are governed by the laws applicable in the Republic of Cameroon, subject to mandatory rules applicable in the Customer/Partner’s or End User’s country. The parties will seek to resolve any dispute amicably before any formal proceedings.
+Failing amicable resolution, disputes shall fall within the jurisdiction of the competent courts of Yaoundé, unless mandatory law provides otherwise.
+27. Contact
+For questions relating to these KSM Terms: YowYob Inc. Ltd, Yaoundé, Cameroon. Contact: https://yowyob.com/contact. General email: info@yowyob.com. Privacy questions: privacy@yowyob.com.
+Annexes bilingues / Bilingual annexes
+Annexe 1 / Annex 1 - Périmètre des plateformes KSM / KSM platform scope
+Le périmètre ci-dessous est indicatif et peut évoluer avec le déploiement de KSM. / The scope below is indicative and may evolve with KSM deployment.
+Platform / Plateforme || Module || Main function / Fonction principale
+ksm.yowyob.com || Console globale KSM / Global KSM console || Accès transverse, paramétrage, administration, supervision.
+cashier.yowyob.com || Caisse / Cashier || Encaissements, décaissements, ouverture/fermeture de caisse, journaux.
+pos.yowyob.com || Points de vente / POS || Ventes comptoir, supermarchés, hypermarchés, terminaux et postes de facturation.
+catalog.yowyob.com || Catalogues partenaires / Partner catalogs || Fiches produits, prix, images, disponibilité, publication commerciale.
+stockman.yowyob.com || Stock intelligent / Smart stock || Stocks, inventaires, transferts, seuils, mouvements et analyses.
+yowflash.yowyob.com || Ventes flash / Flash sales || Campagnes, offres promotionnelles, visibilité et conversion.
+crm.yowyob.com || Relation clientèle / CRM || Clients, prospects, interactions, suivi commercial.
+hrm.yowyob.com || Personnel / HRM || Personnel, contrats, présence, paie ou données RH selon configuration.
+spare.yowyob.com || Pièces de rechange / Spare parts || Assistance stock de rechange pour PME/PMI.
+billing.yowyob.com || Facturation / Billing || Devis, factures, avoirs, paiements, relances.
+accounting.yowyob.com || Comptabilité / Accounting || Comptabilité générale, analytique, interfaces OHADA/SYSCOHADA selon configuration.
+immo.yowyob.com || Immobilisations / Fixed assets || Immobilisations, amortissements, suivi patrimonial.
+shop.yowyob.com || Boutique en ligne / e-Shop || Offre boutique en ligne liée au catalogue partenaire.
+production.yowyob.com || Production / Manufacturing || Fabrication, nomenclatures, ordres de production, PMI.
+thirdparty.yowyob.com || Tiers / Third parties || Fournisseurs, clients, commerciaux, prospects et contacts.
+banking.yowyob.com || Trésorerie / Treasury operations || Suivi de trésorerie, rapprochements et opérations internes des PME/PMI.
+chat.yowyob.com || Chat KSM || Échanges entre acteurs et partenaires KSM.
+event.yowyob.com || Événements / Events || Événements, invitations, inscriptions, campagnes associées.
+kyoc.yowyob.com || Sécurité documentaire / Document security || Contrôle documentaire, preuve technique, suivi et protection de documents.
+loyalty.yowyob.com || Fidélisation / Loyalty || Points, avantages, programmes client.
+blog.yowyob.com || Blog || Publications éditoriales et commerciales.
+podcast.yowyob.com || Podcast || Contenus audio et campagnes éditoriales.
+forum.yowyob.com || Forum || Discussions communautaires ou professionnelles.
+search.yowyob.com || Recherche unifiée / Unified search || Recherche transversale dans l’écosystème autorisé.
+webhook-dev.yowyob.com || Webhooks || Connecteurs, notifications machine-à-machine, intégrations.
+businessbook.yowyob.com || Annuaire d’entreprises / Business directory || Visibilité des partenaires, fiches d’entreprise, référencement.
+notification.yowyob.com || Notifications || Alertes e-mail, SMS, push, in-app et événements système.
+Annexe 2 / Annex 2 - Matrice de responsabilité des données / Data responsibility matrix
+Situation || YowYob || Client/Partenaire / Customer/Partner
+Données dans le Cloud YowYob / Data in YowYob Cloud || YowYob met en œuvre des mesures raisonnables de sécurité et d’exploitation. / YowYob applies reasonable security and operational measures. || Le Client/Partenaire garantit la licéité, exactitude et autorisation des données. / Customer/Partner warrants legality, accuracy and authorization.
+Exports, impressions, téléchargements / Exports, prints, downloads || YowYob fournit seulement l’outil d’export lorsque disponible. / YowYob only provides the export tool where available. || Responsabilité exclusive du Client/Partenaire après sortie du Cloud YowYob. / Exclusive responsibility of Customer/Partner after leaving YowYob Cloud.
+Terminaux POS, navigateurs, caches PWA / POS terminals, browsers, PWA caches || YowYob ne contrôle pas les appareils et réseaux du Client/Partenaire. / YowYob does not control Customer/Partner devices or networks. || Sécurisation, accès, effacement, chiffrement et conservation sous responsabilité du Client/Partenaire. / Security, access, deletion, encryption and retention are Customer/Partner responsibilities.
+Webhooks et outils tiers / Webhooks and third-party tools || YowYob peut transmettre des données selon la configuration autorisée. / YowYob may transmit data according to authorized configuration. || Endpoints, secrets, outils tiers, consentements et conformité externe sous responsabilité du Client/Partenaire. / Endpoints, secrets, third-party tools, consents and external compliance are Customer/Partner responsibilities.
+Contenus publics / Public content || YowYob peut modérer ou déréférencer certains contenus. / YowYob may moderate or delist certain content. || Exactitude, légalité, droits d’image, prix, produits, offres et mentions sous responsabilité du Client/Partenaire. / Accuracy, legality, image rights, prices, products, offers and notices are Customer/Partner responsibilities.
+Annexe 3 / Annex 3 - Support bêta / Beta support
+• Support fourni sur la base d’efforts raisonnables, sauf accord spécifique. / Support is provided on a reasonable-efforts basis unless otherwise agreed.
+• Incidents critiques : sécurité, indisponibilité globale ou risque de perte de données dans le Cloud YowYob. / Critical incidents: security, global unavailability or risk of data loss in YowYob Cloud.
+• Incidents hors Cloud YowYob : terminaux, réseaux, exports, outils tiers et endpoints restent sous responsabilité du Client/Partenaire. / Incidents outside YowYob Cloud: terminals, networks, exports, third-party tools and endpoints remain Customer/Partner responsibility.
+End of document / Fin du document

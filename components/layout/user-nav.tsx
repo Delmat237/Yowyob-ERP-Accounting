@@ -1,8 +1,9 @@
 "use client";
 
+import React from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,13 +35,43 @@ export function UserNav() {
     router.replace("/");
   };
 
+  const [avatarUrl, setAvatarUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window === "undefined" || !user?.id) return;
+    setAvatarUrl(localStorage.getItem(`profile_avatar_${user.id}`));
+  }, [user?.id]);
+
+  // Dériver le prénom/nom depuis l'email ou le username si absents
+  const getDerivedNames = () => {
+    if (!user) return { firstName: "", lastName: "" };
+    let first = user.firstName || "";
+    let last = user.lastName || "";
+    if (!first && !last) {
+      const username = (user as { username?: string }).username;
+      const identifier = username || (user.email ? user.email.split("@")[0] : "");
+      if (identifier) {
+        const parts = identifier.replace(/[._-]+/g, " ").trim().split(/\s+/);
+        if (parts.length === 1) {
+          first = parts[0];
+        } else if (parts.length > 1) {
+          first = parts[0];
+          last = parts.slice(1).join(" ");
+        }
+      }
+    }
+    return { firstName: first, lastName: last };
+  };
+
+  const { firstName, lastName } = getDerivedNames();
+
   // Initiales pour l'avatar
   const initials = user
-    ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}`.toUpperCase() || "?"
+    ? `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.toUpperCase() || user.email?.[0]?.toUpperCase() || "?"
     : "?";
 
   const displayName = user
-    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() || "Utilisateur"
+    ? `${firstName ?? ""} ${lastName ?? ""}`.trim() || "Utilisateur"
     : "Utilisateur";
 
   const displayEmail = user?.email ?? "";
@@ -52,6 +83,7 @@ export function UserNav() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
           <Avatar className="h-9 w-9">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} className="object-cover" />}
             <AvatarFallback className="bg-blue-600 text-white font-semibold text-sm">
               {initials}
             </AvatarFallback>

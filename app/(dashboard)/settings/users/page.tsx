@@ -71,7 +71,7 @@ export default function UsersSettingsPage() {
     agencyId: "none", // "none" represents no agency scope
   });
 
-  const orgId = user?.organizationId || typeof window !== 'undefined' ? localStorage.getItem('organization_id') : null;
+  const orgId = user?.organizationId || (typeof window !== 'undefined' ? localStorage.getItem('organization_id') : null);
 
   useEffect(() => {
     if (orgId) {
@@ -85,17 +85,35 @@ export default function UsersSettingsPage() {
     setIsLoading(true);
     try {
       if (!orgId) return;
-      const [membersData, rolesData, agenciesData] = await Promise.all([
+
+      // La liste des membres est la donnée critique de la page. Les rôles et
+      // les agences ne servent qu'à la modale d'invitation : on les charge en
+      // "best-effort" pour qu'un échec (ex. 403 si l'utilisateur n'est pas
+      // Owner) ne masque pas la liste des collaborateurs.
+      const [membersResult, rolesResult, agenciesResult] = await Promise.allSettled([
         EmployeesRolesService.getEmployees(orgId),
         EmployeesRolesService.getRoles(),
-        AgenciesService.getAgencies()
+        AgenciesService.getAgencies(orgId)
       ]);
-      setEmployees(membersData || []);
-      setRoles(rolesData || []);
-      setAgencies(agenciesData || []);
-    } catch (error) {
-      console.error(error);
-      toast.error("Impossible de charger les données des collaborateurs.");
+
+      if (membersResult.status === "fulfilled") {
+        setEmployees(membersResult.value || []);
+      } else {
+        console.error(membersResult.reason);
+        toast.error("Impossible de charger les données des collaborateurs.");
+      }
+
+      if (rolesResult.status === "fulfilled") {
+        setRoles(rolesResult.value || []);
+      } else {
+        console.warn("Chargement des rôles échoué:", rolesResult.reason);
+      }
+
+      if (agenciesResult.status === "fulfilled") {
+        setAgencies(agenciesResult.value || []);
+      } else {
+        console.warn("Chargement des agences échoué:", agenciesResult.reason);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -124,45 +142,39 @@ export default function UsersSettingsPage() {
 
     setIsSubmitting(true);
     try {
-      // Step 1: Pre-register the user so they exist in the user directory
+      // Étape 1 : créer le compte utilisateur dans le Kernel (idempotent : 409 ignoré).
+      // L'inscription passe par le proxy /api/kernel/auth/register qui relaie au Kernel.
       try {
         await AuthenticationService.register({
           email: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
           password: formData.password,
-          company: user?.organizationId ? "KSM Tenant User" : undefined
         });
       } catch (err: any) {
-        // 409 Conflict means the user already exists, which is fine, we continue to invite them.
-        // Otherwise, throw or handle
-        if (err.status !== 409) {
-          console.warn("User registration skipped or failed, attempting invitation anyway:", err);
+        // 409 = l'utilisateur existe déjà dans le Kernel → on peut quand même l'inviter.
+        const status = err?.status ?? err?.response?.status;
+        if (status !== 409) {
+          // Toute autre erreur : on signale et on arrête.
+          throw new Error(
+            err?.body?.message || err?.message ||
+            "Impossible de créer le compte utilisateur. Vérifiez les informations saisies."
+          );
         }
       }
 
-      // Step 2: Invite the employee to the organization
+      // Étape 2 : rattacher l'utilisateur à l'organisation avec son rôle.
       await EmployeesRolesService.inviteEmployee(orgId, {
         email: formData.email,
         roleId: formData.roleId,
         agencyId: formData.agencyId === "none" ? undefined : formData.agencyId,
-        permissions: [] // Can be customized later
+        permissions: [],
       });
 
-      toast.success("Collaborateur invité avec succès.");
+      toast.success("Collaborateur créé et invité avec succès.");
       setIsInviteOpen(false);
-      
-      // Reset form
-      setFormData({
-        email: "",
-        firstName: "",
-        lastName: "",
-        password: "",
-        roleId: "",
-        agencyId: "none",
-      });
 
-      // Reload list
+      setFormData({ email: "", firstName: "", lastName: "", password: "", roleId: "", agencyId: "none" });
       loadData();
     } catch (error: any) {
       console.error(error);
@@ -233,75 +245,79 @@ export default function UsersSettingsPage() {
               </DialogHeader>
 
               <div className="grid gap-5 py-4">
+                {/* Identité */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Prénom <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="firstName" 
-                      name="firstName" 
-                      placeholder="Jean" 
-                      value={formData.firstName} 
-                      onChange={handleInputChange} 
-                      required 
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      placeholder="Jean"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      required
                       className="rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nom <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="lastName" 
-                      name="lastName" 
-                      placeholder="Dupont" 
-                      value={formData.lastName} 
-                      onChange={handleInputChange} 
-                      required 
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      placeholder="Dupont"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      required
                       className="rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
 
+                {/* Email */}
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Adresse Email <span className="text-red-500">*</span></Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      id="email" 
-                      name="email" 
-                      type="email" 
-                      placeholder="jean.dupont@ksm.dev" 
-                      value={formData.email} 
-                      onChange={handleInputChange} 
-                      required 
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="jean.dupont@ksm.dev"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      required
                       className="pl-9 rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
 
+                {/* Mot de passe initial */}
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Mot de Passe Initial <span className="text-red-500">*</span></Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      id="password" 
-                      name="password" 
-                      type="password" 
-                      placeholder="••••••••" 
-                      value={formData.password} 
-                      onChange={handleInputChange} 
-                      required 
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      required
                       className="pl-9 rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <p className="text-[10px] text-muted-foreground leading-snug">
-                    Requis pour l'inscription du compte utilisateur dans la base de données.
+                    Un compte est créé dans le système pour cet email, puis rattaché à l'organisation.
                   </p>
                 </div>
 
+                {/* Rôle + Agence */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="role" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Rôle ERP <span className="text-red-500">*</span></Label>
-                    <Select 
-                      value={formData.roleId} 
+                    <Select
+                      value={formData.roleId}
                       onValueChange={(val) => handleSelectChange("roleId", val)}
                       required
                     >
@@ -320,8 +336,8 @@ export default function UsersSettingsPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="agency" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Agence de rattachement</Label>
-                    <Select 
-                      value={formData.agencyId} 
+                    <Select
+                      value={formData.agencyId}
                       onValueChange={(val) => handleSelectChange("agencyId", val)}
                     >
                       <SelectTrigger className="rounded-lg border-gray-200">

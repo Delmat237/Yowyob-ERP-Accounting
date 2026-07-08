@@ -1,0 +1,182 @@
+KSM - Kit Suite Manager
+Notice Cookies & Publicité / Cookies & Ads Notice
+VERSION BÊTA PUBLIÉE / BETA PUBLISHED VERSION
+Item || Value / Valeur
+Document || KSM Cookies & Ads Notice - Version bêta publiée / Beta Published Version
+Provider / Fournisseur || YowYob Inc. Ltd, Yaoundé, Cameroon
+Scope / Portée || KSM - Kit Suite Manager and associated KSM platforms under yowyob.com
+Version || 1.1
+Last updated / Dernière mise à jour || 7 July 2026 / 7 juillet 2026
+Publication status / Statut || Beta published version / Version bêta publiée
+Legal basis / Base documentaire || YowYob CGU-ToU V2, YowYob Privacy Policy, FarCal legal notices, KSM business architecture
+Important publication note / Note importante de publication
+This document is intended to be published as a KSM-specific legal notice and must be read together with the general YowYob Terms, the KSM Terms, the KSM Privacy Notice and the KSM Cookies & Ads Notice, as applicable. It is designed to protect YowYob Inc. Ltd to the maximum extent permitted by applicable law while remaining clear for Customers, Partners and End Users. / Le présent document est destiné à être publié comme notice juridique spécifique à KSM et doit être lu conjointement avec les conditions générales YowYob, les conditions KSM, l’avis de confidentialité KSM et la notice Cookies & Publicité KSM, selon le cas. Il vise à protéger YowYob Inc. Ltd dans la mesure maximale permise par le droit applicable, tout en restant lisible pour les Clients, Partenaires et Utilisateurs finaux.
+Table des matières synthétique / Summary table of contents
+1. Partie A - Français : technologies utilisées, finalités, publicité, responsabilités, stockage hors Cloud YowYob, choix utilisateur.
+2. Part B - English: technologies used, purposes, advertising, responsibilities, storage outside YowYob Cloud, user choices.
+3. Annexes bilingues : catégories, modules sensibles, responsabilité des partenaires, contrôles pratiques.
+Partie A - Français
+1. Objet de la notice
+La présente Notice Cookies & Publicité KSM explique comment YowYob Inc. Ltd utilise des cookies et technologies similaires dans KSM - Kit Suite Manager, notamment sur les plateformes web, applications mobiles, PWA, APIs, interfaces partenaires, outils de notification, pages publiques, modules de vente, modules ERP et services associés.
+Elle doit être lue avec les Conditions KSM, les CGU/CGS générales YowYob et l’Avis de confidentialité KSM. Elle complète ces documents et s’applique spécifiquement aux cookies, traceurs, stockage local, mesure d’audience, publicité, contenus sponsorisés, campagnes partenaires et technologies similaires.
+2. Qui sommes-nous
+KSM est fourni par YowYob Inc. Ltd (« YowYob », « nous »). Pour les questions relatives aux cookies, à la publicité ou à vos choix de confidentialité, utilisez https://yowyob.com/contact ou contactez privacy@yowyob.com.
+3. Portée KSM
+La présente notice s’applique aux modules KSM back-office et aux modules publics ou commerciaux, y compris ksm, cashier, pos, catalog, stockman, yowflash, crm, hrm, spare, billing, accounting, immo, shop, production, thirdparty, banking, chat, event, kyoc, loyalty, blog, podcast, forum, search, webhooks, businessbook et notification.
+Certains modules privés de gestion interne utilisent principalement des cookies strictement nécessaires, de sécurité, de session, de préférences et de performance. Certains modules publics ou commerciaux peuvent également utiliser des technologies de publicité, d’audience, de mesure de campagne et de visibilité partenaire.
+4. Cookies et technologies similaires
+Les cookies sont de petits fichiers texte déposés sur votre appareil par un site web. Les technologies similaires comprennent le stockage local, le stockage de session, IndexedDB, caches PWA, service workers, pixels, balises, identifiants SDK, identifiants d’appareil, journaux serveur, événements d’application et mesures techniques.
+Dans KSM, ces technologies permettent notamment de maintenir une session sécurisée, mémoriser des préférences, sécuriser les accès, prévenir la fraude, mesurer l’usage, améliorer les performances, diagnostiquer des incidents, afficher certains contenus commerciaux et mesurer des campagnes.
+5. Technologies pouvant être utilisées dans KSM
+• Cookies de session et d’authentification pour maintenir l’accès au compte et limiter les accès non autorisés.
+• Cookies ou jetons de sécurité pour CSRF, anti-fraude, contrôle de session, équilibrage de charge et détection d’abus.
+• Stockage local, stockage de session, IndexedDB, caches PWA et service workers pour préférences, continuité d’usage, mode dégradé ou performances.
+• Pixels, balises et événements pour analytique, mesure de conversion, mesure de campagne, rapports partenaires ou publicité lorsque cela est autorisé.
+• Identifiants SDK, identifiants publicitaires ou identifiants d’appareil dans les contextes mobiles/PWA lorsque les paramètres de l’appareil et la loi le permettent.
+• Logs techniques : adresse IP, horodatages, navigateur, système, appareil, erreurs, crashs, performances, traces de sécurité, journaux d’API et de webhooks.
+6. Finalités
+KSM utilise des cookies et technologies similaires pour les finalités ci-dessous. Les technologies strictement nécessaires peuvent être actives sans consentement lorsque la loi le permet, car elles sont indispensables à la fourniture, la sécurité ou la stabilité du service. Les technologies non essentielles sont soumises à vos choix ou au paramétrage applicable lorsque la loi l’exige.
+• Strictement nécessaires : authentification, session, sécurité, prévention de fraude, contrôle d’accès, équilibrage de charge, journalisation essentielle et fourniture des modules.
+• Préférences : langue, affichage, devise, organisation active, magasin, poste de facturation, consentement, paramètres d’interface et préférences de notification.
+• Analytique et performance : statistiques d’usage, adoption des fonctionnalités, erreurs, crashs, lenteurs, disponibilité, qualité des interfaces et amélioration du service.
+• Publicité et mesure : contenus sponsorisés, annonces de partenaires, visibilité BusinessBook, campagnes yowflash/shop/catalog, limitation de fréquence, conversion, clics, impressions et prévention de fraude publicitaire.
+• Sécurité avancée : détection d’accès anormal, protection contre robots, attaques, tentatives d’intrusion, abus API, spam, scraping ou compromission de compte.
+• Support et diagnostic : reproduction d’erreurs, vérification de configurations, suivi de tickets, analyse de webhooks, intégrations et notifications.
+7. Tableau des catégories
+Catégorie || Finalité || Exemples non exhaustifs
+Strictement nécessaires || Exploiter KSM, maintenir les sessions, sécuriser les comptes, prévenir la fraude, équilibrer la charge, gérer le consentement. || Session ID, CSRF token, auth token, tenant ID, security flags, consent state.
+Préférences || Mémoriser les choix utilisateur et administrateur. || Langue, thème, organisation active, devise, magasin, tableau de bord, préférences UI.
+Analytique & performance || Comprendre l’usage, améliorer la fiabilité, mesurer l’adoption et diagnostiquer les erreurs. || Page views, événements fonctionnels, crash reports, métriques de performance.
+Publicité & mesure || Afficher et mesurer des annonces, campagnes, promotions, contenus sponsorisés et visibilité partenaire. || Impressions, clics, conversions, frequency caps, campaign IDs, attribution.
+Intégrations & webhooks || Contrôler les flux techniques, livraisons d’événements, erreurs, retries et sécurité API. || Webhook event ID, delivery logs, signature timestamp, API rate metrics.
+Support & sécurité || Analyser des incidents, protéger le service, répondre aux demandes d’assistance. || IP, logs d’accès, device/browser signals, error context, audit events.
+8. Modules sensibles et séparation publicitaire
+KSM comprend des modules sensibles tels que HRM, accounting, billing, banking, cashier, POS, immo, KYOC, CRM et thirdparty. YowYob n’utilise pas les contenus sensibles de ces modules pour personnaliser de la publicité comportementale externe, sauf configuration explicite, base légale valable, consentement lorsque requis et protection contractuelle appropriée.
+Les données sensibles de gestion interne peuvent toutefois être traitées pour des finalités de sécurité, diagnostic, audit technique, support, performance, conformité, prévention de fraude, statistiques agrégées ou amélioration de KSM.
+9. Publicité, contenus sponsorisés et visibilité partenaire
+KSM peut proposer des contenus sponsorisés, annonces, recommandations commerciales, campagnes partenaires, offres yowflash, catalogues mis en avant, fiches BusinessBook, événements sponsorisés, programmes de fidélité ou notifications commerciales.
+Lorsque la loi l’exige, la publicité personnalisée et les technologies non essentielles associées sont soumises au consentement ou aux préférences disponibles. Le refus de la publicité personnalisée n’empêche pas nécessairement l’affichage de publicités contextuelles, de contenus sponsorisés génériques ou de communications nécessaires au service.
+• Les rapports aux annonceurs ou partenaires sont en principe agrégés ou statistiques, sauf consentement, relation contractuelle ou nécessité opérationnelle autorisée.
+• YowYob peut mesurer impressions, clics, conversions, interactions, performance de campagne, fraude publicitaire et qualité de diffusion.
+• Le Client/Partenaire est responsable des annonces, promotions, prix, produits, images, allégations, mentions légales et contenus publicitaires qu’il fournit ou valide.
+10. Technologies ajoutées par les Clients/Partenaires
+Certains Clients/Partenaires peuvent souhaiter ajouter des pixels, scripts, outils analytics, tags publicitaires, chatbots, solutions de paiement, plugins, widgets, SDKs ou liens tiers sur leurs espaces publics KSM, notamment shop, catalog, yowflash, blog, podcast, forum, event ou businessbook.
+Sauf accord écrit spécifique, toute technologie ajoutée ou demandée par un Client/Partenaire relève de sa responsabilité exclusive. Le Client/Partenaire doit informer les personnes concernées, obtenir les consentements requis, vérifier la conformité des tiers, contrôler les transferts, sécuriser les scripts et indemniser YowYob en cas de réclamation.
+11. Clause centrale - stockage local, caches et hors Cloud YowYob
+Les cookies, caches, données PWA, IndexedDB, téléchargements, exports, impressions, fichiers PDF, tableurs, captures d’écran, emails, terminaux POS, navigateurs, appareils mobiles, serveurs locaux, outils tiers, webhooks et intégrations peuvent créer ou conserver des données hors du Cloud YowYob.
+Tout stockage, export, copie, cache, impression, synchronisation, webhook, intégration ou traitement hors du Cloud YowYob relève exclusivement de la responsabilité du Client/Partenaire ou de l’Utilisateur qui le contrôle. YowYob n’est pas responsable de la sécurité, conservation, suppression, divulgation, perte ou usage de ces données hors Cloud YowYob.
+• Les Administrateurs doivent définir des règles internes sur les appareils autorisés, le nettoyage des caches, les exports, impressions, sauvegardes et partages.
+• Les Utilisateurs doivent éviter de stocker des données sensibles dans des appareils partagés, navigateurs publics ou environnements non sécurisés.
+• Le Client/Partenaire doit contrôler ses terminaux POS, navigateurs, lecteurs de codes, imprimantes, réseaux locaux, outils tiers et endpoints.
+12. Partenaires tiers
+YowYob peut utiliser des prestataires ou partenaires tiers pour l’hébergement, sécurité, analytics, crash reporting, paiement, messagerie, notification, publicité, mesure de campagne, cartes, recherche, anti-fraude ou support. Ces tiers peuvent utiliser leurs propres technologies selon leurs politiques et les paramètres applicables.
+Lorsque requis, YowYob demandera un consentement avant d’activer des technologies tierces non essentielles. Les services tiers intégrés ou configurés par le Client/Partenaire sont sous la responsabilité du Client/Partenaire.
+13. Vos choix et contrôles
+• Bannière ou centre de préférences : accepter, refuser ou personnaliser certains cookies non essentiels lorsque disponible.
+• Navigateur : bloquer ou supprimer des cookies, données de site, stockage local, IndexedDB et caches.
+• Appareil mobile/PWA : réinitialiser l’identifiant publicitaire, limiter le suivi publicitaire, gérer les permissions, effacer les données du site ou désinstaller la PWA.
+• Localisation : désactiver les permissions de localisation lorsque le module en demande.
+• Publicité personnalisée : refuser la personnalisation lorsque cette option est proposée. Des annonces contextuelles ou nécessaires peuvent rester visibles.
+• Compte KSM : demander assistance ou exercer les droits prévus par l’Avis de confidentialité KSM.
+14. Effets du refus ou du blocage
+Le refus ou le blocage de cookies non essentiels ne devrait pas empêcher l’accès aux fonctionnalités principales, lorsque cela est techniquement possible. En revanche, le blocage des cookies strictement nécessaires, du stockage local, des sessions, des jetons de sécurité ou de certains caches peut empêcher la connexion, la sécurité, la continuité de session, les préférences, les exports, la PWA ou certaines fonctionnalités KSM.
+15. Durée de conservation
+Les durées de vie des cookies et technologies similaires varient selon leur finalité. Certains expirent à la fermeture du navigateur, d’autres persistent pendant une durée définie afin de retenir les préférences, protéger la sécurité, mesurer la performance, limiter la fréquence publicitaire ou conserver une preuve technique. Les journaux de sécurité, d’audit, d’API, de support et de webhooks peuvent être conservés selon les besoins opérationnels, de sécurité, de preuve et de conformité décrits dans l’Avis de confidentialité KSM.
+16. Do Not Track et signaux similaires
+Certains navigateurs proposent un signal « Do Not Track ». En l’absence de norme technique ou juridique uniforme, KSM applique prioritairement les mécanismes de consentement, paramètres internes, préférences cookies et obligations légales applicables.
+17. Sécurité
+YowYob met en œuvre des mesures raisonnables pour sécuriser les cookies, jetons, sessions et technologies similaires dans le Cloud YowYob. Toutefois, le Client/Partenaire reste responsable de ses appareils, navigateurs, extensions, terminaux POS, réseaux, exports, caches et outils tiers.
+18. Version bêta publiée et évolution
+La présente notice s’applique à une version bêta publiée de KSM. Les noms, catégories, durées, partenaires, traceurs, SDKs, fonctionnalités de publicité, mesure, consentement ou stockage peuvent évoluer. YowYob mettra à jour cette notice lorsque les changements le justifient.
+19. Contact
+Pour toute question sur les cookies, la publicité ou vos choix : YowYob Inc. Ltd, Yaoundé, Cameroun. Contact : https://yowyob.com/contact. Email : privacy@yowyob.com.
+Part B - English
+1. Purpose of this notice
+This KSM Cookies & Ads Notice explains how YowYob Inc. Ltd uses cookies and similar technologies in KSM - Kit Suite Manager, including web platforms, mobile applications, PWAs, APIs, partner interfaces, notification tools, public pages, sales modules, ERP modules and related services.
+It must be read together with the KSM Terms, the general YowYob Terms and the KSM Privacy Notice. It supplements those documents and applies specifically to cookies, trackers, local storage, analytics, advertising, sponsored content, partner campaigns and similar technologies.
+2. Who we are
+KSM is provided by YowYob Inc. Ltd (“YowYob”, “we”, “us”). For questions about cookies, advertising or your privacy choices, use https://yowyob.com/contact or contact privacy@yowyob.com.
+3. KSM scope
+This notice applies to KSM back-office modules and public or commercial modules, including ksm, cashier, pos, catalog, stockman, yowflash, crm, hrm, spare, billing, accounting, immo, shop, production, thirdparty, banking, chat, event, kyoc, loyalty, blog, podcast, forum, search, webhooks, businessbook and notification.
+Some private internal-management modules mainly use strictly necessary, security, session, preference and performance cookies. Some public or commercial modules may also use advertising, audience measurement, campaign measurement and partner visibility technologies.
+4. Cookies and similar technologies
+Cookies are small text files placed on your device by a website. Similar technologies include local storage, session storage, IndexedDB, PWA caches, service workers, pixels, tags, SDK identifiers, device identifiers, server logs, application events and technical measurements.
+In KSM, these technologies help maintain a secure session, remember preferences, secure access, prevent fraud, measure usage, improve performance, diagnose incidents, display certain commercial content and measure campaigns.
+5. Technologies that may be used in KSM
+• Session and authentication cookies to maintain account access and limit unauthorized access.
+• Security cookies or tokens for CSRF, anti-fraud, session control, load balancing and abuse detection.
+• Local storage, session storage, IndexedDB, PWA caches and service workers for preferences, continuity, degraded mode or performance.
+• Pixels, tags and events for analytics, conversion measurement, campaign measurement, partner reports or advertising where authorized.
+• SDK identifiers, advertising identifiers or device identifiers in mobile/PWA contexts where device settings and the law allow it.
+• Technical logs: IP address, timestamps, browser, system, device, errors, crashes, performance, security traces, API and webhook logs.
+6. Purposes
+KSM uses cookies and similar technologies for the purposes below. Strictly necessary technologies may be active without consent where the law allows it, because they are essential to service provision, security or stability. Non-essential technologies are subject to your choices or applicable settings where the law requires it.
+• Strictly necessary: authentication, session, security, fraud prevention, access control, load balancing, essential logging and module provision.
+• Preferences: language, display, currency, active organization, store, billing point, consent, interface settings and notification preferences.
+• Analytics and performance: usage statistics, feature adoption, errors, crashes, slowness, availability, interface quality and service improvement.
+• Advertising and measurement: sponsored content, partner ads, BusinessBook visibility, yowflash/shop/catalog campaigns, frequency capping, conversion, clicks, impressions and ad fraud prevention.
+• Advanced security: detection of abnormal access, protection against bots, attacks, intrusion attempts, API abuse, spam, scraping or account compromise.
+• Support and diagnostics: error reproduction, configuration checks, ticket follow-up, webhook, integration and notification analysis.
+7. Category table
+Category || Purpose || Non-exhaustive examples
+Strictly necessary || Operate KSM, maintain sessions, secure accounts, prevent fraud, balance load, manage consent. || Session ID, CSRF token, auth token, tenant ID, security flags, consent state.
+Preferences || Remember user and administrator choices. || Language, theme, active organization, currency, store, dashboard, UI preferences.
+Analytics & performance || Understand usage, improve reliability, measure adoption and diagnose errors. || Page views, feature events, crash reports, performance metrics.
+Advertising & measurement || Display and measure ads, campaigns, promotions, sponsored content and partner visibility. || Impressions, clicks, conversions, frequency caps, campaign IDs, attribution.
+Integrations & webhooks || Control technical flows, event deliveries, errors, retries and API security. || Webhook event ID, delivery logs, signature timestamp, API rate metrics.
+Support & security || Analyze incidents, protect the service, respond to support requests. || IP, access logs, device/browser signals, error context, audit events.
+8. Sensitive modules and advertising separation
+KSM includes sensitive modules such as HRM, accounting, billing, banking, cashier, POS, immo, KYOC, CRM and thirdparty. YowYob does not use sensitive content from these modules to personalize external behavioral advertising unless there is explicit configuration, a valid legal basis, consent where required and appropriate contractual protection.
+Sensitive internal-management data may however be processed for security, diagnostics, technical audit, support, performance, compliance, fraud prevention, aggregated statistics or KSM improvement purposes.
+9. Advertising, sponsored content and partner visibility
+KSM may offer sponsored content, ads, business recommendations, partner campaigns, yowflash offers, promoted catalogs, BusinessBook profiles, sponsored events, loyalty programs or commercial notifications.
+Where the law requires it, personalized advertising and associated non-essential technologies are subject to consent or available preferences. Opting out of personalized advertising does not necessarily prevent contextual ads, generic sponsored content or service-related communications from being displayed.
+• Reports to advertisers or partners are generally aggregated or statistical unless consent, a contractual relationship or an authorized operational necessity applies.
+• YowYob may measure impressions, clicks, conversions, interactions, campaign performance, ad fraud and delivery quality.
+• The Customer/Partner is responsible for the ads, promotions, prices, products, images, claims, legal notices and advertising content it provides or approves.
+10. Technologies added by Customers/Partners
+Some Customers/Partners may wish to add pixels, scripts, analytics tools, advertising tags, chatbots, payment solutions, plugins, widgets, SDKs or third-party links on their public KSM spaces, including shop, catalog, yowflash, blog, podcast, forum, event or businessbook.
+Unless specifically agreed in writing, any technology added or requested by a Customer/Partner is its exclusive responsibility. The Customer/Partner must inform data subjects, obtain required consents, check third-party compliance, control transfers, secure scripts and indemnify YowYob in case of claim.
+11. Core clause - local storage, caches and outside YowYob Cloud
+Cookies, caches, PWA data, IndexedDB, downloads, exports, prints, PDF files, spreadsheets, screenshots, emails, POS terminals, browsers, mobile devices, local servers, third-party tools, webhooks and integrations may create or retain data outside the YowYob Cloud.
+Any storage, export, copy, cache, print, synchronization, webhook, integration or processing outside the YowYob Cloud is exclusively the responsibility of the Customer/Partner or the User who controls it. YowYob is not responsible for the security, retention, deletion, disclosure, loss or use of such data outside the YowYob Cloud.
+• Administrators must define internal rules on authorized devices, cache clearing, exports, prints, backups and sharing.
+• Users should avoid storing sensitive data on shared devices, public browsers or unsecured environments.
+• The Customer/Partner must control its POS terminals, browsers, code readers, printers, local networks, third-party tools and endpoints.
+12. Third-party partners
+YowYob may use third-party providers or partners for hosting, security, analytics, crash reporting, payment, messaging, notification, advertising, campaign measurement, maps, search, anti-fraud or support. These third parties may use their own technologies subject to their own policies and applicable settings.
+Where required, YowYob will request consent before enabling non-essential third-party technologies. Third-party services integrated or configured by the Customer/Partner are the Customer/Partner’s responsibility.
+13. Your choices and controls
+• Banner or preference center: accept, reject or customize certain non-essential cookies where available.
+• Browser: block or delete cookies, site data, local storage, IndexedDB and caches.
+• Mobile/PWA device: reset advertising identifier, limit ad tracking, manage permissions, clear site data or uninstall the PWA.
+• Location: disable location permissions where a module requests them.
+• Personalized advertising: opt out of personalization where this option is offered. Contextual or necessary ads may still be visible.
+• KSM account: request assistance or exercise rights provided in the KSM Privacy Notice.
+14. Effects of rejection or blocking
+Rejecting or blocking non-essential cookies should not prevent access to core features where technically possible. However, blocking strictly necessary cookies, local storage, sessions, security tokens or certain caches may prevent login, security, session continuity, preferences, exports, the PWA or certain KSM features from working.
+15. Retention periods
+Cookie and similar technology lifetimes vary according to their purpose. Some expire when the browser closes, while others persist for a defined period to remember preferences, protect security, measure performance, cap advertising frequency or retain technical evidence. Security, audit, API, support and webhook logs may be retained according to the operational, security, evidential and compliance needs described in the KSM Privacy Notice.
+16. Do Not Track and similar signals
+Some browsers offer a “Do Not Track” signal. In the absence of a uniform technical or legal standard, KSM primarily applies consent mechanisms, internal settings, cookie preferences and applicable legal obligations.
+17. Security
+YowYob implements reasonable measures to secure cookies, tokens, sessions and similar technologies in the YowYob Cloud. However, the Customer/Partner remains responsible for its devices, browsers, extensions, POS terminals, networks, exports, caches and third-party tools.
+18. Beta published version and evolution
+This notice applies to a beta published version of KSM. Names, categories, lifetimes, partners, trackers, SDKs, advertising, measurement, consent or storage features may evolve. YowYob will update this notice when changes justify it.
+19. Contact
+For questions about cookies, advertising or your choices: YowYob Inc. Ltd, Yaoundé, Cameroon. Contact: https://yowyob.com/contact. Email: privacy@yowyob.com.
+Annexes bilingues / Bilingual annexes
+Annexe 1 / Annex 1 - Modules et usages probables / Modules and likely uses
+Le tableau ci-dessous donne une lecture indicative des catégories de technologies par module. / The table below gives an indicative view of technology categories by module.
+Modules || Technologies probables / Likely technologies
+cashier, pos, billing, accounting, banking, immo || Sessions, sécurité, audit, préférences, performance. Publicité limitée ou non applicable par défaut. / Sessions, security, audit, preferences, performance. Advertising limited or not applicable by default.
+catalog, shop, yowflash, loyalty, businessbook || Préférences, analytique, publicité, mesure de campagne, conversion, visibilité partenaire. / Preferences, analytics, advertising, campaign measurement, conversion, partner visibility.
+hrm, crm, thirdparty, kyoc || Sécurité, accès, audit, support, performance. Pas de publicité comportementale externe par défaut. / Security, access, audit, support, performance. No external behavioral advertising by default.
+chat, forum, blog, podcast, event, notification || Sessions, préférences, notifications, analytique, modération, parfois contenus sponsorisés. / Sessions, preferences, notifications, analytics, moderation, sometimes sponsored content.
+search, webhook-dev, APIs || Logs techniques, sécurité, performance, diagnostics, rate limiting. / Technical logs, security, performance, diagnostics, rate limiting.
+Annexe 2 / Annex 2 - Contrôles pratiques recommandés / Recommended practical controls
+• Administrateurs : limiter les rôles, contrôler les terminaux, imposer des mots de passe forts et revoir les intégrations. / Administrators: limit roles, control terminals, enforce strong passwords and review integrations.
+• Utilisateurs : éviter les navigateurs publics, nettoyer les caches sur appareils partagés et ne pas exporter inutilement des données sensibles. / Users: avoid public browsers, clear caches on shared devices and avoid unnecessary export of sensitive data.
+• Partenaires : documenter les pixels, scripts, prestataires publicité/analytics et consentements nécessaires. / Partners: document pixels, scripts, advertising/analytics providers and required consents.
+• Techniques : sécuriser endpoints webhooks, clés API, domaines autorisés, CSP, CORS et logs. / Technical: secure webhook endpoints, API keys, allowed domains, CSP, CORS and logs.
+End of document / Fin du document

@@ -1,9 +1,8 @@
 "use client";
-
+import React, { useState, useEffect } from "react";
 import { UserNav } from "./user-nav";
 import { Button } from "../ui/button";
-import { Menu, Search, Settings, HelpCircle, BookOpen, FileText, ShieldCheck, BarChart3, FileClock, Layers } from "lucide-react";
-import { Input } from "../ui/input";
+import { Menu, Settings, HelpCircle, BookOpen, FileText, ShieldCheck, BarChart3, FileClock, Layers } from "lucide-react";
 import { useSidebar } from "@/hooks/useSidebar";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import {
@@ -18,6 +17,7 @@ import Link from "next/link";
 import { NotificationBell } from "../notifications/notification-bell";
 import { useAuth } from "@/hooks/use-auth";
 import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
+import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
 
 // ─── Contenu du centre d'aide par rôle ───────────────────────────────────────
 
@@ -96,6 +96,35 @@ export function Header() {
   const { toggle, toggleMobile } = useSidebar();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { accountingRole } = useAuth();
+  const [orgName, setOrgName] = useState<string>("KSM");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const name = localStorage.getItem("organization_name");
+      if (name) {
+        // Si c'est un UUID, on ne l'affiche pas directement pour éviter l'identifiant technique à l'écran
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(name);
+        if (!isUuid) {
+          setOrgName(name);
+        }
+      }
+
+      const orgId = localStorage.getItem("organization_id");
+      if (orgId) {
+        OrganizationsService.getOrganizationById(orgId)
+          .then((org) => {
+            const resolvedName = org?.name || org?.displayName;
+            if (resolvedName) {
+              setOrgName(resolvedName);
+              localStorage.setItem("organization_name", resolvedName);
+            }
+          })
+          .catch((err) => {
+            console.warn("Erreur lors de la récupération du nom de l'organisation:", err);
+          });
+      }
+    }
+  }, []);
 
   const helpContent = accountingRole
     ? HELP_CONTENT[accountingRole as keyof typeof HELP_CONTENT]
@@ -114,18 +143,8 @@ export function Header() {
       <Button variant="ghost" size="icon" className="mr-2" onClick={handleMenuClick}>
         <Menu className="h-5 w-5 text-gray-600" />
       </Button>
-      <div className="font-semibold text-lg tracking-tight text-gray-700 mr-6 shrink-0">
-        KSM
-      </div>
-
-      <div className="hidden sm:flex flex-1 max-w-2xl">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <Input
-            placeholder="Rechercher..."
-            className="w-full bg-[#eaf1fb] rounded-full pl-10 pr-4 py-2 h-12 border-transparent focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-200"
-          />
-        </div>
+      <div className="font-semibold text-lg tracking-tight text-gray-700 mr-6 shrink-0 max-w-[200px] truncate" title={orgName}>
+        {orgName}
       </div>
 
       <div className="flex-1" />

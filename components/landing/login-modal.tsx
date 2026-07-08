@@ -34,10 +34,9 @@ interface RegisterFormData {
     firstName: string;
     lastName: string;
     email: string;
-    company: string;
+    organizationCode: string;
     password: string;
     confirmPassword: string;
-    role: string;
 }
 
 type AuthUser = {
@@ -225,7 +224,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 response.tenantId || option.tenantId || process.env.NEXT_PUBLIC_TENANT_ID || '');
             localStorage.setItem('organization_id',
                 option.organizationId || response.user?.organizationId
-                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
+                || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
+            localStorage.setItem('organization_name', option.label || 'KSM');
             OpenAPI.TOKEN = response.token;
             setUser(response.user);
 
@@ -250,13 +250,120 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         }
     };
 
-    const handleRegister = async () => {
+    const handleRegister = async (data: RegisterFormData) => {
         setIsLoading(true);
         setRegisterError(null);
         try {
-            const message =
-                "L'inscription n'est pas encore exposée par le backend local. Utilisez un compte de test mock pour vous connecter.";
-            setRegisterError(message);
+            if (data.password !== data.confirmPassword) {
+                setRegisterError("Les mots de passe ne correspondent pas.");
+                return;
+            }
+
+            // Étape 1 : Découvrir les contextes d'inscription associés au code d'organisation
+            const discoverSignUpRes = await fetch(`${apiBase()}/api/kernel/auth/discover-sign-up-contexts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ organizationCode: data.organizationCode }),
+            });
+
+            if (!discoverSignUpRes.ok) {
+                const body = await discoverSignUpRes.json().catch(() => ({}));
+                if (discoverSignUpRes.status === 404) {
+                    setRegisterError("Code d'organisation invalide ou introuvable. Veuillez vérifier le code avec votre responsable.");
+                } else {
+                    setRegisterError(body?.message || "Impossible de valider le code d'organisation.");
+                }
+                return;
+            }
+
+            const signUpContextsData = await discoverSignUpRes.json();
+            const signUpContexts = signUpContextsData.data || signUpContextsData;
+
+            const selectionToken = signUpContexts.selectionToken;
+            const contexts = signUpContexts.contexts || [];
+
+            if (!selectionToken || contexts.length === 0) {
+                setRegisterError("Aucun contexte d'inscription disponible pour ce code d'organisation.");
+                return;
+            }
+
+            // On prend le premier contexte retourné par le Kernel
+            const targetContext = contexts[0];
+
+            // Étape 2 : Créer le compte utilisateur dans le tenant et l'organisation correspondante
+            const signUpRes = await fetch(`${apiBase()}/api/kernel/auth/sign-up`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    tenantId: targetContext.tenantId,
+                    signUpSelectionToken: selectionToken,
+                    contextId: targetContext.contextId,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    username: data.email, // On utilise l'email comme username
+                    email: data.email,
+                    password: data.password,
+                    socialProvider: "LOCAL",
+                    accountType: "PROSPECT",
+                    businessType: "INDIVIDUAL"
+                }),
+            });
+
+            if (!signUpRes.ok) {
+                const body = await signUpRes.json().catch(() => ({}));
+                if (signUpRes.status === 409) {
+                    setRegisterError("Un compte existe déjà avec cette adresse email.");
+                } else {
+                    setRegisterError(body?.message || "Échec de l'inscription. Veuillez réessayer.");
+                }
+                return;
+            }
+
+            // Étape 3 : Vérifier le statut retourné par le Kernel
+            const signUpBody = await signUpRes.json().catch(() => ({}));
+            const signUpStatus = signUpBody?.data?.status;
+
+            // Si le Kernel demande une vérification email, on redirige vers login avec message clair
+            if (signUpStatus === 'EMAIL_VERIFICATION_REQUIRED') {
+                setActiveTab('login');
+                setRegisterError(null);
+                toast.success(
+                    "✅ Compte créé ! Un email de vérification a été envoyé à " + data.email +
+                    ". Vérifiez votre boîte mail avant de vous connecter.",
+                    { duration: 8000 }
+                );
+                return;
+            }
+
+            // Étape 4 : Connexion automatique si le compte est directement actif
+            const discoverRes = await fetch(`${apiBase()}/api/auth/discover-contexts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: data.email, password: data.password }),
+            });
+
+            if (!discoverRes.ok) {
+                setActiveTab('login');
+                setRegisterError(null);
+                toast.success("Compte créé avec succès ! Connectez-vous maintenant.");
+                return;
+            }
+
+            const discovered = await discoverRes.json() as DiscoverContextsResponse;
+            const options = buildOptions(discovered.contexts ?? []);
+            if (options.length === 0) {
+                setActiveTab('login');
+                toast.success("Compte créé ! Connectez-vous pour accéder à votre espace.");
+                return;
+            }
+
+            if (options.length === 1) {
+                await completeSelection(discovered.selectionToken, options[0]);
+            } else {
+                setPendingSelection({ selectionToken: discovered.selectionToken, options });
+                setActiveTab('login');
+                setIsLoading(false);
+            }
         } catch (error: unknown) {
             setRegisterError(getErrorMessage(error, "Une erreur est survenue lors de l'inscription."));
         } finally {
@@ -318,71 +425,71 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 </Button>
                             </div>
                         ) : (
-                        <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <div className="relative">
-                                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="votre@email.com"
-                                        className="pl-10"
-                                        {...loginForm.register('email', {
-                                            required: 'Email requis',
-                                            pattern: { value: /^\S+@\S+$/i, message: 'Email invalide' }
-                                        })}
-                                    />
+                            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                        <Input
+                                            id="email"
+                                            type="email"
+                                            placeholder="votre@email.com"
+                                            className="pl-10"
+                                            {...loginForm.register('email', {
+                                                required: 'Email requis',
+                                                pattern: { value: /^\S+@\S+$/i, message: 'Email invalide' }
+                                            })}
+                                        />
+                                    </div>
+                                    {loginForm.formState.errors.email && (
+                                        <p className="text-sm text-red-600">{loginForm.formState.errors.email.message}</p>
+                                    )}
                                 </div>
-                                {loginForm.formState.errors.email && (
-                                    <p className="text-sm text-red-600">{loginForm.formState.errors.email.message}</p>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">Mot de passe</Label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                                    <Input
-                                        id="password"
-                                        type={showPassword ? "text" : "password"}
-                                        placeholder="Votre mot de passe"
-                                        className="pl-10 pr-10"
-                                        {...loginForm.register('password', { required: 'Mot de passe requis' })}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        className="absolute right-1 top-1 h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        tabIndex={-1}
-                                    >
-                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">Mot de passe</Label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                        <Input
+                                            id="password"
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="Votre mot de passe"
+                                            className="pl-10 pr-10"
+                                            {...loginForm.register('password', { required: 'Mot de passe requis' })}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="absolute right-1 top-1 h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </Button>
+                                    </div>
+                                    {loginForm.formState.errors.password && (
+                                        <p className="text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <label className="flex items-center space-x-2 text-sm">
+                                        <input type="checkbox" className="rounded" />
+                                        <span>Se souvenir de moi</span>
+                                    </label>
+                                    <Button variant="link" className="text-sm p-0 h-auto text-blue-600 hover:underline">
+                                        Mot de passe oublié ?
                                     </Button>
                                 </div>
-                                {loginForm.formState.errors.password && (
-                                    <p className="text-sm text-red-600">{loginForm.formState.errors.password.message}</p>
-                                )}
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <label className="flex items-center space-x-2 text-sm">
-                                    <input type="checkbox" className="rounded" />
-                                    <span>Se souvenir de moi</span>
-                                </label>
-                                <Button variant="link" className="text-sm p-0 h-auto text-blue-600 hover:underline">
-                                    Mot de passe oublié ?
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? (
+                                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Connexion...</>
+                                    ) : "Se connecter"}
                                 </Button>
-                            </div>
-                            <Button
-                                type="submit"
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm"
-                                disabled={isLoading}
-                            >
-                                {isLoading ? (
-                                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Connexion...</>
-                                ) : "Se connecter"}
-                            </Button>
-                        </form>
+                            </form>
                         )}
                     </TabsContent>
 
@@ -390,6 +497,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     <TabsContent value="register" className="space-y-4 mt-6">
                         {registerError && <ErrorBanner message={registerError} />}
                         <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
+                            {/* Identité */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="firstName">Prénom</Label>
@@ -414,6 +522,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Email */}
                             <div className="space-y-2">
                                 <Label htmlFor="registerEmail">Email</Label>
                                 <Input
@@ -429,33 +539,29 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <p className="text-sm text-red-600">{registerForm.formState.errors.email.message}</p>
                                 )}
                             </div>
+
+                            {/* Code d'organisation */}
                             <div className="space-y-2">
-                                <Label htmlFor="company">Entreprise</Label>
-                                <Input
-                                    id="company"
-                                    placeholder="Nom de votre entreprise"
-                                    {...registerForm.register('company', { required: 'Entreprise requise' })}
-                                />
-                                {registerForm.formState.errors.company && (
-                                    <p className="text-sm text-red-600">{registerForm.formState.errors.company.message}</p>
+                                <Label htmlFor="organizationCode">Code d'organisation</Label>
+                                <div className="relative">
+                                    <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
+                                    <Input
+                                        id="organizationCode"
+                                        placeholder="Ex : KSM-CPTA-LA"
+                                        className="pl-10"
+                                        {...registerForm.register('organizationCode', { required: "Code d'organisation requis" })}
+                                    />
+                                </div>
+                                {registerForm.formState.errors.organizationCode && (
+                                    <p className="text-sm text-red-600">{registerForm.formState.errors.organizationCode.message}</p>
                                 )}
+                                <p className="text-xs text-muted-foreground">
+                                    Ce code vous est fourni par votre responsable. Il identifie l'organisation à rejoindre.
+                                    Votre rôle sera attribué par un administrateur après votre inscription.
+                                </p>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="role">Rôle (Profil souhaité)</Label>
-                                <select
-                                    id="role"
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    {...registerForm.register('role', { required: 'Veuillez sélectionner un rôle' })}
-                                >
-                                    <option value="" disabled>Sélectionnez votre rôle</option>
-                                    <option value="AIDE_COMPTABLE">Aide-comptable</option>
-                                    <option value="COMPTABLE">Comptable</option>
-                                    <option value="RESPONSABLE_COMPTABLE">Responsable comptable</option>
-                                </select>
-                                {registerForm.formState.errors.role && (
-                                    <p className="text-sm text-red-600">{registerForm.formState.errors.role.message}</p>
-                                )}
-                            </div>
+
+                            {/* Mot de passe */}
                             <div className="space-y-2">
                                 <Label htmlFor="registerPassword">Mot de passe</Label>
                                 <div className="relative">
@@ -485,6 +591,8 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <p className="text-sm text-red-600">{registerForm.formState.errors.password.message}</p>
                                 )}
                             </div>
+
+                            {/* Confirmation mot de passe */}
                             <div className="space-y-2">
                                 <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
                                 <div className="relative">
@@ -514,6 +622,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <p className="text-sm text-red-600">{registerForm.formState.errors.confirmPassword.message}</p>
                                 )}
                             </div>
+
                             <Button
                                 type="submit"
                                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm"

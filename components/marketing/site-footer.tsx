@@ -29,13 +29,21 @@ const footerColumns = [
       { label: 'Presse', href: '/press' },
     ],
   },
+  {
+    title: 'Légal',
+    links: [
+      { label: 'Conditions KSM', href: '/terms' },
+      { label: 'Confidentialité', href: '/privacy' },
+      { label: 'Cookies & Publicité', href: '/cookies' },
+    ],
+  },
 ];
 
 export function SiteFooter() {
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
@@ -64,7 +72,7 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-400">
-          <p>&copy; 2025 KSM. Tous droits réservés.</p>
+          <p>&copy; 2026 YowYob Inc. Ltd. Tous droits réservés.</p>
         </div>
       </div>
     </footer>

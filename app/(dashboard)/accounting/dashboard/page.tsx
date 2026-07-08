@@ -140,6 +140,7 @@ export default function AccountingDashboard() {
     { period: 'Jun', Revenus: 2100000, Dépenses: 1300000, Résultat: 800000 },
   ]);
   const [periodsList, setPeriodsList] = useState<any[]>([]);
+  const [hasNoPeriods, setHasNoPeriods] = useState(false);
 
   /* ── fetch ── */
   const fetchDashboardData = useCallback(async (options?: AutoRefreshOptions) => {
@@ -150,6 +151,13 @@ export default function AccountingDashboard() {
       const periods = periodsRes.data || [];
       setPeriodsList(periods);
 
+      if (periods.length === 0) {
+        setHasNoPeriods(true);
+        setIsLoading(false);
+        return;
+      }
+      setHasNoPeriods(false);
+
       const now = new Date();
       const activePeriod = periods.find(p => {
         const s = new Date(p.dateDebut);
@@ -158,7 +166,7 @@ export default function AccountingDashboard() {
       }) || periods[0];
 
       if (!activePeriod) {
-        toast.warning("Aucune période comptable trouvée.");
+        setHasNoPeriods(true);
         setIsLoading(false);
         return;
       }
@@ -347,6 +355,31 @@ export default function AccountingDashboard() {
 
   if (isLoading && kpis.totalRevenue === 0 && kpis.totalDebit === 0) {
     return <CustomPageLoader />;
+  }
+
+  if (hasNoPeriods && !isLoading) {
+    return (
+      <div className="min-h-[85vh] flex flex-col items-center justify-center p-6 bg-slate-50/50">
+        <div className="max-w-md w-full text-center space-y-6 bg-white p-8 rounded-2xl shadow-sm border border-slate-100 animate-in fade-in zoom-in-95 duration-300">
+          <div className="mx-auto h-16 w-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+            <Calendar className="h-8 w-8" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">Comptabilité non initialisée</h1>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Aucune période comptable n'a été configurée pour cette organisation. Veuillez en créer une première pour débloquer le tableau de bord et la saisie d'écritures.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-11 rounded-xl shadow-sm transition-all hover:shadow-md cursor-pointer">
+              <a href="/accounting/periods">
+                Configurer la période comptable
+              </a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const isProfit = kpis.netProfit >= 0;

@@ -18,5 +18,5 @@ export const NavigationLoader = () => {
 
     if (!isLoading) return null;
 
-    return <CustomPageLoader message="Chargement en cours..." />;
+    return <CustomPageLoader message="Chargement en cours..." className="navigation-loader" />;
 };
