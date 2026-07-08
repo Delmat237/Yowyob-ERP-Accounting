@@ -6,8 +6,10 @@ import {
   AccountingFiscalYearsService,
   AccountingPeriodsService,
 } from "@/src/lib2";
+import { AccountingPeriodesAnalytiquesService } from "@/src/lib2/services/AccountingPeriodesAnalytiquesService";
 import type { PeriodeComptableDto } from "@/src/lib2/models/PeriodeComptableDto";
 import type { ExerciceComptableDto } from "@/src/lib2/models/ExerciceComptableDto";
+import type { PeriodeAnalytiqueDto } from "@/src/lib2/models/PeriodeAnalytiqueDto";
 import type { PeriodeAnalytique, StatutPeriode, PeriodeCG, ExerciceCG } from "@/lib/analytique/mock-data";
 import {
   deriveStatutPeriodeAnalytique,
@@ -15,6 +17,11 @@ import {
   mapExerciceComptableToCG,
   mapPeriodeCGToAnalytique,
 } from "@/lib/analytique/periodes-alignees";
+import {
+  mapPeriodeCGToDto,
+  mapPeriodeDtoToStatutOverrides,
+  mapStatutUiToApi,
+} from "@/lib/analytique/analytique-mappers";
 
 type UsePeriodesAnalytiquesAligneesResult = {
   periodes: PeriodeAnalytique[];
@@ -23,9 +30,10 @@ type UsePeriodesAnalytiquesAligneesResult = {
   loading: boolean;
   error: string | null;
   usingMockFallback: boolean;
+  usingApiPeriodes: boolean;
   reload: (options?: AutoRefreshOptions) => Promise<void>;
-  setStatutLocal: (periodeId: string, statut: StatutPeriode) => void;
-  synchroniserClotures: () => void;
+  setStatutLocal: (periodeId: string, statut: StatutPeriode) => Promise<void>;
+  synchroniserClotures: () => Promise<void>;
 };
 
 function mapDtoToPeriodeCG(p: PeriodeComptableDto): PeriodeCG {
@@ -61,6 +69,8 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
   const [periodesCG, setPeriodesCG] = useState<PeriodeCG[]>([]);
   const [exercices, setExercices] = useState<ExerciceComptableDto[]>([]);
   const [statutOverrides, setStatutOverrides] = useState<Record<string, StatutPeriode>>({});
+  const [periodesApi, setPeriodesApi] = useState<PeriodeAnalytiqueDto[]>([]);
+  const [usingApiPeriodes, setUsingApiPeriodes] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingMockFallback, setUsingMockFallback] = useState(false);
@@ -72,9 +82,10 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
     setError(null);
     setUsingMockFallback(false);
     try {
-      const [periodesRes, exercicesRes] = await Promise.all([
+      const [periodesRes, exercicesRes, periodesAnalytiquesRes] = await Promise.all([
         AccountingPeriodsService.getAllPeriodeComptables(),
         AccountingFiscalYearsService.getAllExercices(),
+        AccountingPeriodesAnalytiquesService.getAllPeriodes().catch(() => ({ data: [] })),
       ]);
 
       if (periodesRes?.success === false) {
@@ -94,7 +105,11 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
 
       setPeriodesCG(periodesList.map(mapDtoToPeriodeCG));
       setExercices(exercicesRes?.data ?? []);
-      setStatutOverrides({});
+
+      const apiPeriodes = periodesAnalytiquesRes?.data ?? [];
+      setPeriodesApi(apiPeriodes);
+      setUsingApiPeriodes(apiPeriodes.length > 0);
+      setStatutOverrides(mapPeriodeDtoToStatutOverrides(apiPeriodes));
     } catch (err: unknown) {
       const { mockPeriodes, mockPeriodesCG, mockExercicesCG } = await import(
         "@/lib/analytique/mock-data"
@@ -111,6 +126,8 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
           statut: e.statut,
         })),
       );
+      setPeriodesApi([]);
+      setUsingApiPeriodes(false);
       setStatutOverrides(
         Object.fromEntries(mockPeriodes.map((p) => [p.id, p.statut])),
       );
@@ -143,24 +160,62 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
     [periodesBase, statutOverrides],
   );
 
-  const setStatutLocal = useCallback((periodeId: string, statut: StatutPeriode) => {
-    setStatutOverrides((prev) => ({ ...prev, [periodeId]: statut }));
-  }, []);
+  const setStatutLocal = useCallback(
+    async (periodeId: string, statut: StatutPeriode) => {
+      setStatutOverrides((prev) => ({ ...prev, [periodeId]: statut }));
 
-  const synchroniserClotures = useCallback(() => {
-    setStatutOverrides((prev) => {
-      const next = { ...prev };
-      for (const cg of periodesCG) {
-        if (!cg.id) continue;
-        if (cg.cloturee) {
-          next[cg.id] = "CLOTURE";
-        } else if (next[cg.id] === "CLOTURE") {
-          delete next[cg.id];
-        }
+      if (!usingApiPeriodes || usingMockFallback) return;
+
+      const cg = periodesCG.find((p) => p.id === periodeId);
+      const existing = periodesApi.find((p) => p.id === periodeId || p.code === cg?.code);
+      if (!cg) return;
+
+      const payload = {
+        ...(existing ?? mapPeriodeCGToDto(cg, statut)),
+        statut: mapStatutUiToApi(statut),
+      };
+
+      if (existing?.id) {
+        await AccountingPeriodesAnalytiquesService.updatePeriode(existing.id, payload);
+      } else {
+        await AccountingPeriodesAnalytiquesService.createPeriode(mapPeriodeCGToDto(cg, statut));
       }
-      return next;
-    });
-  }, [periodesCG]);
+    },
+    [periodesApi, periodesCG, usingApiPeriodes, usingMockFallback],
+  );
+
+  const synchroniserClotures = useCallback(async () => {
+    const nextOverrides: Record<string, StatutPeriode> = { ...statutOverrides };
+    for (const cg of periodesCG) {
+      if (!cg.id) continue;
+      if (cg.cloturee) {
+        nextOverrides[cg.id] = "CLOTURE";
+      } else if (nextOverrides[cg.id] === "CLOTURE") {
+        delete nextOverrides[cg.id];
+      }
+    }
+    setStatutOverrides(nextOverrides);
+
+    if (!usingApiPeriodes || usingMockFallback) return;
+
+    await Promise.all(
+      periodesCG
+        .filter((cg) => cg.id && cg.cloturee)
+        .map(async (cg) => {
+          const existing = periodesApi.find((p) => p.id === cg.id || p.code === cg.code);
+          const payload = {
+            ...(existing ?? mapPeriodeCGToDto(cg, "CLOTURE")),
+            statut: "CLOTUREE",
+          };
+          if (existing?.id) {
+            await AccountingPeriodesAnalytiquesService.updatePeriode(existing.id, payload);
+          } else {
+            await AccountingPeriodesAnalytiquesService.createPeriode(mapPeriodeCGToDto(cg, "CLOTURE"));
+          }
+        }),
+    );
+    await load({ silent: true });
+  }, [load, periodesApi, periodesCG, statutOverrides, usingApiPeriodes, usingMockFallback]);
 
   return {
     periodes,
@@ -169,6 +224,7 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
     loading,
     error,
     usingMockFallback,
+    usingApiPeriodes,
     reload: load,
     setStatutLocal,
     synchroniserClotures,

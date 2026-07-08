@@ -193,7 +193,7 @@ export default function PeriodesPage() {
                                                 <div className="flex items-center justify-end gap-2">
                                                     {isResponsable && p.statut === "OUVERT" && !cg?.cloturee && (
                                                         <button
-                                                            onClick={() => setStatutLocal(p.id, "EN_COURS")}
+                                                            onClick={() => void setStatutLocal(p.id, "EN_COURS")}
                                                             className="px-2.5 py-1.5 rounded-lg text-xs font-bold border border-amber-200 text-amber-700 hover:bg-amber-50"
                                                         >
                                                             Démarrer

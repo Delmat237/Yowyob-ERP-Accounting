@@ -1,36 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { Plus, Notebook, Search } from "lucide-react";
+import { useState } from "react";
+import { Plus, Notebook, Search, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
-import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
+import { useJournauxAnalytiquesApi } from "@/hooks/use-journaux-analytiques-api";
 import {
     TYPE_JOURNAL_LABELS,
     type JournalAnalytiqueConfig,
 } from "@/lib/analytique/journal-analytique";
-import {
-    createJournalAnalytique,
-    listJournauxAnalytiques,
-    saveJournalAnalytique,
-} from "@/lib/analytique/journaux-analytiques-store";
 import { JournalAnalytiqueForm } from "@/components/analytique/journal-analytique-form";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { cn } from "@/lib/utils";
 
 export default function JournauxAnalytiquesPage() {
-    const [journaux, setJournaux] = useState<JournalAnalytiqueConfig[]>([]);
+    const { journaux, loading, error, usingMockFallback, saveJournal, createJournal } =
+        useJournauxAnalytiquesApi();
     const [search, setSearch] = useState("");
     const { openForm, closeForm } = useAnalytiqueCompose();
-
-    const reload = useCallback((options?: AutoRefreshOptions) => {
-        setJournaux(listJournauxAnalytiques());
-    }, []);
-
-    useEffect(() => {
-        reload();
-    }, [reload]);
-
-    useAutoRefresh(reload, [reload]);
 
     const filtered = journaux.filter(
         (j) =>
@@ -43,11 +30,14 @@ export default function JournauxAnalytiquesPage() {
             "Nouveau journal analytique",
             <JournalAnalytiqueForm
                 onCancel={closeForm}
-                onSubmit={(data) => {
-                    createJournalAnalytique(data);
-                    closeForm();
-                    reload();
-                    toast.success("Journal analytique créé");
+                onSubmit={async (data) => {
+                    try {
+                        await createJournal(data);
+                        closeForm();
+                        toast.success("Journal analytique créé");
+                    } catch {
+                        toast.error("Impossible de créer le journal");
+                    }
                 }}
             />,
         );
@@ -59,18 +49,31 @@ export default function JournauxAnalytiquesPage() {
             <JournalAnalytiqueForm
                 initial={journal}
                 onCancel={closeForm}
-                onSubmit={(data) => {
-                    saveJournalAnalytique(data);
-                    closeForm();
-                    reload();
-                    toast.success("Journal mis à jour");
+                onSubmit={async (data) => {
+                    try {
+                        await saveJournal({ ...journal, ...data, id: journal.id });
+                        closeForm();
+                        toast.success("Journal mis à jour");
+                    } catch {
+                        toast.error("Impossible de mettre à jour le journal");
+                    }
                 }}
             />,
         );
     };
 
+    if (loading) {
+        return <CustomPageLoader message="Chargement des journaux analytiques..." />;
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {error && (
+                <div className={`rounded-xl p-4 flex gap-3 text-sm border ${usingMockFallback ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <p>{error}</p>
+                </div>
+            )}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

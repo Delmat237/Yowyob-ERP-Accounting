@@ -1,15 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { mockCentres, CentreAnalyse } from "@/lib/analytique/mock-data";
-import { Plus, Search, ArrowRight } from "lucide-react";
+import { CentreAnalyse } from "@/lib/analytique/mock-data";
+import { Plus, Search, ArrowRight, AlertCircle } from "lucide-react";
 import { CentresAnalyseList } from "@/components/analytique/centres-analyse-list";
 import { CentreAnalytiqueForm } from "@/components/analytique/centre-form-modal";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
+import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 export default function CentresAnalysePage() {
-    const [centres, setCentres] = useState<CentreAnalyse[]>(mockCentres);
+    const { centres, loading, error, usingMockFallback, saveCentre, deleteCentre } = useCentresAnalyseApi();
     const [search, setSearch] = useState("");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [filter, setFilter] = useState<"all" | "principal" | "auxiliaire">("all");
@@ -28,28 +30,7 @@ export default function CentresAnalysePage() {
     const auxiliaires = centres.filter((c) => c.nature === "CENTRE_AUXILIAIRE");
 
     const handleSave = (data: Partial<CentreAnalyse>) => {
-        if (data.id) {
-            setCentres((p) => p.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
-        } else {
-            setCentres((p) => [
-                ...p,
-                {
-                    id: `c${Date.now()}`,
-                    code: data.code ?? "",
-                    libelle: data.libelle ?? "",
-                    nature: data.nature ?? "CENTRE_PRINCIPAL",
-                    uniteOeuvre: data.uniteOeuvre ?? "",
-                    axeId: data.axeId ?? "",
-                    actif: data.actif ?? true,
-                    compteAnalytiqueId: data.compteAnalytiqueId,
-                    responsable: data.responsable,
-                    budgetAlloue: data.budgetAlloue,
-                    typePrestation: data.typePrestation,
-                    exerciceId: data.exerciceId,
-                    periodeId: data.periodeId,
-                },
-            ]);
-        }
+        void saveCentre(data);
     };
 
     const openCentreForm = (initial?: Partial<CentreAnalyse>) => {
@@ -66,13 +47,26 @@ export default function CentresAnalysePage() {
         );
     };
 
+    if (loading) {
+        return <CustomPageLoader message="Chargement des centres d'analyse..." />;
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {error && (
+                <div className={`rounded-xl p-4 flex gap-3 text-sm border ${usingMockFallback ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <p>{error}</p>
+                </div>
+            )}
             {deleteId && (
                 <ConfirmDialog
                     title="Confirmer la suppression"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => setCentres((p) => p.filter((c) => c.id !== deleteId))}
+                    onConfirm={() => {
+                        void deleteCentre(deleteId);
+                        setDeleteId(null);
+                    }}
                 >
                     <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
                 </ConfirmDialog>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
-    mockComptesAnalytiques, mockPlansAnalytiques,
-    CompteAnalytique, PlanAnalytique
+    mockPlansAnalytiques,
+    CompteAnalytique,
+    PlanAnalytique
 } from "@/lib/analytique/mock-data";
 import {
     CLASSES_ANALYTIQUES,
@@ -18,7 +19,10 @@ import {
 } from "lucide-react";
 import { PlanCompteAnalytiqueForm } from "@/components/analytique/plan-compte-analytique-form";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
+import { useComptesAnalytiquesApi } from "@/hooks/use-comptes-analytiques-api";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
+import { AlertCircle } from "lucide-react";
 
 const CLASS_CONFIG = Object.fromEntries(
     CLASSES_ANALYTIQUES.map((cl) => [
@@ -61,7 +65,7 @@ function PlanCard({ plan }: { plan: PlanAnalytique }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PlanAnalytiquePage() {
-    const [comptes, setComptes] = useState<CompteAnalytique[]>(mockComptesAnalytiques);
+    const { comptes, loading, error, usingMockFallback, saveCompte, deleteCompte } = useComptesAnalytiquesApi();
     const [search, setSearch] = useState("");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const { openForm, closeForm } = useAnalytiqueCompose();
@@ -83,11 +87,7 @@ export default function PlanAnalytiquePage() {
     }, [comptes, search]);
 
     const handleSave = (data: Partial<CompteAnalytique>) => {
-        if (data.id) {
-            setComptes(p => p.map(c => c.id === data.id ? { ...c, ...data } as CompteAnalytique : c));
-        } else {
-            setComptes(p => [...p, { ...data, id: `c-${Date.now()}` } as CompteAnalytique]);
-        }
+        void saveCompte(data);
     };
 
     const openCompteForm = (initial?: Partial<CompteAnalytique>) => {
@@ -107,14 +107,27 @@ export default function PlanAnalytiquePage() {
     const compteToDelete = comptes.find(c => c.id === deleteId);
     const planActif = mockPlansAnalytiques.find(p => p.statut === "ACTIF");
 
+    if (loading) {
+        return <CustomPageLoader message="Chargement du plan analytique..." />;
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {error && (
+                <div className={`rounded-xl p-4 flex gap-3 text-sm border ${usingMockFallback ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <p>{error}</p>
+                </div>
+            )}
             {/* Confirm delete */}
             {deleteId && (
                 <ConfirmDialog
                     title="Supprimer le compte ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => { setComptes((p) => p.filter((c) => c.id !== deleteId)); }}
+                    onConfirm={() => {
+                        void deleteCompte(deleteId);
+                        setDeleteId(null);
+                    }}
                 >
                     <p className="text-sm text-muted-foreground">
                         Voulez-vous supprimer le compte <strong>{compteToDelete?.numero} - {compteToDelete?.libelle}</strong> ? Cette action est irréversible.

@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { mockUnitesOeuvre, mockCentres, UniteOeuvre, NatureUO } from "@/lib/analytique/mock-data";
-import { Plus, Pencil, Trash2, X, AlertTriangle, Ruler } from "lucide-react";
+import { UniteOeuvre, NatureUO } from "@/lib/analytique/mock-data";
+import { Plus, Pencil, Trash2, X, AlertTriangle, Ruler, AlertCircle } from "lucide-react";
 import { FloatingModal } from "@/components/ui/floating-modal";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { useUnitesOeuvreApi } from "@/hooks/use-unites-oeuvre-api";
+import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 const NATURE_LABELS: Record<NatureUO, string> = {
     PHYSIQUE: "Physique",
@@ -13,29 +16,40 @@ const NATURE_LABELS: Record<NatureUO, string> = {
 
 
 export default function UnitesOeuvrePage() {
-    const [unites, setUnites] = useState<UniteOeuvre[]>(mockUnitesOeuvre);
+    const { unites, loading, error, usingMockFallback, saveUnite, deleteUnite } = useUnitesOeuvreApi();
+    const { centres } = useCentresAnalyseApi();
     const [modal, setModal] = useState<{ open: boolean; initial?: Partial<UniteOeuvre> }>({ open: false });
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
     function getCentresLiesUnite(uo: UniteOeuvre) {
-        return mockCentres.filter(
-            (c) => c.uniteOeuvre === uo.id || c.uniteOeuvre === uo.libelle,
+        return centres.filter(
+            (c) => c.uniteOeuvre === uo.id || c.uniteOeuvre === uo.code || c.uniteOeuvre === uo.libelle,
         );
     }
 
     function handleSave(data: UniteOeuvre) {
-        setUnites((p) => p.find((u) => u.id === data.id) ? p.map((u) => u.id === data.id ? data : u) : [...p, data]);
+        void saveUnite(data);
     }
 
     function handleDelete(id: string) {
         const uo = unites.find((u) => u.id === id);
         if (uo && getCentresLiesUnite(uo).length > 0) return;
-        setUnites((p) => p.filter((u) => u.id !== id));
+        void deleteUnite(id);
         setDeleteId(null);
+    }
+
+    if (loading) {
+        return <CustomPageLoader message="Chargement des unités d'œuvre..." />;
     }
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {error && (
+                <div className={`rounded-xl p-4 flex gap-3 text-sm border ${usingMockFallback ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <p>{error}</p>
+                </div>
+            )}
             {modal.open && <Modal initial={modal.initial} onClose={() => setModal({ open: false })} onSave={handleSave} />}
             {deleteId && (() => {
                 const uoToDelete = unites.find((u) => u.id === deleteId);

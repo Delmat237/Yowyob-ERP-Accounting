@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
-    mockComptesAnalytiques,
     CompteAnalytique,
     TYPE_SECTION_LABELS,
 } from "@/lib/analytique/mock-data";
@@ -19,6 +18,9 @@ import {
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
 import { CompteAnalytiqueForm } from "@/components/analytique/compte-analytique-form-modal";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
+import { useComptesAnalytiquesApi } from "@/hooks/use-comptes-analytiques-api";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
+import { AlertCircle } from "lucide-react";
 
 // ─── Config classes OHADA ──────────────────────────────────────────────────────
 const CLASSE_CONFIG = Object.fromEntries(
@@ -32,7 +34,7 @@ const CLASSES = CLASSES_ANALYTIQUES;
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function ComptesAnalytiquesPage() {
-    const [comptes, setComptes] = useState<CompteAnalytique[]>(mockComptesAnalytiques);
+    const { comptes, loading, error, usingMockFallback, saveCompte, deleteCompte } = useComptesAnalytiquesApi();
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [classeFilter, setClasseFilter] = useState<ClasseAnalytique | "all">("all");
@@ -60,19 +62,7 @@ export default function ComptesAnalytiquesPage() {
     }, [filtered]);
 
     function handleSave(data: Partial<CompteAnalytique>) {
-        const payload = {
-            ...data,
-            numero: data.numero!.trim(),
-            libelle: data.libelle!.trim(),
-            classe: data.classe!,
-            actif: data.actif ?? true,
-        } as CompteAnalytique;
-
-        setComptes((p) =>
-            payload.id && p.find((c) => c.id === payload.id)
-                ? p.map((c) => (c.id === payload.id ? { ...c, ...payload } : c))
-                : [...p, { ...payload, id: payload.id ?? `ca-${Date.now()}` }],
-        );
+        void saveCompte(data);
     }
 
     function openCompteForm(initial?: Partial<CompteAnalytique>) {
@@ -90,7 +80,7 @@ export default function ComptesAnalytiquesPage() {
     }
 
     function handleDelete(id: string) {
-        setComptes((p) => p.filter((c) => c.id !== id));
+        void deleteCompte(id);
         setDeleteId(null);
     }
 
@@ -104,8 +94,18 @@ export default function ComptesAnalytiquesPage() {
         parClasse: CLASSES.map((cl) => ({ cl, count: comptes.filter((c) => c.classe === cl).length })),
     };
 
+    if (loading) {
+        return <CustomPageLoader message="Chargement des comptes analytiques..." />;
+    }
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            {error && (
+                <div className={`rounded-xl p-4 flex gap-3 text-sm border ${usingMockFallback ? "bg-amber-50 border-amber-200 text-amber-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                    <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                    <p>{error}</p>
+                </div>
+            )}
             {/* Modal de Suppression */}
             {deleteId && (
                 <ConfirmDialog

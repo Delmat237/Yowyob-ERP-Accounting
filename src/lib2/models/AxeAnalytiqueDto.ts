@@ -8,6 +8,10 @@ export type AxeAnalytiqueDto = {
     libelle?: string;
     type?: string;
     responsable?: string;
+    parentId?: string;
+    typeCentre?: string;
+    budgetAnnuel?: number;
+    uniteOeuvreCode?: string;
     actif?: boolean;
     compteIds?: Array<string>;
     compteLibelles?: Array<string>;
