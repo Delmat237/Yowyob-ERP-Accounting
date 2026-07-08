@@ -1,0 +1,423 @@
+% =============================================================================
+% Cahier d'Analyse et de Conception — Système de Comptabilité ERP
+% =============================================================================
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+
+\geometry{margin=2.5cm}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black,
+  pdftitle={Cahier d'Analyse et de Conception — Comptabilité ERP},
+  pdfauthor={Équipe projet}
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize Cahier d'Analyse et de Conception}
+\fancyhead[R]{\footnotesize Comptabilité ERP}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\textbf{SYSTÈME DE GESTION COMPTABLE}\\[0.4em]Comptabilité Générale et Analytique\par}
+  \vspace{1.8cm}
+  {\Huge\textbf{Cahier d'Analyse\\[0.35em]et de Conception}\par}
+  \vspace{1.2cm}
+  {\large Document d'analyse fonctionnelle et de conception logicielle\par}
+  \vspace{2.2cm}
+  \begin{tabular}{rl}
+    \textbf{Domaine} & Gestion financière et comptable d'entreprise \\
+    \textbf{Version du document} & 1.1 \\
+    \textbf{Date} & Juillet 2026 \\
+    \textbf{Public} & Analystes, architectes, chefs de projet, développeurs \\
+  \end{tabular}
+  \vfill
+  {\small Les diagrammes associés sont fournis au format XML dans le répertoire \texttt{diagrammes/}.\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+
+% =============================================================================
+\chapter{Introduction et contexte}
+% =============================================================================
+
+\section{Objet du document}
+
+Le présent cahier décrit l'analyse et la conception d'une application web de gestion comptable destinée aux organisations multi-établissements. Il couvre le besoin métier, l'architecture logique, les modèles conceptuels, les flux utilisateurs, les règles d'autorisation et la conception des deux grands domaines fonctionnels : la comptabilité générale et la comptabilité analytique.
+
+Ce document constitue une référence commune pour les analystes, les architectes et les équipes de réalisation. Il privilégie un vocabulaire métier et architectural, sans s'attacher aux noms d'artefacts techniques internes du code source.
+
+\section{Contexte et enjeux}
+
+Les entreprises doivent produire une comptabilité légale fiable tout en disposant d'une lecture analytique de leurs coûts et de leurs budgets. L'application répond à ce double besoin en proposant un espace unifié, avec une séparation claire des contextes de travail. Lorsqu'une organisation dispose des deux activités, l'utilisateur choisit explicitement l'espace de travail actif afin d'éviter toute confusion dans la navigation et dans l'interprétation des données.
+
+\section{Périmètre fonctionnel}
+
+Le système couvre la présentation institutionnelle du produit, l'authentification multi-contexte, le suivi de synthèse, la tenue de la comptabilité générale, le pilotage analytique, les états financiers et analytiques, le suivi budgétaire, ainsi que l'administration organisationnelle. Sont notamment inclus le plan de comptes, les écritures, la validation, les journaux, les exercices et périodes, les taxes et devises, les rapports légaux, les centres d'analyse, les ventilations, les méthodes de coûts, les budgets et la configuration des paramètres métier.
+
+\section{Hors périmètre}
+
+Ne relèvent pas de ce document la conception interne des services serveur, le détail des contrats d'interface générés, ni la description ligne à ligne des écrans techniques. Ces éléments relèvent des spécifications d'implémentation et de la documentation API.
+
+% =============================================================================
+\chapter{Analyse fonctionnelle}
+% =============================================================================
+
+\section{Acteurs}
+
+Trois profils comptables structurent les droits d'accès. L'aide-comptable assure principalement la saisie et la consultation des brouillons. Le comptable en hérite et complète par la validation des écritures ainsi que la gestion courante des comptes, journaux et taxes. Le responsable comptable dispose de l'accès le plus large : attribution des rôles, gestion des packs fiscaux et localisations, verrouillage des périodes, activation des activités comptables, validation budgétaire et configuration globale de l'analytique.
+
+S'ajoutent le visiteur non authentifié des pages publiques, l'utilisateur authentifié sans rôle comptable, auquel l'accès au module est refusé, et l'administrateur d'organisation pour le paramétrage structurel.
+
+\section{Vue d'ensemble des domaines métier}
+
+\subsection{Portail et authentification}
+
+Avant l'accès à l'espace de travail, l'utilisateur peut découvrir l'offre, la documentation et les informations institutionnelles. L'authentification s'effectue en tenant compte d'éventuels contextes multiples (structure, organisation). Après succès, la session est établie et l'utilisateur rejoint un tableau de synthèse. Si les deux activités comptables sont souscrites sans choix préexistant, un choix d'espace lui est demandé.
+
+\subsection{Pilotage et synthèse}
+
+Deux tableaux de bord distincts synthétisent respectivement la situation générale et la situation analytique. La vue générale met en avant les indicateurs de résultat, d'équilibre et d'activité. La vue analytique privilégie les budgets alloués et consommés, les axes actifs, les alertes de dépassement et l'état des périodes.
+
+\subsection{Comptabilité générale}
+
+Ce domaine regroupe la tenue du plan de comptes, la saisie et la validation des écritures, la saisie assistée, les opérations, les journaux, les exercices, les périodes, les taxes, les devises, la fiscalité localisée, l'initialisation et le paramétrage des activités. Les états associés comprennent le bilan, le compte de résultat, les flux de trésorerie, le résumé de direction, le grand livre, la balance et le journal d'audit.
+
+\subsection{Comptabilité analytique}
+
+Ce domaine regroupe les charges, les écritures analytiques, leur validation, les ventilations, les tableaux de répartition, les méthodes de coûts, l'imputation rationnelle, la concordance avec la comptabilité générale, les axes et centres, les états et rapports, ainsi que le suivi budgétaire. La configuration couvre le plan analytique, les comptes analytiques, les centres, les journaux, les périodes alignées, les unités d'œuvre, les incorporations, la valorisation des stocks, la méthode de coût, les prix de cession et les paramètres globaux, notamment l'activation de l'import depuis la comptabilité générale.
+
+\subsection{Tiers et administration}
+
+Les modules de gestion des clients, fournisseurs et produits complètent le périmètre opérationnel. L'administration couvre le profil, la sécurité des accès, l'organisation, les sites, les collaborateurs, les rôles et la traçabilité applicative.
+
+\section{Cas d'utilisation majeurs}
+
+\subsection{Connexion et sélection d'espace}
+
+L'utilisateur s'authentifie, sélectionne le cas échéant un contexte organisationnel, puis accède à l'espace de travail. Lorsque deux activités sont disponibles, le système exige un choix d'espace avant d'exposer le contenu métier. Un seul abonnement actif conduit à une orientation automatique vers le domaine concerné.
+
+\subsection{Tenue et validation des écritures générales}
+
+Un collaborateur autorisé saisit une écriture provisoire. Un comptable ou un responsable la contrôle puis la valide. Les règles d'équilibre et les droits associés s'appliquent tout au long du cycle.
+
+\subsection{Cycle des écritures analytiques}
+
+L'organisation peut saisir manuellement des écritures analytiques ou activer un import depuis la comptabilité générale. Les brouillons issus de l'import sont traités dans un circuit de validation dédié. Lorsqu'un centre source est précisé, le système produit un transfert interne entre centres. Un contrôle budgétaire peut signaler une alerte ou un dépassement selon les seuils définis.
+
+\subsection{Bascule entre espaces}
+
+Lorsque les deux activités sont souscrites, l'utilisateur peut basculer d'un espace à l'autre. Le système mémorise le nouveau contexte, ajuste la navigation et oriente vers le tableau de synthèse correspondant.
+
+\subsection{États et pilotage budgétaire}
+
+Les états s'appuient sur la période active et les agrégats disponibles. Le pilotage budgétaire compare les montants alloués aux montants réalisés, par axe et globalement, afin d'alimenter le suivi de gestion.
+
+% =============================================================================
+\chapter{Analyse des exigences et architecture logique}
+% =============================================================================
+
+\section{Objectifs de conception}
+
+L'architecture vise à séparer clairement la présentation, l'orchestration métier, le domaine comptable et les accès aux ressources externes. Cette découpe facilite l'évolution progressive de la comptabilité analytique, encore partiellement simulée localement, vers une intégration serveur complète, sans remettre en cause la navigation ni les règles d'accès.
+
+\section{Architecture en couches}
+
+La couche de présentation regroupe les écrans publics et authentifiés, les compositions d'interface et les retours utilisateur. La couche d'orchestration coordonne l'authentification, le contrôle d'accès, le choix d'espace, le chargement des synthèses et le rafraîchissement périodique des listes. La couche domaine formalise les règles comptables, les permissions, les calendriers et les mécanismes propres à l'analytique. La couche d'infrastructure assure les échanges avec les services distants, la session locale et les mécanismes transverses de chargement.
+
+La figure~\ref{fig:arch-couches} illustre cette organisation. Le diagramme source est \texttt{diagrammes/01-architecture-couches.drawio.xml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.88\textwidth}{\centering\small
+\textbf{Présentation} --- écrans, navigation, retours utilisateur\\[0.4em]
+$\downarrow$\\[0.4em]
+\textbf{Orchestration} --- session, accès, choix d'espace, synthèses\\[0.4em]
+$\downarrow$\\[0.4em]
+\textbf{Domaine} --- règles comptables, permissions, analytique\\[0.4em]
+$\downarrow$\\[0.4em]
+\textbf{Infrastructure} --- services distants, session, persistance locale
+}}
+\caption{Architecture logique en couches}
+\label{fig:arch-couches}
+\end{figure}
+
+\section{Principes transverses}
+
+Le système distingue les périodes de calcul, les journaux, les plans de comptes et les centres d'analyse. Les rafraîchissements automatiques des listes s'effectuent en arrière-plan afin de préserver la continuité de lecture. Les transitions importantes affichent un indicateur de chargement plein écran. Les actions ponctuelles sur formulaires conservent un retour local discret.
+
+\section{Cartographie des modules d'espace de travail}
+
+L'espace authentifié organise la navigation en modules : synthèse, clients, fournisseurs, analyse générale, comptabilité générale, comptabilité analytique, analyse analytique, configuration analytique et configuration générale. Chaque entrée est filtrée selon l'abonnement, l'espace actif et le rôle de l'utilisateur.
+
+La figure~\ref{fig:modules} synthétise cette cartographie. Diagramme : \texttt{diagrammes/02-cartographie-modules.drawio.xml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.92\textwidth}{\centering\small
+Synthèse \quad Clients \quad Fournisseurs\\[0.5em]
+Analyse générale \quad Comptabilité générale \quad Comptabilité analytique\\[0.5em]
+Analyse analytique \quad Configuration analytique \quad Configuration générale
+}}
+\caption{Cartographie des modules de navigation}
+\label{fig:modules}
+\end{figure}
+
+% =============================================================================
+\chapter{Authentification, espaces et permissions}
+% =============================================================================
+
+\section{Flux de connexion}
+
+L'utilisateur s'identifie, le système découvre les contextes disponibles, propose une sélection le cas échéant, établit la session et ouvre l'espace de travail. Un message de confirmation précède la redirection. La figure~\ref{fig:seq-login} schématise ce parcours. Sources : \texttt{diagrammes/03-sequence-connexion.drawio.xml} et \texttt{diagrammes/03-sequence-connexion.puml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\raggedright\small
+Utilisateur $\rightarrow$ Interface de connexion $\rightarrow$ Service d'authentification\\
+$\rightarrow$ Persistance de session $\rightarrow$ Espace de travail\\
+$\rightarrow$ éventuel choix Comptabilité générale / Comptabilité analytique
+}}
+\caption{Séquence simplifiée de connexion}
+\label{fig:seq-login}
+\end{figure}
+
+\section{Choix d'espace de travail}
+
+Le choix d'espace devient obligatoire lorsque les deux activités sont actives et qu'aucune préférence n'est encore connue. Il peut ensuite être modifié par bascule. Si une seule activité est active, le système oriente automatiquement l'utilisateur et corrige d'éventuelles navigations incohérentes.
+
+\section{Permissions}
+
+Les droits s'expriment par fonctionnalité et par action : lecture, création, modification, validation, verrouillage, configuration. Les écrans sensibles, notamment validation, packs locaux et attributions de rôles, sont réservés aux profils adéquats. L'absence de rôle comptable conduit à un refus d'accès explicite.
+
+% =============================================================================
+\chapter{Conception de la comptabilité générale}
+% =============================================================================
+
+\section{Entités métier}
+
+Les entités centrales sont l'organisation, l'exercice, la période, le plan de comptes, le journal, l'écriture, la taxe, la devise, le budget et les axes partagés utilisés par la lecture analytique. Les états financiers sont produits à partir de la période active et des agrégats de gestion.
+
+\section{Cycle de vie d'une écriture}
+
+Une écriture naît à l'état provisoire, peut être corrigée ou annulée selon les droits, puis devient définitive après validation. Elle alimente ensuite les états et la traçabilité. La figure~\ref{fig:cg-cycle} résume ce cycle. Diagramme : \texttt{diagrammes/04-cycle-ecriture-cg.drawio.xml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.88\textwidth}{\centering\small
+Saisie ou import \quad$\rightarrow$\quad Brouillon \quad$\rightarrow$\quad Validation \quad$\rightarrow$\quad États et audit
+}}
+\caption{Cycle de vie d'une écriture de comptabilité générale}
+\label{fig:cg-cycle}
+\end{figure}
+
+\section{Reporting}
+
+Les écrans d'analyse produisent les états réglementaires et de direction. Le tableau de synthèse confronte chiffres d'activité, équilibre des mouvements et volume des opérations en attente, avec une présentation adaptée au profil connecté.
+
+% =============================================================================
+\chapter{Conception de la comptabilité analytique}
+% =============================================================================
+
+\section{Principes}
+
+La comptabilité analytique fournit une lecture de gestion par axes et centres. Elle complète la comptabilité générale sans la remplacer. Une partie du parcours peut s'appuyer, dans un premier temps, sur une persistance locale de démonstration, en attendant la disponibilité complète des services distants.
+
+\section{Modèle d'écriture analytique}
+
+Une écriture analytique porte un statut, une origine, un journal, une date d'effet, un numéro de pièce, un libellé, des centres source et destination, un axe, un exercice, une nature de charge, un montant et, le cas échéant, une quantité d'unité d'œuvre. Des lignes d'imputation sont générées à l'enregistrement.
+
+\section{Règles d'imputation}
+
+Lorsque seul le centre de destination est renseigné, le montant lui est affecté intégralement. Lorsque le centre source est également présent, le système crée un mouvement de transfert : sortie sur le centre source et entrée sur le centre destination.
+
+\section{Import et validation}
+
+L'activation de l'import depuis la comptabilité générale permet de créer des brouillons analytiques. Ces brouillons ne figurent pas dans la liste opérationnelle courante ; ils transitent par un écran de validation. Le contrôle budgétaire peut accompagner la décision. La figure~\ref{fig:ca-flux} synthétise le flux. Diagramme : \texttt{diagrammes/05-flux-ecriture-analytique.drawio.xml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.92\textwidth}{\centering\small
+Paramétrage de l'import \quad$\rightarrow$\quad Saisie manuelle ou import\\[0.3em]
+$\rightarrow$\quad Brouillon \quad$\rightarrow$\quad Validation \quad$\rightarrow$\quad Lignes d'imputation et contrôle budgétaire
+}}
+\caption{Flux des écritures analytiques}
+\label{fig:ca-flux}
+\end{figure}
+
+\section{Alignement des périodes}
+
+Les périodes analytiques reprennent le calendrier de la comptabilité générale. Les dates, l'exercice de rattachement et les clôtures restent alignés afin de garantir la cohérence des analyses croisées.
+
+\section{États et suivi budgétaire}
+
+Les écrans d'analyse analytique présentent les rapports de gestion, la balance par compte, la comparaison budget versus réalisé et le suivi budgétaire. Les alertes de dépassement enrichissent le tableau de synthèse.
+
+% =============================================================================
+\chapter{Interfaces et expérience utilisateur}
+% =============================================================================
+
+\section{Organisation de l'espace authentifié}
+
+L'espace de travail combine une navigation latérale, une en-tête de contexte, une zone principale et des dialogues métier. L'en-tête porte l'aide selon le rôle, les paramètres, les notifications, la bascule d'espace et le menu utilisateur.
+
+\section{Chargement et actualisation}
+
+Les chargements initiaux de page s'affichent en plein écran. Les actualisations périodiques des listes restent silencieuses. Les actions de formulaire signalent leur progression localement.
+
+\section{Patterns d'interaction}
+
+Les listes, fiches de détail et formulaires de composition structurent la majorité des écrans. Les confirmations et messages successifs sécurisent les opérations irréversibles. Les libellés métier sont privilégiés aux codes techniques dans l'interface.
+
+% =============================================================================
+\chapter{Modèle de données conceptuel}
+% =============================================================================
+
+\section{Persistance de session}
+
+La session conserve l'identité de l'utilisateur, le contexte organisationnel, le jeton d'accès et le choix d'espace. La déconnexion purge ces informations et restaure un état d'interface neutre.
+
+\section{Vue conceptuelle}
+
+La figure~\ref{fig:mcd} présente les principales entités et leurs relations. Diagramme : \texttt{diagrammes/06-modele-conceptuel.drawio.xml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.95\textwidth}{\centering\small
+Organisation --- Utilisateur --- Exercice --- Période\\[0.45em]
+Plan de comptes --- Journal général --- Écriture générale --- Taxe / Devise\\[0.45em]
+Axe --- Centre --- Journal analytique --- Écriture analytique --- Budget
+}}
+\caption{Vue conceptuelle simplifiée des entités}
+\label{fig:mcd}
+\end{figure}
+
+% =============================================================================
+\chapter{Flux transverses et déploiement}
+% =============================================================================
+
+\section{Parcours global}
+
+La figure~\ref{fig:flux-global} décrit le cheminement depuis le portail public jusqu'aux opérations métier. Diagramme : \texttt{diagrammes/07-flux-global.drawio.xml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\small
+Portail \quad$\rightarrow$\quad Connexion \quad$\rightarrow$\quad Choix d'espace éventuel\\[0.35em]
+$\rightarrow$\quad Tableau de synthèse \quad$\rightarrow$\quad Opérations métier
+}}
+\caption{Parcours utilisateur global}
+\label{fig:flux-global}
+\end{figure}
+
+\section{Vue composants logiques}
+
+La figure~\ref{fig:composants} positionne les grands blocs logiciels. Diagramme : \texttt{diagrammes/08-composants.drawio.xml}.
+
+\begin{figure}[htbp]
+\centering
+\fbox{\parbox{0.9\textwidth}{\centering\small
+Cadre d'espace de travail \quad---\quad Écrans métier\\[0.35em]
+$\downarrow$\\[0.35em]
+Coordination session et accès \quad---\quad Règles de domaine\\[0.35em]
+$\downarrow$\\[0.35em]
+Services distants et persistance
+}}
+\caption{Vue des composants logiques}
+\label{fig:composants}
+\end{figure}
+
+\section{Déploiement logique}
+
+En environnement de développement, le navigateur consomme l'application web, elle-même reliée aux services d'authentification et de comptabilité, complétés éventuelle\-ment par des jeux de données locaux. Diagramme : \texttt{diagrammes/09-deploiement.drawio.xml}.
+
+\section{Validation analytique et automate d'états}
+
+Les diagrammes d'activités et d'états précisent le traitement des brouillons analytiques jusqu'à leur validation ou leur rejet : \texttt{diagrammes/10-activites-validation-ca.drawio.xml}, \texttt{diagrammes/11-etats-ecriture-ca.drawio.xml} et \texttt{diagrammes/12-sequence-import-cg.puml}.
+
+% =============================================================================
+\chapter{Exigences non fonctionnelles}
+% =============================================================================
+
+\section{Sécurité}
+
+L'accès à l'espace authentifié repose sur une session valide. Les permissions croisent profils, fonctionnalités et actions. La séparation des espaces réduit le risque d'opérations hors contexte.
+
+\section{Performance perçue}
+
+Les indicateurs de chargement plein écran confortent les transitions. Les actualisations silencieuses maintiennent la fraîcheur des listes. Les synthèses agrègent leurs sources en parallèle et tolèrent des données partielles.
+
+\section{Maintenabilité et évolutivité}
+
+La séparation en couches et modules facilite le remplacement progressif des mécanismes locaux de démonstration par des services distants. Les règles d'accès et de navigation sont centralisées conceptuellement, indépendamment de leur support technique.
+
+\section{Accessibilité et langue}
+
+L'interface est proposée en français. Les composants d'interaction respectent les usages clavier courants. Les messages et confirmations rendent compte clairement des résultats d'action.
+
+% =============================================================================
+\chapter{Perspectives d'évolution}
+% =============================================================================
+
+La priorité technique et métier consiste à rattacher intégralement les écritures et journaux analytiques aux services distants. Suivront l'alignement exhaustif des écrans de coûts et de répartition, l'enrichissement du contrôle budgétaire multi-centres, la consolidation des modules tiers avec la comptabilité, puis le renforcement des contrôles automatisés portant sur les règles d'imputation, les accès et le parcours connexion-choix d'espace-validation.
+
+% =============================================================================
+\chapter{Annexes}
+% =============================================================================
+
+\section{Inventaire des diagrammes}
+
+\begin{longtable}{p{5.4cm}p{9cm}}
+\hline
+\textbf{Fichier} & \textbf{Contenu} \\
+\hline
+\endhead
+\texttt{01-architecture-couches.drawio.xml} & Architecture logique en couches \\
+\texttt{02-cartographie-modules.drawio.xml} & Modules de navigation \\
+\texttt{03-sequence-connexion.drawio.xml} & Séquence de connexion \\
+\texttt{03-sequence-connexion.puml} & Séquence de connexion (PlantUML) \\
+\texttt{04-cycle-ecriture-cg.drawio.xml} & Cycle de vie d'une écriture générale \\
+\texttt{05-flux-ecriture-analytique.drawio.xml} & Flux d'écriture analytique \\
+\texttt{06-modele-conceptuel.drawio.xml} & Modèle conceptuel \\
+\texttt{07-flux-global.drawio.xml} & Parcours utilisateur global \\
+\texttt{08-composants.drawio.xml} & Composants logiques \\
+\texttt{09-deploiement.drawio.xml} & Déploiement logique \\
+\texttt{10-activites-validation-ca.drawio.xml} & Activités de validation analytique \\
+\texttt{11-etats-ecriture-ca.drawio.xml} & Automate d'états d'une écriture analytique \\
+\texttt{12-sequence-import-cg.puml} & Séquence d'import vers l'analytique \\
+\hline
+\end{longtable}
+
+\section{Glossaire}
+
+\textbf{Comptabilité générale} : tenue légale des comptes et production d'états réglementaires. \textbf{Comptabilité analytique} : lecture de gestion par axes, centres, coûts et budgets. \textbf{Espace de travail} : contexte actif, général ou analytique. \textbf{Brouillon} : écriture non encore validée. \textbf{Unité d'œuvre} : base de répartition retenue pour certains calculs de coûts. \textbf{OHADA} : cadre régional de référence pour certaines localisations fiscales et comptables.
+
+\vspace{1.5cm}
+\begin{center}
+\textit{Fin du cahier d'analyse et de conception}
+\end{center}
+
+\end{document}

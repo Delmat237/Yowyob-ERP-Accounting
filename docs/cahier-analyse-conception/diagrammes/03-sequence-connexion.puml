@@ -1,0 +1,33 @@
+@startuml
+title Séquence — Connexion Yowyob ERP Accounting
+actor Utilisateur
+participant "LoginModal" as LM
+participant "Kernel API" as API
+participant "localStorage\n+ useAuth" as Store
+participant "Dashboard\nLayout" as Dash
+participant "AccountingChoiceModal" as Choice
+
+Utilisateur -> LM : Saisie identifiants
+LM -> API : discoverContexts / login
+API --> LM : contexts + selectionToken
+alt Multi-contextes
+  Utilisateur -> LM : Sélection tenant / organisation
+  LM -> API : select-context
+  API --> LM : token + user + tenantId
+else Mono-contexte
+  API --> LM : token + user
+end
+LM -> Store : persist auth_token, user,\ntenant_id, organization_id\nOpenAPI.TOKEN = token
+LM -> Store : clearAccountingChoice()\nclearUiState()
+LM --> Utilisateur : toast « Connexion réussie »
+LM -> Dash : router.push(/accounting/dashboard)
+Dash -> Dash : useRequireAuth + subscription
+alt Generale ET Analytique actifs\nsans choix stocké
+  Dash -> Choice : ouvrir modale de choix
+  Utilisateur -> Choice : choisir CG ou CA
+  Choice -> Store : setChoice(...)
+  Choice -> Dash : router.push(dashboard cible)
+else Un seul module
+  Store -> Store : setChoice implicite
+end
+@enduml

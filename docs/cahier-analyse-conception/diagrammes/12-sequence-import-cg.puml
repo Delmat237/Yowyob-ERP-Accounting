@@ -1,0 +1,37 @@
+@startuml
+title Séquence — Import flux Comptabilité Générale vers écritures analytiques
+
+actor Responsable
+participant "Page Configuration CA" as Config
+participant "analytique-config-store" as ConfStore
+participant "Page Écritures CA" as Ecritures
+participant "import-flux-cg" as Import
+participant "ecritures-analytiques-store" as Store
+participant "Page Validation" as Valid
+
+Responsable -> Config : Active importComptabiliteGeneraleActive
+Responsable -> Config : Enregistrer
+Config -> ConfStore : persister toggle
+alt Première activation
+  Config -> Import : importFluxDepuisCG()
+  Import -> Store : createEcritureAnalytique(... ORIGINE=IMPORT_CG, STATUT=BROUILLON)
+  Config -> Valid : redirection validation
+else Activation déjà connue
+  Responsable -> Ecritures : « Importer maintenant »
+  Ecritures -> ConfStore : lire toggle
+  Ecritures -> Import : importFluxDepuisCG()
+  Import -> Store : créer brouillons
+end
+
+Responsable -> Ecritures : Consulter liste
+Ecritures -> Store : listEcrituresAnalytiques()
+note right of Ecritures
+  isVisibleOnEcrituresPage filtre
+  les brouillons IMPORT_CG
+end note
+
+Responsable -> Valid : Ouvrir validation
+Valid -> Store : brouillons importés
+Responsable -> Valid : Valider / Rejeter
+Valid -> Store : update statut + lignes + contrôle budgétaire
+@enduml
