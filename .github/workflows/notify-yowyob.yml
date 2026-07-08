@@ -1,0 +1,14 @@
+name: Notify yowyob (accounting-frontend)
+# À chaque push sur `frontend`, notifie instantanément le miroir yowyob (pas d'attente du cron).
+on:
+  push:
+    branches: [frontend]
+  workflow_dispatch:
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déclencher le miroir yowyob
+        env:
+          GH_TOKEN: ${{ secrets.YOWYOB_SYNC_TOKEN }}
+        run: gh api -X POST repos/yowyob/accounting-frontend/dispatches -f event_type=upstream-push
