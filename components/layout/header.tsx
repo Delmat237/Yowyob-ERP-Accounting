@@ -17,6 +17,7 @@ import Link from "next/link";
 import { NotificationBell } from "../notifications/notification-bell";
 import { useAuth } from "@/hooks/use-auth";
 import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
+import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
 
 // ─── Contenu du centre d'aide par rôle ───────────────────────────────────────
 
@@ -101,7 +102,26 @@ export function Header() {
     if (typeof window !== "undefined") {
       const name = localStorage.getItem("organization_name");
       if (name) {
-        setOrgName(name);
+        // Si c'est un UUID, on ne l'affiche pas directement pour éviter l'identifiant technique à l'écran
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(name);
+        if (!isUuid) {
+          setOrgName(name);
+        }
+      }
+
+      const orgId = localStorage.getItem("organization_id");
+      if (orgId) {
+        OrganizationsService.getOrganizationById(orgId)
+          .then((org) => {
+            const resolvedName = org?.name || org?.displayName;
+            if (resolvedName) {
+              setOrgName(resolvedName);
+              localStorage.setItem("organization_name", resolvedName);
+            }
+          })
+          .catch((err) => {
+            console.warn("Erreur lors de la récupération du nom de l'organisation:", err);
+          });
       }
     }
   }, []);

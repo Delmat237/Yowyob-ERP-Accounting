@@ -135,31 +135,14 @@ export default function UsersSettingsPage() {
       return;
     }
 
-    if (!formData.email || !formData.firstName || !formData.lastName || !formData.password || !formData.roleId) {
-      toast.error("Veuillez remplir tous les champs obligatoires.");
+    if (!formData.email || !formData.roleId) {
+      toast.error("Veuillez remplir tous les champs obligatoires (Email et Rôle).");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Step 1: Pre-register the user so they exist in the user directory
-      try {
-        await AuthenticationService.register({
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          password: formData.password,
-          company: user?.organizationId ? "KSM Tenant User" : undefined
-        });
-      } catch (err: any) {
-        // 409 Conflict means the user already exists, which is fine, we continue to invite them.
-        // Otherwise, throw or handle
-        if (err.status !== 409) {
-          console.warn("User registration skipped or failed, attempting invitation anyway:", err);
-        }
-      }
-
-      // Step 2: Invite the employee to the organization
+      // Invite the employee to the organization directly
       await EmployeesRolesService.inviteEmployee(orgId, {
         email: formData.email,
         roleId: formData.roleId,
@@ -251,67 +234,23 @@ export default function UsersSettingsPage() {
               </DialogHeader>
 
               <div className="grid gap-5 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Prénom <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="firstName" 
-                      name="firstName" 
-                      placeholder="Jean" 
-                      value={formData.firstName} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Nom <span className="text-red-500">*</span></Label>
-                    <Input 
-                      id="lastName" 
-                      name="lastName" 
-                      placeholder="Dupont" 
-                      value={formData.lastName} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Adresse Email <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Adresse Email du collaborateur <span className="text-red-500">*</span></Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input 
                       id="email" 
                       name="email" 
                       type="email" 
-                      placeholder="jean.dupont@ksm.dev" 
+                      placeholder="nom.prenom@domain.com" 
                       value={formData.email} 
                       onChange={handleInputChange} 
                       required 
                       className="pl-9 rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-gray-500">Mot de Passe Initial <span className="text-red-500">*</span></Label>
-                  <div className="relative">
-                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input 
-                      id="password" 
-                      name="password" 
-                      type="password" 
-                      placeholder="••••••••" 
-                      value={formData.password} 
-                      onChange={handleInputChange} 
-                      required 
-                      className="pl-9 rounded-lg border-gray-200 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
                   <p className="text-[10px] text-muted-foreground leading-snug">
-                    Requis pour l'inscription du compte utilisateur dans la base de données.
+                    L'adresse email doit correspondre à un compte utilisateur existant.
                   </p>
                 </div>
 
