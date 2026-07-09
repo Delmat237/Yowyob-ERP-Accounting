@@ -16,18 +16,30 @@ import {
 } from "@/lib/analytique/journaux-analytiques-store";
 import { JournalAnalytiqueForm } from "@/components/analytique/journal-analytique-form";
 import { cn } from "@/lib/utils";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { CA_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function JournauxAnalytiquesPage() {
     const [journaux, setJournaux] = useState<JournalAnalytiqueConfig[]>([]);
     const [search, setSearch] = useState("");
+    const [usingCache, setUsingCache] = useState(false);
+    const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
     const { openForm, closeForm } = useAnalytiqueCompose();
 
-    const reload = useCallback((options?: AutoRefreshOptions) => {
-        setJournaux(listJournauxAnalytiques());
+    const reload = useCallback(async (options?: AutoRefreshOptions) => {
+        const result = await fetchWithOfflineCache({
+            cacheKey: CA_CACHE_KEYS.JOURNAUX,
+            fetcher: async () => ({ success: true, data: listJournauxAnalytiques() }),
+            emptyValue: [] as JournalAnalytiqueConfig[],
+        });
+        setJournaux(result.data);
+        setUsingCache(result.fromCache);
+        setCacheTimestamp(result.cachedAt);
     }, []);
 
     useEffect(() => {
-        reload();
+        void reload();
     }, [reload]);
 
     useAutoRefresh(reload, [reload]);
@@ -46,7 +58,7 @@ export default function JournauxAnalytiquesPage() {
                 onSubmit={(data) => {
                     createJournalAnalytique(data);
                     closeForm();
-                    reload();
+                    void reload();
                     toast.success("Journal analytique créé");
                 }}
             />,
@@ -62,7 +74,7 @@ export default function JournauxAnalytiquesPage() {
                 onSubmit={(data) => {
                     saveJournalAnalytique(data);
                     closeForm();
-                    reload();
+                    void reload();
                     toast.success("Journal mis à jour");
                 }}
             />,
@@ -71,6 +83,7 @@ export default function JournauxAnalytiquesPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">

@@ -15,6 +15,9 @@ import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BusinessActorsService } from "@/src/lib/services/BusinessActorsService";
 import { BusinessActor } from "@/src/lib/models/BusinessActor";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 function Field({
   icon: Icon,
@@ -41,14 +44,24 @@ function Field({
 export default function BusinessActorSettingsPage() {
   const [actor, setActor] = useState<BusinessActor | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setIsLoading(true);
       try {
-        const data = await BusinessActorsService.getMyProfile();
-        if (!cancelled) setActor(data ?? null);
+        const result = await fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.BUSINESS_ACTOR,
+          fetcher: () => BusinessActorsService.getMyProfile(),
+          emptyValue: null as BusinessActor | null,
+        });
+        if (!cancelled) {
+          setActor(result.data ?? null);
+          setUsingCache(result.fromCache);
+          setCacheTimestamp(result.cachedAt);
+        }
       } catch (error) {
         console.error(error);
         if (!cancelled) toast.error("Impossible de charger votre profil professionnel.");
@@ -79,6 +92,7 @@ export default function BusinessActorSettingsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
       <div className="flex items-center gap-4">
         <div className="h-16 w-16 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md">
           <UserSquare className="h-8 w-8" />

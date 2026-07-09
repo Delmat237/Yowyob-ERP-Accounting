@@ -9,8 +9,10 @@ import { toast } from "sonner";
 import { formatCurrency } from "@/lib/utils";
 import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
 import {
+    initEcrituresAnalytiquesStore,
     listEcrituresByStatut,
     rejectEcritureAnalytique,
+    reloadEcrituresFromCache,
     validateEcritureAnalytique,
 } from "@/lib/analytique/ecritures-analytiques-store";
 import {
@@ -31,8 +33,16 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { CustomPageLoader } from "@/components/ui/custom-page-loader";
+import { useAuth } from "@/hooks/use-auth";
+import { hasPermission } from "@/src/lib/auth/roles";
+import { useNetworkStatus } from "@/hooks/use-network-status";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function ValidationEcrituresAnalytiquesPage() {
+    const { accountingRole } = useAuth();
+    const { isOffline } = useNetworkStatus();
+    const canValidate = hasPermission(accountingRole, "analytical_entries", "validate");
+    const canReject = hasPermission(accountingRole, "analytical_entries", "reject");
     const [brouillons, setBrouillons] = useState<EcritureAnalytique[]>([]);
     const [search, setSearch] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -47,6 +57,8 @@ export default function ValidationEcrituresAnalytiquesPage() {
     const loadBrouillons = useCallback(async (options?: AutoRefreshOptions) => {
         if (!options?.silent) setIsLoading(true);
         try {
+            await initEcrituresAnalytiquesStore();
+            await reloadEcrituresFromCache();
             setBrouillons(listEcrituresByStatut("BROUILLON"));
         } finally {
             if (!options?.silent) setIsLoading(false);
@@ -96,6 +108,10 @@ export default function ValidationEcrituresAnalytiquesPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner
+                visible={isOffline}
+                label="Données analytiques enregistrées localement"
+            />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <Link
@@ -167,7 +183,7 @@ export default function ValidationEcrituresAnalytiquesPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-emerald-600"
-                                                    disabled={validatingId === e.id}
+                                                    disabled={!canValidate || validatingId === e.id}
                                                     onClick={() => handleValidate(e.id)}
                                                 >
                                                     {validatingId === e.id ? (
@@ -180,6 +196,7 @@ export default function ValidationEcrituresAnalytiquesPage() {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="text-rose-600"
+                                                    disabled={!canReject}
                                                     onClick={() => setRejectDialog({ open: true, entry: e })}
                                                 >
                                                     <XCircle className="h-4 w-4" />
@@ -223,11 +240,11 @@ export default function ValidationEcrituresAnalytiquesPage() {
                     )}
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setPreview(null)}>Fermer</Button>
-                        {preview && (
+                        {preview && canValidate ? (
                             <Button onClick={() => handleValidate(preview.id)} className="bg-emerald-600 hover:bg-emerald-700">
                                 Valider
                             </Button>
-                        )}
+                        ) : null}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -247,7 +264,7 @@ export default function ValidationEcrituresAnalytiquesPage() {
                         <Button variant="outline" onClick={() => setRejectDialog({ open: false, entry: null })}>
                             Annuler
                         </Button>
-                        <Button variant="destructive" onClick={handleReject}>Rejeter</Button>
+                        <Button variant="destructive" disabled={!canReject} onClick={handleReject}>Rejeter</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

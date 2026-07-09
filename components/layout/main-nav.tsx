@@ -32,6 +32,7 @@ export function MainNav({ links }: MainNavProps) {
           <Link
             key={index}
             href={link.href}
+            prefetch={false}
             onClick={() => {
               const isCurrent =
                 pathname === link.href || pathname.startsWith(`${link.href}/`);

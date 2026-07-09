@@ -12,10 +12,17 @@ import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
 import { useAccountingChoiceStore } from "@/hooks/use-accounting-choice-store";
 import { useLoadingStore } from "@/hooks/use-loading-store";
-import { getDashboardPathForChoice } from "@/lib/accounting-dashboard-routes";
+import { getDashboardPathForChoice, getModuleNavigationTarget } from "@/lib/accounting-dashboard-routes";
 import { applyAccountingModuleSwitch } from "@/lib/accounting-module-switch";
+import {
+  getRememberedWorkspaceModule,
+  notifyCgWorkspaceEntered,
+  rememberWorkspaceModule,
+} from "@/lib/accounting-workspace-memory";
+import { useNavigationStore } from "@/hooks/use-navigation-store";
 import { isAnalytiqueRoute } from "@/config/navigation";
 import { isAnalytiqueBridgedAccountingRoute } from "@/lib/accounting-workspace-routes";
+import { useAuth } from "@/hooks/use-auth";
 import type { AccountingChoice } from "@/lib/accounting-choice";
 
 const WORKSPACE_META: Record<
@@ -48,6 +55,7 @@ export function AccountingWorkspaceSwitch() {
   const pathname = usePathname();
   const { generale, analytique, loaded } = useAccountingSubscription();
   const { choice } = useEffectiveAccountingChoice();
+  const { accountingRole } = useAuth();
   const setChoice = useAccountingChoiceStore((s) => s.setChoice);
   const { startLoading } = useLoadingStore();
 
@@ -61,10 +69,23 @@ export function AccountingWorkspaceSwitch() {
   const Icon = meta.icon;
 
   const handleSwitch = () => {
+    rememberWorkspaceModule(current, useNavigationStore.getState().activeModule);
     setChoice(target);
     applyAccountingModuleSwitch(target);
+    const rememberedModule = getRememberedWorkspaceModule(target);
+    useNavigationStore.getState().setActiveModule(rememberedModule);
     startLoading();
-    router.push(getDashboardPathForChoice(target));
+    const destination =
+      getModuleNavigationTarget(rememberedModule, {
+        choice: target,
+        generale,
+        analytique,
+        accountingRole,
+      }) ?? getDashboardPathForChoice(target);
+    router.push(destination);
+    if (target === 'generale') {
+      notifyCgWorkspaceEntered();
+    }
   };
 
   return (

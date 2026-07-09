@@ -10,6 +10,10 @@ import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { removeListItemWithOutbox, upsertListItemWithOutbox } from "@/lib/offline/list-outbox-mutations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +30,8 @@ export default function TaxesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
@@ -33,12 +39,15 @@ export default function TaxesPage() {
     if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
-      const response = await AccountingTaxManagementService.getAllTaxes();
-      if (response && response.data) {
-        setTaxes(response.data);
-      } else {
-        setTaxes([]);
-      }
+      const result = await fetchWithOfflineCache({
+        cacheKey: CG_CACHE_KEYS.TAXES,
+        fetcher: () => AccountingTaxManagementService.getAllTaxes(),
+        emptyValue: [] as TaxeDto[],
+      });
+      setTaxes(result.data);
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
+      if (result.fromCache) setError(null);
     } catch (err: any) {
       let reason = "Impossible de charger les taxes.";
       if (err.body?.message) reason = err.body.message;
@@ -64,13 +73,29 @@ export default function TaxesPage() {
   const handleSave = async (data: TaxeDto) => {
     try {
       if (data.id) {
-        await AccountingTaxManagementService.updateTaxe(data.id, data);
+        await upsertListItemWithOutbox({
+          cacheKey: CG_CACHE_KEYS.TAXES,
+          entity: "cg.taxes",
+          action: "UPDATE",
+          item: data,
+          onlineMutator: () => AccountingTaxManagementService.updateTaxe(data.id!, data),
+        });
         toast.success('Taxe mise à jour avec succès', {
           description: `La taxe ${data.code} a été modifiée.`,
           className: "bg-green-50 border-green-200 text-green-800"
         });
       } else {
-        await AccountingTaxManagementService.createTaxe(data);
+        const withId: TaxeDto = {
+          ...data,
+          id: crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`,
+        };
+        await upsertListItemWithOutbox({
+          cacheKey: CG_CACHE_KEYS.TAXES,
+          entity: "cg.taxes",
+          action: "CREATE",
+          item: withId,
+          onlineMutator: () => AccountingTaxManagementService.createTaxe(withId),
+        });
         toast.success('Taxe créée avec succès', {
           description: `La nouvelle taxe ${data.code} a été ajoutée.`,
           className: "bg-green-50 border-green-200 text-red-800"
@@ -98,7 +123,12 @@ export default function TaxesPage() {
     if (!deleteId) return;
 
     try {
-      await AccountingTaxManagementService.deleteTaxe(deleteId);
+      await removeListItemWithOutbox({
+        cacheKey: CG_CACHE_KEYS.TAXES,
+        entity: "cg.taxes",
+        entityId: deleteId,
+        onlineMutator: () => AccountingTaxManagementService.deleteTaxe(deleteId),
+      });
       toast.success('Taxe supprimée', {
         description: 'La taxe a été retirée avec succès.',
         className: "bg-green-50 border-green-200 text-green-800"
@@ -151,6 +181,8 @@ export default function TaxesPage() {
           <h2 className="text-xl font-semibold text-gray-700 mb-1">Gestion des Taxes</h2>
           <p className="text-sm text-gray-500">Configurez et gérez les différentes taxes applicables dans votre comptabilité.</p>
         </div>
+
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
         {error && (
           <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">

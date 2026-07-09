@@ -1,6 +1,10 @@
 import type { PeriodeComptableDto } from "@/src/lib2/models/PeriodeComptableDto";
 import type { ExerciceComptableDto } from "@/src/lib2/models/ExerciceComptableDto";
 import type { PeriodeAnalytique, PeriodeCG, StatutPeriode, ExerciceCG } from "@/lib/analytique/mock-data";
+import {
+  getPeriodeComptableCourante,
+  isDateInPeriode,
+} from "@/lib/accounting/periode-utilisateur";
 
 const MOIS_FR = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -23,10 +27,7 @@ export function deriveStatutPeriodeAnalytique(
   cloturee: boolean,
 ): StatutPeriode {
   if (cloturee) return "CLOTURE";
-  const now = new Date();
-  const start = new Date(dateDebut);
-  const end = new Date(dateFin);
-  if (now >= start && now <= end) return "EN_COURS";
+  if (isDateInPeriode(new Date(), dateDebut, dateFin)) return "EN_COURS";
   return "OUVERT";
 }
 
@@ -117,10 +118,20 @@ export function isPeriodeAnalytiqueOuverte(p: PeriodeAnalytique): boolean {
   return p.statut !== "CLOTURE";
 }
 
-/** Période analytique en cours : EN_COURS, sinon première période ouverte. */
+/** Période analytique visible (alignée sur la période CG courante). */
 export function getPeriodeAnalytiqueEnCours(
   periodes: PeriodeAnalytique[],
+  periodesCG?: PeriodeCG[],
 ): PeriodeAnalytique | undefined {
+  if (periodesCG?.length) {
+    const cgCourante = getPeriodeComptableCourante(periodesCG);
+    if (cgCourante) {
+      const cgId = cgCourante.id ?? cgCourante.code;
+      const alignee = periodes.find((p) => p.id === cgId || p.periodeCGId === cgId);
+      if (alignee) return alignee;
+    }
+  }
+
   const enCours = periodes.find((p) => p.statut === "EN_COURS");
   if (enCours) return enCours;
   return periodes

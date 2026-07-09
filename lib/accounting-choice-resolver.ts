@@ -43,3 +43,18 @@ export function syncStoredAccountingChoiceWithSubscription(
 
   return resolved;
 }
+
+/** Choix d'espace pour la sidebar (un seul espace CG ou CA à la fois). */
+export function resolveSidebarWorkspaceChoice(
+  choice: AccountingChoice | null,
+  generale: boolean,
+  analytique: boolean,
+): AccountingChoice | null {
+  const resolved = resolveAccountingChoiceForSubscription(choice, generale, analytique);
+  if (resolved) return resolved;
+
+  if (generale && analytique) {
+    return getAccountingChoice() ?? 'generale';
+  }
+  return null;
+}

@@ -10,20 +10,30 @@ import { useIsMounted } from "@/hooks/use-is-mounted";
 import type { BudgetItem } from "@/components/accounting/budget-list-view";
 import { mapBudgetDtoToItem, mapBudgetItemsToLegacy } from "@/lib/accounting/budget-mappers";
 import { AccountingBudgetsService } from "@/src/lib2/services/AccountingBudgetsService";
+import type { BudgetDto } from "@/src/lib2/models/BudgetDto";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { CA_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function BudgetVsRealisePage() {
     const mountedRef = useIsMounted();
     const [budgets, setBudgets] = useState<BudgetItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [usingCache, setUsingCache] = useState(false);
+    const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
     const loadBudgets = useCallback(async (options?: AutoRefreshOptions) => {
         if (!options?.silent) setIsLoading(true);
         try {
-            const response = await AccountingBudgetsService.getAllBudgets();
+            const result = await fetchWithOfflineCache({
+                cacheKey: CA_CACHE_KEYS.BUDGETS,
+                fetcher: () => AccountingBudgetsService.getAllBudgets(),
+                emptyValue: [] as BudgetDto[],
+            });
             if (!mountedRef.current) return;
-            if (response.data) {
-                setBudgets((response.data ?? []).map(mapBudgetDtoToItem));
-            }
+            setBudgets((result.data ?? []).map(mapBudgetDtoToItem));
+            setUsingCache(result.fromCache);
+            setCacheTimestamp(result.cachedAt);
         } catch (error) {
             if (!mountedRef.current) return;
             console.error("Failed to load budgets:", error);
@@ -43,6 +53,7 @@ export default function BudgetVsRealisePage() {
 
     return (
         <div className="min-h-screen flex flex-col p-4 bg-gray-100">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             <div className="w-full max-w-7xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
                 <div className="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>

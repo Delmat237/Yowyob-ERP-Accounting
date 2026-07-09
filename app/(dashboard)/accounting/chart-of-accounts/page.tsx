@@ -21,6 +21,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { ensureLocalId } from '@/lib/offline/ensure-local-id';
+import { removeListItemWithOutbox, upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
 
 export default function ChartOfAccountsPage() {
   const [accounts, setAccounts] = useState<PlanComptableDto[]>([]);
@@ -29,6 +34,8 @@ export default function ChartOfAccountsPage() {
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
@@ -36,14 +43,16 @@ export default function ChartOfAccountsPage() {
     if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
-      const response = await AccountingPlanComptableService.getAllPlanComptables();
-      if (response?.success === false) {
-        throw new Error(response.message || "Impossible de charger le plan comptable.");
-      }
-      if (response?.data) {
-        setAccounts(response.data);
-      } else {
-        setAccounts([]);
+      const result = await fetchWithOfflineCache({
+        cacheKey: CG_CACHE_KEYS.PLAN_COMPTABLE,
+        fetcher: () => AccountingPlanComptableService.getAllPlanComptables(),
+        emptyValue: [] as PlanComptableDto[],
+      });
+      setAccounts(result.data);
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
+      if (result.fromCache) {
+        setError(null);
       }
     } catch (err: any) {
       let reason = "Impossible de charger le plan comptable.";
@@ -70,13 +79,23 @@ export default function ChartOfAccountsPage() {
   const handleSave = async (data: PlanComptableDto) => {
     try {
       const isNew = !data.id;
-      if (isNew) {
-        await AccountingPlanComptableService.createPlanComptable(data);
-        toast.success('Compte créé avec succès');
-      } else {
-        await AccountingPlanComptableService.updatePlanComptable(data.id!, data);
-        toast.success('Compte mis à jour avec succès');
-      }
+      const item: PlanComptableDto = {
+        ...data,
+        id: ensureLocalId(data.id),
+      };
+
+      await upsertListItemWithOutbox({
+        cacheKey: CG_CACHE_KEYS.PLAN_COMPTABLE,
+        entity: 'cg.plan_comptable',
+        action: isNew ? 'CREATE' : 'UPDATE',
+        item,
+        onlineMutator: () =>
+          isNew
+            ? AccountingPlanComptableService.createPlanComptable(item)
+            : AccountingPlanComptableService.updatePlanComptable(item.id!, item),
+      });
+
+      toast.success(isNew ? 'Compte créé avec succès' : 'Compte mis à jour avec succès');
       await fetchAccounts();
       setSelectedAccountId(null);
     } catch (err: any) {
@@ -99,7 +118,12 @@ export default function ChartOfAccountsPage() {
     if (!deleteId) return;
 
     try {
-      await AccountingPlanComptableService.deactivatePlanComptable(deleteId);
+      await removeListItemWithOutbox({
+        cacheKey: CG_CACHE_KEYS.PLAN_COMPTABLE,
+        entity: 'cg.plan_comptable',
+        entityId: deleteId,
+        onlineMutator: () => AccountingPlanComptableService.deactivatePlanComptable(deleteId),
+      });
       toast.success('Compte désactivé/supprimé');
       await fetchAccounts();
       if (selectedAccountId === deleteId) {
@@ -241,6 +265,7 @@ export default function ChartOfAccountsPage() {
           <h2 className="text-xl font-semibold text-gray-700 mb-1">Plan Comptable</h2>
           <p className="text-sm text-gray-500">Gérez la liste de tous vos comptes.</p>
         </div>
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
         {error && (
           <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">

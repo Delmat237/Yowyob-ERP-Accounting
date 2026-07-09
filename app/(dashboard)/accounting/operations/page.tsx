@@ -11,6 +11,10 @@ import { toast } from 'sonner';
 import { AlertCircle, Edit, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { removeListItemWithOutbox, upsertListItemWithOutbox } from "@/lib/offline/list-outbox-mutations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +39,8 @@ export default function OperationComptablePage() {
   const [selectedOperationId, setSelectedOperationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
@@ -42,12 +48,15 @@ export default function OperationComptablePage() {
     if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
-      const response = await AccountingOperationsService.getAllOperationsComptables();
-      if (response && response.data) {
-        setOperations(response.data);
-      } else {
-        setOperations([]);
-      }
+      const result = await fetchWithOfflineCache({
+        cacheKey: CG_CACHE_KEYS.OPERATIONS,
+        fetcher: () => AccountingOperationsService.getAllOperationsComptables(),
+        emptyValue: [] as OperationComptableDto[],
+      });
+      setOperations(result.data);
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
+      if (result.fromCache) setError(null);
     } catch (err: any) {
       let reason = "Impossible de charger les opérations.";
       if (err.body?.message) reason = err.body.message;
@@ -73,17 +82,27 @@ export default function OperationComptablePage() {
   const handleSave = async (data: OperationComptableDto, journalIds: string[]) => {
     try {
       const isNew = !data.id;
+      const ensureId = (d: OperationComptableDto): OperationComptableDto => ({
+        ...d,
+        id: d.id ?? (crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`),
+      });
       if (isNew) {
         const creationPromises = journalIds.map(journalId => {
-          const operationForJournal: OperationComptableDto = {
+          const operationForJournal: OperationComptableDto = ensureId({
             ...data,
             journalComptableId: journalId,
             contreparties: data.contreparties?.map(cp => ({
               ...cp,
               journalComptableId: cp.journalComptableId || journalId
             }))
-          };
-          return AccountingOperationsService.createOperationComptable(operationForJournal);
+          });
+          return upsertListItemWithOutbox({
+            cacheKey: CG_CACHE_KEYS.OPERATIONS,
+            entity: "cg.operations",
+            action: "CREATE",
+            item: operationForJournal,
+            onlineMutator: () => AccountingOperationsService.createOperationComptable(operationForJournal),
+          });
         });
         await Promise.all(creationPromises);
         toast.success(`${journalIds.length} opération(s) créée(s) avec succès`);
@@ -96,7 +115,13 @@ export default function OperationComptablePage() {
             journalComptableId: cp.journalComptableId || journalIds[0] || data.journalComptableId
           }))
         };
-        await AccountingOperationsService.updateOperationComptable(data.id!, updatedData);
+        await upsertListItemWithOutbox({
+          cacheKey: CG_CACHE_KEYS.OPERATIONS,
+          entity: "cg.operations",
+          action: "UPDATE",
+          item: updatedData,
+          onlineMutator: () => AccountingOperationsService.updateOperationComptable(data.id!, updatedData),
+        });
         toast.success('Opération mise à jour avec succès');
       }
       await fetchOperations();
@@ -121,7 +146,12 @@ export default function OperationComptablePage() {
     if (!deleteId) return;
 
     try {
-      await AccountingOperationsService.deleteOperationComptable(deleteId);
+      await removeListItemWithOutbox({
+        cacheKey: CG_CACHE_KEYS.OPERATIONS,
+        entity: "cg.operations",
+        entityId: deleteId,
+        onlineMutator: () => AccountingOperationsService.deleteOperationComptable(deleteId),
+      });
       toast.success('Opération supprimée');
       await fetchOperations();
       if (selectedOperationId === deleteId) {
@@ -221,6 +251,8 @@ export default function OperationComptablePage() {
           <h2 className="text-xl font-semibold text-gray-700 mb-1">Opérations Comptables</h2>
           <p className="text-sm text-gray-500">Gérez les modèles d'opérations courantes (Ventes, Achats, Salaires).</p>
         </div>
+
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
         {error && (
           <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">

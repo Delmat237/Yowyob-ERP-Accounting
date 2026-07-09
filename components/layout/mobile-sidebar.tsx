@@ -16,10 +16,20 @@ import { applyAccountingModuleSwitch } from "@/lib/accounting-module-switch";
 import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
 import { resolveDashboardSidebarLinks, isDashboardPath } from "@/lib/accounting-dashboard-routes";
 import {
+  filterSidebarLinksForWorkspace,
+  isAccountingModuleDisabled,
   isModuleVisibleForChoice,
-  isWorkspaceChoiceRequired,
   resolveActiveModuleForPath,
 } from "@/lib/accounting-workspace-routes";
+import { ACCOUNTING_SETUP_PATH } from "@/lib/accounting-setup-complete";
+import { useAccountingSetupComplete } from "@/hooks/use-accounting-setup-complete";
+import {
+  getRememberedWorkspaceModule,
+  rememberWorkspaceModule,
+} from "@/lib/accounting-workspace-memory";
+import Link from "next/link";
+import { YowyobLogo } from "@/components/brand/yowyob-logo";
+import { getDefaultDashboardPath } from "@/lib/accounting-dashboard-routes";
 
 export function MobileSidebar() {
   const { isMobileOpen, setMobileOpen } = useSidebar();
@@ -28,42 +38,40 @@ export function MobileSidebar() {
   const { accountingRole } = useAuth();
   const { generale, analytique, load } = useAccountingSubscription();
   const { choice: effectiveChoice } = useEffectiveAccountingChoice();
+  const { isComplete: isSetupComplete } = useAccountingSetupComplete(
+    accountingRole === "RESPONSABLE_COMPTABLE" && generale,
+  );
 
   useEffect(() => {
     load();
   }, [load]);
-  const workspaceChoiceRequired = isWorkspaceChoiceRequired(generale, analytique);
 
-  const isModuleDisabled = (key: ModuleKey): boolean => {
-    if (key === "generale") {
-      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
-    }
-    if (key === "analytique") {
-      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
-    }
-    if (key === "configuration") {
-      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
-    }
-    if (key === "configurationAnalytique") {
-      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
-    }
-    if (key === "analyse") {
-      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
-    }
-    if (key === "clients" || key === "fournisseurs") {
-      return !generale || (workspaceChoiceRequired && effectiveChoice === "analytique");
-    }
-    if (key === "analyseAnalytique") {
-      return !analytique || (workspaceChoiceRequired && effectiveChoice === "generale");
-    }
-    return false;
-  };
+  const isModuleDisabled = (key: ModuleKey): boolean =>
+    isAccountingModuleDisabled(key, { generale, analytique, effectiveChoice });
 
   const handleModuleSwitch = (key: ModuleKey) => {
     if (isModuleDisabled(key)) return;
     applyAccountingModuleSwitch(key);
     setActiveModule(key);
   };
+
+  useEffect(() => {
+    if (effectiveChoice === "generale" || effectiveChoice === "analytique") {
+      rememberWorkspaceModule(effectiveChoice, activeModule);
+    }
+  }, [effectiveChoice, activeModule]);
+
+  useEffect(() => {
+    if (effectiveChoice !== "generale") return;
+    const caModules: ModuleKey[] = [
+      "analytique",
+      "analyseAnalytique",
+      "configurationAnalytique",
+    ];
+    if (caModules.includes(activeModule)) {
+      setActiveModule(getRememberedWorkspaceModule("generale"));
+    }
+  }, [effectiveChoice, activeModule, setActiveModule]);
 
   // Fermer le drawer lors d'un changement de route
   useEffect(() => {
@@ -91,30 +99,21 @@ export function MobileSidebar() {
 
   const filteredLinks: SidebarLink[] = isModuleDisabled(activeModule)
     ? []
-    : (activeModule === "dashboard"
-        ? resolveDashboardSidebarLinks({ generale, analytique, choice: effectiveChoice })
-        : currentModuleData.sidebarLinks.filter((link) => !isDashboardPath(link.href))
-      ).filter((link) => {
-        if (activeModule === "analytique" && effectiveChoice !== "analytique") return false;
-        if (activeModule === "analyseAnalytique" && effectiveChoice !== "analytique") return false;
-        if (activeModule === "analyse" && effectiveChoice === "analytique") return false;
-        if (activeModule === "configurationAnalytique" && effectiveChoice !== "analytique") {
-          return false;
-        }
-        if (
-          (activeModule === "generale" ||
-            activeModule === "configuration" ||
-            activeModule === "analyse" ||
-            activeModule === "clients" ||
-            activeModule === "fournisseurs") &&
-          effectiveChoice === "analytique"
-        ) {
-          return false;
-        }
-        if (!link.allowedRoles) return true;
-        if (!accountingRole) return false;
-        return link.allowedRoles.includes(accountingRole);
-      });
+    : filterSidebarLinksForWorkspace(
+        activeModule,
+        (activeModule === "dashboard"
+          ? resolveDashboardSidebarLinks({ generale, analytique, choice: effectiveChoice })
+          : currentModuleData.sidebarLinks.filter((link) => !isDashboardPath(link.href))
+        ).filter((link) => {
+          if (link.href === ACCOUNTING_SETUP_PATH && isSetupComplete) return false;
+          if (!link.allowedRoles) return true;
+          if (!accountingRole) return false;
+          return link.allowedRoles.includes(accountingRole);
+        }),
+        effectiveChoice,
+        generale,
+        analytique,
+      );
 
   const visibleModules = Object.entries(modules).filter(([key, module]) => {
     if (!isModuleVisibleForChoice(key, effectiveChoice, generale, analytique)) {
@@ -130,6 +129,18 @@ export function MobileSidebar() {
       <SheetContent side="left" className="p-0 w-[300px] flex flex-row">
         {/* Colonne icônes modules — identique à la sidebar desktop */}
         <div className="w-16 flex-shrink-0 flex flex-col items-center py-4 border-r bg-white">
+          <Link
+            href={getDefaultDashboardPath({
+              generale,
+              analytique,
+              choice: effectiveChoice,
+            })}
+            className="mb-4 flex shrink-0 items-center justify-center"
+            aria-label="Yowyob ERP — accueil"
+            onClick={() => setMobileOpen(false)}
+          >
+            <YowyobLogo size="sm" />
+          </Link>
           <TooltipProvider delayDuration={0}>
             {visibleModules.map(([key, module]) => {
               const Icon = module.icon;

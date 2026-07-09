@@ -1,0 +1,623 @@
+% =============================================================================
+% Guide d'implémentation — Mode hors ligne (Offline)
+% Yowyob ERP — Comptabilité Générale et Analytique
+% =============================================================================
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+
+\geometry{margin=2.5cm}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize Guide Offline — Yowyob ERP}
+\fancyhead[R]{\footnotesize Backend \& Frontend}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\textbf{YOWYOB ERP}\\[0.4em]Comptabilité Générale et Analytique\par}
+  \vspace{1.8cm}
+  {\Huge\textbf{Guide d'implémentation\\[0.35em]Mode hors ligne (Offline)}\par}
+  \vspace{1.2cm}
+  {\large Spécification technique Backend et Frontend\par}
+  \vspace{2.2cm}
+  \begin{tabular}{rl}
+    \textbf{Version} & 1.0 \\
+    \textbf{Date} & Juillet 2026 \\
+    \textbf{Public} & Développeurs frontend, développeurs backend, architectes \\
+    \textbf{Statut} & Document de référence pour la mise en œuvre \\
+  \end{tabular}
+  \vfill
+  {\small Ce document décrit l'architecture, les contrats API et les procédures d'implémentation pour un fonctionnement \emph{online-first avec repli offline}.\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\chapter{Introduction}
+% =============================================================================
+
+\section{Objectif}
+
+Ce guide définit comment permettre à un utilisateur de continuer à travailler dans l'application web lorsque la connexion réseau est indisponible, puis de retrouver automatiquement l'ensemble de son travail dans l'application une fois la connexion rétablie.
+
+Le principe retenu est le suivant :
+
+\begin{itemize}
+  \item \textbf{En ligne} : communication systématique avec le backend (source de vérité serveur).
+  \item \textbf{Hors ligne} : bascule transparente vers une mémoire locale persistante.
+  \item \textbf{Retour en ligne} : synchronisation automatique de la file d'attente vers le backend.
+\end{itemize}
+
+\section{Périmètre}
+
+\begin{longtable}{@{}p{4cm}p{9cm}@{}}
+\hline
+\textbf{Inclus} & Détection réseau, cache local, file d'attente (outbox), moteur de sync, contrat API backend, gestion des conflits, indicateur discret, pilote écritures analytiques \\
+\hline
+\textbf{Hors périmètre initial} & PWA complète (Service Worker), sync multi-appareils temps réel, offline sur pièces jointes volumineuses \\
+\hline
+\end{longtable}
+
+\section{Principes directeurs}
+
+\begin{enumerate}
+  \item \textbf{Online-first} : tant que le réseau et l'API répondent, toute lecture et écriture passe par le backend.
+  \item \textbf{Offline en dernier recours} : le stockage local n'est activé que si la connexion ou l'API est indisponible.
+  \item \textbf{Transparence} : l'utilisateur n'est pas bloqué ; un indicateur discret signale les éléments en attente de synchronisation.
+  \item \textbf{Pas de perte} : aucune donnée locale n'est supprimée avant accusé de réception serveur.
+  \item \textbf{Idempotence} : le backend doit accepter le rejeu d'opérations sans créer de doublons.
+\end{enumerate}
+
+% =============================================================================
+\chapter{Architecture globale}
+% =============================================================================
+
+\section{Vue d'ensemble}
+
+\begin{verbatim}
+┌─────────────────────────────────────────────────────────────────┐
+│                        INTERFACE UTILISATEUR                     │
+└───────────────────────────────┬─────────────────────────────────┘
+                                │
+                    ┌───────────▼───────────┐
+                    │  Couche Réseau        │
+                    │  (détection online)   │
+                    └───────────┬───────────┘
+                                │
+              ┌─────────────────┴─────────────────┐
+              │ EN LIGNE                        │ HORS LIGNE
+              ▼                                 ▼
+    ┌─────────────────┐               ┌─────────────────┐
+    │  API Backend    │               │  IndexedDB      │
+    │  (REST)         │               │  Cache + Outbox │
+    └────────┬────────┘               └────────┬────────┘
+             │                                  │
+             └──────────────┬───────────────────┘
+                            ▼
+                 ┌─────────────────────┐
+                 │  Moteur de sync     │
+                 │  (flush outbox)     │
+                 └─────────────────────┘
+\end{verbatim}
+
+\section{Composants frontend}
+
+\begin{longtable}{@{}p{3.5cm}p{9.5cm}@{}}
+\hline
+\textbf{Composant} & \textbf{Rôle} \\
+\hline
+
+\texttt{network-status} & Détecte online/offline via \texttt{navigator.onLine}, événements navigateur et échecs API consécutifs \\
+\texttt{offline/db} & Schéma IndexedDB (Dexie) : entités, outbox, métadonnées \\
+\texttt{offline/outbox} & Enregistre chaque mutation (CREATE, UPDATE, DELETE) en attente \\
+\texttt{offline/sync-engine} & Rejoue la file d'attente au retour en ligne \\
+\texttt{offline/handlers} & Adaptateurs par type d'entité (écritures analytiques, etc.) \\
+\texttt{use-network-status} & Hook React exposant \texttt{isOnline}, \texttt{pendingCount} \\
+\texttt{OfflineProvider} & Provider global monté dans le layout dashboard \\
+\hline
+\end{longtable}
+
+\section{Composants backend}
+
+\begin{longtable}{@{}p{3.5cm}p{9.5cm}@{}}
+\hline
+\textbf{Composant} & \textbf{Rôle} \\
+\hline
+
+API REST CRUD & Endpoints standards par entité métier \\
+Idempotence & Acceptation de \texttt{clientMutationId} ou en-tête \texttt{Idempotency-Key} \\
+Versionnement & Champ \texttt{updatedAt} et/ou \texttt{version} sur chaque entité \\
+Sync delta & Endpoint \texttt{GET ?since=timestamp} (phase 2) \\
+Gestion conflits & Réponse HTTP 409 avec détail structuré \\
+Audit & Journal des opérations comptables \\
+\hline
+\end{longtable}
+
+% =============================================================================
+\chapter{Détection de l'état réseau}
+% =============================================================================
+
+\section{Signaux utilisés}
+
+\begin{enumerate}
+  \item \texttt{navigator.onLine} : détection immédiate de coupure réseau locale.
+  \item Événements \texttt{window.online} et \texttt{window.offline}.
+  \item Compteur d'échecs API consécutifs (timeout, \texttt{Failed to fetch}, status 0).
+  \item Repassage en mode online uniquement après un appel API réussi.
+\end{enumerate}
+
+\section{Distinction erreur réseau vs erreur métier}
+
+\begin{longtable}{@{}p{3cm}p{4cm}p{6cm}@{}}
+\hline
+\textbf{Type} & \textbf{Exemples} & \textbf{Comportement} \\
+\hline
+
+Réseau & Timeout, fetch failed, status 0 & Bascule offline, cache + outbox \\
+Métier & 422 validation, 403 interdit & Message utilisateur, pas de bascule offline \\
+Serveur & 500, 502, 503 & Retry avec backoff, pas de bascule immédiate \\
+Conflit & 409 & Marquer conflit, conserver donnée locale \\
+\hline
+\end{longtable}
+
+\section{Algorithme de décision}
+
+\begin{verbatim}
+function shouldUseOffline(): boolean {
+  if (!navigator.onLine) return true;
+  if (consecutiveNetworkFailures >= 2) return true;
+  return false;
+}
+\end{verbatim}
+
+% =============================================================================
+\chapter{Implémentation Frontend}
+% =============================================================================
+
+\section{Stockage local : IndexedDB}
+
+\textbf{Ne pas utiliser} \texttt{localStorage} comme stockage principal offline (limite 5 Mo, pas de requêtes structurées).
+
+\subsection{Schéma Dexie (version 1)}
+
+\begin{verbatim}
+entities  : key, entity, entityId, updatedAt
+outbox    : id, entity, entityId, status, createdAt
+meta      : key
+\end{verbatim}
+
+\subsection{Table \texttt{entities}}
+
+Cache des données métier pour consultation hors ligne.
+
+\begin{verbatim}
+{
+  key: "ecriture_analytique:ea-uuid",
+  entity: "ecriture_analytique",
+  entityId: "ea-uuid",
+  data: { ... },
+  updatedAt: "2026-07-08T12:00:00Z",
+  syncStatus: "synced" | "pending" | "local_only"
+}
+\end{verbatim}
+
+\subsection{Table \texttt{outbox}}
+
+File d'attente des opérations à envoyer au backend.
+
+\begin{verbatim}
+{
+  id: "op-uuid",
+  entity: "ecriture_analytique",
+  action: "CREATE" | "UPDATE" | "DELETE",
+  entityId: "ea-uuid",
+  payload: { ... },
+  clientMutationId: "cm-uuid",
+  createdAt: "2026-07-08T12:00:00Z",
+  status: "pending" | "syncing" | "done" | "failed" | "conflict",
+  retries: 0,
+  lastError: null
+}
+\end{verbatim}
+
+\section{Flux de lecture}
+
+\begin{enumerate}
+  \item Si \textbf{en ligne} : appel API $\rightarrow$ mise à jour cache IndexedDB $\rightarrow$ affichage.
+  \item Si \textbf{hors ligne} : lecture cache IndexedDB $\rightarrow$ affichage.
+  \item Si API échoue (réseau) : lecture cache en repli, bascule offline.
+\end{enumerate}
+
+\section{Flux d'écriture}
+
+\begin{enumerate}
+  \item Validation métier légère côté frontend (champs obligatoires, formats).
+  \item Si \textbf{en ligne} : envoi API $\rightarrow$ si succès, mise à jour cache ; si échec réseau $\rightarrow$ étape 3.
+  \item Si \textbf{hors ligne} ou échec réseau :
+    \begin{itemize}
+      \item Sauvegarde immédiate dans IndexedDB.
+      \item Ajout dans outbox (status \texttt{pending}).
+      \item Mise à jour UI (optimistic).
+    \end{itemize}
+  \item Au retour en ligne : \texttt{syncEngine.flush()} rejoue l'outbox dans l'ordre chronologique.
+\end{enumerate}
+
+\section{Règle d'or}
+
+\begin{quote}
+\textbf{Ne jamais supprimer une entrée de l'outbox ni une entité locale tant que le serveur n'a pas confirmé la réception (HTTP 200/201).}
+\end{quote}
+
+\section{Moteur de synchronisation}
+
+\subsection{Algorithme flush}
+
+\begin{enumerate}
+  \item Récupérer les opérations \texttt{outbox} où \texttt{status = pending} ou \texttt{failed} (retries < 5), triées par \texttt{createdAt}.
+  \item Pour chaque opération :
+    \begin{itemize}
+      \item Passer en \texttt{syncing}.
+      \item Appeler le handler de l'entité (\texttt{push}).
+      \item Si succès : \texttt{done}, mettre à jour \texttt{entities.syncStatus = synced}.
+      \item Si erreur réseau : \texttt{pending}, incrémenter \texttt{retries}, arrêter le flush.
+      \item Si 409 conflit : \texttt{conflict}, notifier discrètement.
+      \item Si 422 métier : \texttt{failed}, conserver localement.
+    \end{itemize}
+  \item Émettre événement \texttt{sync:complete} avec le nombre d'opérations synchronisées.
+\end{enumerate}
+
+\subsection{Backoff}
+
+\begin{longtable}{@{}cc@{}}
+\hline
+\textbf{Tentative} & \textbf{Délai avant retry} \\
+\hline
+1 & 0 s (immédiat au online) \\
+2 & 2 s \\
+3 & 5 s \\
+4 & 15 s \\
+5 & 30 s \\
+\hline
+\end{longtable}
+
+\section{Intégration dans l'application existante}
+
+\subsection{Layout dashboard}
+
+Monter \texttt{OfflineProvider} qui :
+\begin{itemize}
+  \item initialise IndexedDB ;
+  \item écoute online/offline ;
+  \item lance le flush au retour en ligne ;
+  \item expose le nombre d'opérations en attente.
+\end{itemize}
+
+\subsection{useAutoRefresh}
+
+Désactiver le polling quand hors ligne :
+
+\begin{verbatim}
+useAutoRefresh(callback, deps, { enabled: isOnline });
+\end{verbatim}
+
+\subsection{Indicateur utilisateur}
+
+Point discret dans le header :
+\begin{itemize}
+  \item Vert : en ligne, rien en attente.
+  \item Orange : hors ligne OU opérations en attente de sync.
+  \item Tooltip : « 3 élément(s) en attente de synchronisation ».
+\end{itemize}
+
+\section{Pilote : écritures analytiques}
+
+Première entité migrée :
+\begin{itemize}
+  \item Remplacement de \texttt{localStorage} par IndexedDB.
+  \item Migration automatique des données existantes au premier chargement.
+  \item Chaque CREATE/UPDATE/DELETE alimente l'outbox.
+  \item Handler sync prêt à brancher l'API backend quand disponible.
+\end{itemize}
+
+% =============================================================================
+\chapter{Implémentation Backend}
+% =============================================================================
+
+\section{Endpoints requis — Comptabilité analytique}
+
+\subsection{Écritures analytiques}
+
+\begin{longtable}{@{}p{2cm}p{5.5cm}p{5cm}@{}}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+
+GET & \texttt{/api/accounting/analytic-entries} & Liste (filtres : statut, période) \\
+GET & \texttt{/api/accounting/analytic-entries/\{id\}} & Détail \\
+POST & \texttt{/api/accounting/analytic-entries} & Création (accepte \texttt{clientId}) \\
+PUT & \texttt{/api/accounting/analytic-entries/\{id\}} & Mise à jour \\
+DELETE & \texttt{/api/accounting/analytic-entries/\{id\}} & Suppression \\
+POST & \texttt{/api/accounting/analytic-entries/\{id\}/validate} & Validation \\
+POST & \texttt{/api/accounting/analytic-entries/\{id\}/reject} & Rejet \\
+GET & \texttt{/api/accounting/analytic-entries?since=\{iso\}} & Sync delta (phase 2) \\
+\hline
+\end{longtable}
+
+\subsection{Journaux analytiques}
+
+\begin{longtable}{@{}p{2cm}p{5.5cm}p{5cm}@{}}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} & \textbf{Description} \\
+\hline
+
+GET & \texttt{/api/accounting/analytic-journals} & Liste \\
+POST & \texttt{/api/accounting/analytic-journals} & Création \\
+PUT & \texttt{/api/accounting/analytic-journals/\{id\}} & Mise à jour \\
+DELETE & \texttt{/api/accounting/analytic-journals/\{id\}} & Suppression \\
+\hline
+\end{longtable}
+
+\section{Contrat de création avec idempotence}
+
+\subsection{Requête POST}
+
+\begin{verbatim}
+POST /api/accounting/analytic-entries
+Headers:
+  Authorization: Bearer {token}
+  X-Organization-Id: {orgId}
+  X-Tenant-Id: {tenantId}
+  Idempotency-Key: {clientMutationId}
+
+Body:
+{
+  "clientId": "ea-uuid-genere-cote-client",
+  "journalId": "...",
+  "dateEffet": "2026-07-08",
+  "numeroPiece": "ECRIT-ANALYTIQUE-2026-0001",
+  "libelleOperation": "...",
+  "centreDestinationId": "...",
+  "axeId": "...",
+  "exerciceAnalytiqueId": "...",
+  "natureChargeId": "...",
+  "montant": 450000,
+  "lignes": [ ... ],
+  "origine": "MANUELLE"
+}
+\end{verbatim}
+
+\subsection{Réponse succès}
+
+\begin{verbatim}
+HTTP 201 Created
+{
+  "success": true,
+  "data": {
+    "id": "serveur-uuid",
+    "clientId": "ea-uuid-genere-cote-client",
+    "version": 1,
+    "updatedAt": "2026-07-08T12:00:00Z",
+    ...
+  }
+}
+\end{verbatim}
+
+\subsection{Réponse idempotente (rejeu)}
+
+Si \texttt{Idempotency-Key} déjà traité :
+
+\begin{verbatim}
+HTTP 200 OK
+{
+  "success": true,
+  "data": { ... entité existante ... },
+  "message": "ALREADY_PROCESSED"
+}
+\end{verbatim}
+
+\section{Versionnement et conflits}
+
+Chaque entité modifiable doit exposer :
+\begin{itemize}
+  \item \texttt{version} (entier incrémenté) ou \texttt{updatedAt} (ISO 8601).
+  \item Le PUT/PATCH doit accepter \texttt{If-Match: \{version\}} ou \texttt{expectedVersion} dans le body.
+\end{itemize}
+
+En cas de conflit :
+
+\begin{verbatim}
+HTTP 409 Conflict
+{
+  "success": false,
+  "code": "VERSION_CONFLICT",
+  "message": "L'entité a été modifiée par un autre utilisateur",
+  "data": {
+    "serverVersion": { ... état serveur ... },
+    "clientVersion": { ... état client ... }
+  }
+}
+\end{verbatim}
+
+\section{Politique de conflit recommandée (ERP comptable)}
+
+\begin{longtable}{@{}p{4cm}p{8cm}@{}}
+\hline
+\textbf{Situation} & \textbf{Politique} \\
+\hline
+
+Brouillon local jamais synchronisé & Client gagne (première sync) \\
+Écriture déjà validée côté serveur & Serveur gagne \\
+Modification concurrente sur brouillon & Résolution manuelle (UI) \\
+Suppression serveur + modification locale & Conflit, conservation locale \\
+\hline
+\end{longtable}
+
+\section{Health check}
+
+Endpoint léger pour vérifier la disponibilité API au retour en ligne :
+
+\begin{verbatim}
+GET /api/health
+Response: { "status": "UP" }
+\end{verbatim}
+
+% =============================================================================
+\chapter{Garanties et limites}
+% =============================================================================
+
+\section{Ce qui est garanti (niveau production)}
+
+\begin{itemize}
+  \item Survit au rechargement de page (IndexedDB persistant).
+  \item Survit à une coupure réseau pendant la saisie.
+  \item Sync automatique au retour en ligne.
+  \item Pas de doublon si idempotence backend respectée.
+  \item Opérations en attente visibles (compteur discret).
+\end{itemize}
+
+\section{Ce qui n'est pas garanti à 100\%}
+
+\begin{itemize}
+  \item Utilisateur vide le cache navigateur $\rightarrow$ perte du local non synchronisé.
+  \item Navigation privée sans persistance.
+  \item Multi-appareils sans sync temps réel.
+  \item Quota IndexedDB dépassé (gros fichiers).
+  \item Conflits non résolus manuellement.
+\end{itemize}
+
+\section{Niveaux de fiabilité}
+
+\begin{longtable}{@{}cp{9cm}@{}}
+\hline
+\textbf{Niveau} & \textbf{Description} \\
+\hline
+A & localStorage seul, pas de backend $\rightarrow$ risque élevé \\
+B & IndexedDB + outbox, un navigateur $\rightarrow$ très bon \\
+C & B + backend idempotent + conflits gérés $\rightarrow$ quasi zéro perte \\
+D & Absolu sur le web $\rightarrow$ impossible \\
+\hline
+\end{longtable}
+
+% =============================================================================
+\chapter{Plan de déploiement}
+% =============================================================================
+
+\section{Phase 1 — Fondations (actuelle)}
+
+\begin{itemize}
+  \item IndexedDB + outbox + détection réseau.
+  \item OfflineProvider dans le layout.
+  \item Pilote écritures analytiques.
+  \item Migration localStorage $\rightarrow$ IndexedDB.
+  \item Indicateur discret dans le header.
+\end{itemize}
+
+\section{Phase 2 — Lecture offline CG}
+
+\begin{itemize}
+  \item Cache des listes comptabilité générale (écritures, plan comptable, journaux).
+  \item Lecture cache en repli hors ligne.
+\end{itemize}
+
+\section{Phase 3 — Écriture offline CG}
+
+\begin{itemize}
+  \item APIs backend avec idempotence.
+  \item Handlers sync pour écritures comptables (brouillons d'abord).
+\end{itemize}
+
+\section{Phase 4 — PWA}
+
+\begin{itemize}
+  \item Service Worker pour shell applicatif.
+  \item Ouverture de l'app sans réseau après première visite.
+\end{itemize}
+
+% =============================================================================
+\chapter{Tests et validation}
+% =============================================================================
+
+\section{Scénarios de test}
+
+\begin{enumerate}
+  \item \textbf{Saisie hors ligne} : couper réseau, créer écriture, recharger page $\rightarrow$ donnée présente.
+  \item \textbf{Retour en ligne} : rétablir réseau $\rightarrow$ outbox vidée, compteur à 0.
+  \item \textbf{Échec API} : API down mais \texttt{onLine=true} $\rightarrow$ bascule offline après 2 échecs.
+  \item \textbf{Idempotence} : rejouer même \texttt{clientMutationId} $\rightarrow$ pas de doublon.
+  \item \textbf{Conflit 409} : modification concurrente $\rightarrow$ statut conflict, donnée locale conservée.
+  \item \textbf{Migration} : données localStorage existantes $\rightarrow$ présentes dans IndexedDB.
+\end{enumerate}
+
+\section{Critères d'acceptation}
+
+\begin{itemize}
+  \item Aucun loader bloquant en mode offline.
+  \item Polling AJAX désactivé hors ligne.
+  \item Indicateur visible si opérations en attente.
+  \item Aucune perte sur rechargement page en offline.
+  \item Sync silencieuse au retour en ligne (toast optionnel).
+\end{itemize}
+
+% =============================================================================
+\chapter{Annexes}
+% =============================================================================
+
+\section{Arborescence fichiers frontend}
+
+\begin{verbatim}
+lib/offline/
+  db.ts
+  network-status.ts
+  outbox.ts
+  sync-engine.ts
+  migrate-local-storage.ts
+  handlers/
+    ecriture-analytique-sync.ts
+hooks/
+  use-network-status.ts
+  use-offline-sync.ts
+components/offline/
+  offline-provider.tsx
+  offline-status-indicator.tsx
+\end{verbatim}
+
+\section{Événements internes}
+
+\begin{longtable}{@{}p{4cm}p{8cm}@{}}
+\hline
+\textbf{Événement} & \textbf{Déclencheur} \\
+\hline
+
+\texttt{network:offline} & Coupure réseau ou 2+ échecs API \\
+\texttt{network:online} & Événement online + API OK \\
+\texttt{sync:start} & Début flush outbox \\
+\texttt{sync:complete} & Fin flush (avec count) \\
+\texttt{sync:conflict} & Opération en conflit 409 \\
+\hline
+\end{longtable}
+
+\section{Références}
+
+\begin{itemize}
+  \item MDN — \texttt{navigator.onLine}, IndexedDB API
+  \item Dexie.js — wrapper IndexedDB
+  \item Pattern Outbox — microservices / offline sync
+  \item RFC — Idempotency-Key (pratique courante REST)
+\end{itemize}
+
+\end{document}

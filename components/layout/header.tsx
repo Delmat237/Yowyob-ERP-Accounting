@@ -18,6 +18,7 @@ import { NotificationBell } from "../notifications/notification-bell";
 import { useAuth } from "@/hooks/use-auth";
 import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
 import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
+import { OfflineStatusIndicator } from "@/components/offline/offline-status-indicator";
 
 // ─── Contenu du centre d'aide par rôle ───────────────────────────────────────
 
@@ -234,6 +235,7 @@ export function Header() {
           </DropdownMenu>
         </div>
 
+        <OfflineStatusIndicator />
         <NotificationBell />
         <UserNav />
       </div>

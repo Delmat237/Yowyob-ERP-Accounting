@@ -30,6 +30,16 @@ import {
 import { Check, Eye, RefreshCw, Search, XCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import {
+  validateEcritureComptableOffline,
+  rejectEcritureComptableOffline,
+  mergeServerEcrituresIntoCache,
+} from '@/lib/offline/cg-ecritures-offline';
+import { PlanComptableDto } from '@/src/lib2/models/PlanComptableDto';
 
 export default function AccountingValidationPage() {
   const [ecritures, setEcritures] = useState<EcritureComptableDto[]>([]);
@@ -39,6 +49,8 @@ export default function AccountingValidationPage() {
   const [activeTab, setActiveTab] = useState("list");
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   // Reject dialog state
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; entry: EcritureComptableDto | null }>({
@@ -48,44 +60,68 @@ export default function AccountingValidationPage() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setIsLoading(true);
+  const fetchData = useCallback(async (options?: AutoRefreshOptions) => {
+    if (!options?.silent) setIsLoading(true);
     try {
-      const [entriesRes, journalsRes, accountsRes] = await Promise.all([
-        AccountingEntriesService.getNonValidated(),
-        AccountingJournalManagementService.getAllJournals(),
-        AccountingPlanComptableService.getAllPlanComptables()
+      const [entriesResult, journalsResult, accountsResult] = await Promise.all([
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.ECRITURES_NON_VALIDATED,
+          fetcher: () => AccountingEntriesService.getNonValidated(),
+          emptyValue: [] as EcritureComptableDto[],
+        }),
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.JOURNAUX,
+          fetcher: () => AccountingJournalManagementService.getAllJournals(),
+          emptyValue: [] as JournalComptableDto[],
+        }),
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.PLAN_COMPTABLE,
+          fetcher: () => AccountingPlanComptableService.getAllPlanComptables(),
+          emptyValue: [] as PlanComptableDto[],
+        }),
       ]);
 
-      const fetchedJournals = Array.isArray(journalsRes.data) ? journalsRes.data : [];
+      const fetchedJournals = journalsResult.data;
       setJournals(fetchedJournals);
+      setAccounts(accountsResult.data.map((a) => ({ id: a.id!, noCompte: a.noCompte })));
 
-      const fetchedAccounts = Array.isArray(accountsRes.data) ? accountsRes.data : [];
-      setAccounts(fetchedAccounts.map(a => ({ id: a.id!, noCompte: a.noCompte })));
-
-      const fetchedEntries = Array.isArray(entriesRes.data) ? entriesRes.data : [];
-      const enrichedEntries = fetchedEntries.map(e => ({
+      const merged = await mergeServerEcrituresIntoCache(entriesResult.data);
+      const nonValidated = merged.filter((e) => !e.validee && e.actif !== false);
+      const enrichedEntries = nonValidated.map((e) => ({
         ...e,
-        journalComptableLibelle: fetchedJournals.find(j => j.id === e.journalComptableId)?.libelle || e.journalComptableId
+        journalComptableLibelle:
+          fetchedJournals.find((j) => j.id === e.journalComptableId)?.libelle || e.journalComptableId,
       }));
 
       setEcritures(enrichedEntries);
+      setUsingCache(
+        entriesResult.fromCache || journalsResult.fromCache || accountsResult.fromCache,
+      );
+      setCacheTimestamp(
+        entriesResult.cachedAt ?? journalsResult.cachedAt ?? accountsResult.cachedAt,
+      );
     } catch (error) {
       console.error("Failed to fetch data:", error);
       toast.error("Erreur lors du chargement des écritures");
     } finally {
-      setIsLoading(false);
+      if (!options?.silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
   }, [fetchData]);
+
+  useAutoRefresh(fetchData, [fetchData]);
 
   const handleValidate = async (id: string) => {
     try {
-      await AccountingEntriesService.validateEcriture(id);
-      toast.success("Écriture validée avec succès");
+      const { queued } = await validateEcritureComptableOffline(id);
+      if (queued) {
+        toast.success("Validation en attente de synchronisation");
+      } else {
+        toast.success("Écriture validée avec succès");
+      }
 
       setEcritures((prev) => prev.filter((e) => e.id !== id));
 
@@ -93,6 +129,7 @@ export default function AccountingValidationPage() {
         setSelectedEcritureId(null);
         setActiveTab("list");
       }
+      void fetchData({ silent: true });
     } catch (error) {
       console.error("Failed to validate ecriture:", error);
       toast.error("Erreur lors de la validation");
@@ -119,18 +156,11 @@ export default function AccountingValidationPage() {
     setIsRejecting(true);
     const entry = rejectDialog.entry;
     try {
-      // Update the entry notes with the rejection reason
-      const updatedEntry = {
-        ...entry,
-        notes: `${entry.notes || ''}\n[REJETÉ]: ${rejectionReason}`.trim(),
-      };
+      const { queued } = await rejectEcritureComptableOffline(entry, rejectionReason.trim());
 
-      await AccountingEntriesService.updateEcriture(entry.id!, updatedEntry);
-
-      // Deactivate the entry
-      await AccountingEntriesService.deactivate(entry.id!);
-
-      toast.success('Écriture rejetée et désactivée');
+      toast.success(
+        queued ? "Rejet en attente de synchronisation" : "Écriture rejetée et désactivée",
+      );
       setEcritures((prev) => prev.filter((e) => e.id !== entry.id));
 
       if (selectedEcritureId === entry.id) {
@@ -139,6 +169,7 @@ export default function AccountingValidationPage() {
       }
 
       closeRejectDialog();
+      void fetchData({ silent: true });
     } catch (error) {
       console.error("Failed to reject ecriture:", error);
       toast.error("Erreur lors du rejet de l'écriture");
@@ -193,6 +224,8 @@ export default function AccountingValidationPage() {
           <h2 className="text-xl font-semibold text-gray-700 mb-1">Validation des Écritures</h2>
           <p className="text-sm text-gray-500">Validez ou rejetez les écritures comptables en attente.</p>
         </div>
+
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 bg-white rounded-t-lg shadow">

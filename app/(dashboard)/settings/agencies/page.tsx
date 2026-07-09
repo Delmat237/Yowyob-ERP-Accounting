@@ -17,11 +17,16 @@ import {
 } from "@/components/ui/table";
 import { AgenciesService } from "@/src/lib/services/AgenciesService";
 import { Agency } from "@/src/lib/models/Agency";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function AgenciesSettingsPage() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   useEffect(() => {
     let cancelled = false;
@@ -33,8 +38,16 @@ export default function AgenciesSettingsPage() {
           if (!cancelled) setAgencies([]);
           return;
         }
-        const data = await AgenciesService.getAgencies(orgId);
-        if (!cancelled) setAgencies(data || []);
+        const result = await fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.agencies(orgId),
+          fetcher: () => AgenciesService.getAgencies(orgId),
+          emptyValue: [] as Agency[],
+        });
+        if (!cancelled) {
+          setAgencies(result.data);
+          setUsingCache(result.fromCache);
+          setCacheTimestamp(result.cachedAt);
+        }
       } catch (error) {
         console.error(error);
         if (!cancelled) toast.error("Impossible de charger les agences & sites.");
@@ -63,6 +76,7 @@ export default function AgenciesSettingsPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
           Agences &amp; Sites

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Rocket, CheckCircle2, AlertTriangle, Circle, Loader2, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import {
     type AccountingSetupRequest,
     type AccountingSetupStepResult,
 } from "@/src/lib2/services/AccountingSetupService";
+import { isAccountingSetupComplete, writeCachedAccountingSetupComplete } from "@/lib/accounting-setup-complete";
 
 type StepKey = "planComptable" | "journaux" | "exercice" | "periodes" | "operations";
 
@@ -43,6 +45,7 @@ function StepIcon({ status }: { status?: string }) {
 }
 
 export default function AccountingSetupPage() {
+    const router = useRouter();
     const currentYear = new Date().getFullYear();
     const [year, setYear] = useState<number>(currentYear);
     const [selections, setSelections] = useState<Record<StepKey, boolean>>({
@@ -65,13 +68,21 @@ export default function AccountingSetupPage() {
                 if (s.key) map[s.key] = s;
             });
             setStatusByKey(map);
+
+            const complete = isAccountingSetupComplete(res?.data?.steps);
+            const orgId = typeof window !== 'undefined' ? localStorage.getItem('organization_id') : null;
+            writeCachedAccountingSetupComplete(complete, orgId);
+
+            if (complete) {
+                router.replace("/accounting/chart-of-accounts");
+            }
         } catch (err: any) {
             const reason = err?.body?.message || err?.message || "Impossible de charger l'état d'initialisation.";
             toast.error(reason);
         } finally {
             setLoadingStatus(false);
         }
-    }, []);
+    }, [router]);
 
     useEffect(() => {
         fetchStatus(year);
@@ -121,7 +132,13 @@ export default function AccountingSetupPage() {
                     duration: 6000,
                 });
             }
-            // Refresh the authoritative status from the backend.
+            if (isAccountingSetupComplete(steps)) {
+                const orgId = typeof window !== 'undefined' ? localStorage.getItem('organization_id') : null;
+                writeCachedAccountingSetupComplete(true, orgId);
+                router.replace("/accounting/chart-of-accounts");
+                return;
+            }
+
             fetchStatus(year);
         } catch (err: any) {
             const reason = err?.body?.message || err?.message || "Échec de l'initialisation.";

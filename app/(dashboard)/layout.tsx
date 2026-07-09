@@ -3,7 +3,7 @@
 import { Header } from "@/components/layout/header";
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
-import React from "react";
+import React, { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ComposeWindow } from "@/components/ui/compose-window";
 import { AccountingChoiceModal } from "@/components/accounting/accounting-choice-modal";
@@ -12,6 +12,8 @@ import { useAccountingAccessGuard } from "@/hooks/use-accounting-access-guard";
 import { canShowDashboardRouteContent } from "@/lib/accounting-workspace-routes";
 import { useEffectiveAccountingChoice } from "@/hooks/use-effective-accounting-choice";
 import { CustomPageLoader } from "@/components/ui/custom-page-loader";
+import { OfflineProvider } from "@/components/offline/offline-provider";
+import { useAccountingSubscription } from "@/hooks/use-accounting-subscription";
 
 export default function DashboardLayout({
   children,
@@ -21,7 +23,16 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const authStatus = useRequireAuth();
   const { choice, generale, analytique, subscriptionLoaded } = useEffectiveAccountingChoice();
+  const loadSubscription = useAccountingSubscription((s) => s.load);
   useAccountingAccessGuard();
+
+  useEffect(() => {
+    void loadSubscription();
+  }, [loadSubscription]);
+
+  if (authStatus === "redirecting") {
+    return <CustomPageLoader message="Redirection vers la connexion..." />;
+  }
 
   if (authStatus !== "allowed") {
     return <CustomPageLoader message="Vérification de la session..." />;
@@ -45,6 +56,7 @@ export default function DashboardLayout({
   }
 
   return (
+    <OfflineProvider>
     <div className="h-screen w-screen overflow-hidden flex bg-[#f6f8fc]">
       <Sidebar />
       <MobileSidebar />
@@ -55,5 +67,6 @@ export default function DashboardLayout({
       <ComposeWindow />
       <AccountingChoiceModal />
     </div>
+    </OfflineProvider>
   );
 }

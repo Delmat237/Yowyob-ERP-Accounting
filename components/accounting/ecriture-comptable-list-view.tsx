@@ -242,9 +242,16 @@ export const EcritureComptableListView: React.FC<EcritureComptableListViewProps>
                           </button>
                         </div>
                       ) : (
-                        <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200">
-                          Brouillon
-                        </Badge>
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge variant="secondary" className="bg-gray-100 text-gray-600 hover:bg-gray-200">
+                            Brouillon
+                          </Badge>
+                          {(ecriture as { _offlinePending?: boolean })._offlinePending && (
+                            <Badge className="bg-amber-100 text-amber-800 border-none text-[10px]">
+                              Sync en attente
+                            </Badge>
+                          )}
+                        </div>
                       )}
                     </TableCell>
                     {!readOnly && (

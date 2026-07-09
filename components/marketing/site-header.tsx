@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { LoginModal } from '@/components/landing/login-modal';
+import { YowyobLogo } from '@/components/brand/yowyob-logo';
 
 // Liens de navigation principaux. Les ancres pointent vers la page d'accueil
 // (préfixe "/#...") afin de fonctionner depuis n'importe quelle page marketing.
@@ -27,10 +28,7 @@ export function SiteHeader() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">KSM</h1>
-                <p className="text-xs text-gray-500">Solution Comptable</p>
-              </div>
+              <YowyobLogo size="md" showSubtitle subtitle="Solution Comptable" priority />
             </Link>
 
             {/* Desktop Navigation */}

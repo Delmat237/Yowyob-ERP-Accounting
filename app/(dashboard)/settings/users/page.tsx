@@ -48,6 +48,9 @@ import { OrganizationMember } from "@/src/lib/models/OrganizationMember";
 import { Role } from "@/src/lib/models/Role";
 import { Agency } from "@/src/lib/models/Agency";
 import { getRoleLabel } from "@/src/lib/auth/roles";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function UsersSettingsPage() {
   const { user } = useAuth();
@@ -58,6 +61,8 @@ export default function UsersSettingsPage() {
   const [agencies, setAgencies] = useState<Agency[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
   
   // Dialog / Form States
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -86,34 +91,36 @@ export default function UsersSettingsPage() {
     try {
       if (!orgId) return;
 
-      // La liste des membres est la donnée critique de la page. Les rôles et
-      // les agences ne servent qu'à la modale d'invitation : on les charge en
-      // "best-effort" pour qu'un échec (ex. 403 si l'utilisateur n'est pas
-      // Owner) ne masque pas la liste des collaborateurs.
-      const [membersResult, rolesResult, agenciesResult] = await Promise.allSettled([
-        EmployeesRolesService.getEmployees(orgId),
-        EmployeesRolesService.getRoles(),
-        AgenciesService.getAgencies(orgId)
+      const [membersResult, rolesResult, agenciesResult] = await Promise.all([
+        fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.employees(orgId),
+          fetcher: () => EmployeesRolesService.getEmployees(orgId),
+          emptyValue: [] as OrganizationMember[],
+        }),
+        fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.ROLES,
+          fetcher: () => EmployeesRolesService.getRoles(),
+          emptyValue: [] as Role[],
+        }),
+        fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.agencies(orgId),
+          fetcher: () => AgenciesService.getAgencies(orgId),
+          emptyValue: [] as Agency[],
+        }),
       ]);
 
-      if (membersResult.status === "fulfilled") {
-        setEmployees(membersResult.value || []);
-      } else {
-        console.error(membersResult.reason);
-        toast.error("Impossible de charger les données des collaborateurs.");
-      }
-
-      if (rolesResult.status === "fulfilled") {
-        setRoles(rolesResult.value || []);
-      } else {
-        console.warn("Chargement des rôles échoué:", rolesResult.reason);
-      }
-
-      if (agenciesResult.status === "fulfilled") {
-        setAgencies(agenciesResult.value || []);
-      } else {
-        console.warn("Chargement des agences échoué:", agenciesResult.reason);
-      }
+      setEmployees(membersResult.data);
+      setRoles(rolesResult.data);
+      setAgencies(agenciesResult.data);
+      setUsingCache(
+        membersResult.fromCache || rolesResult.fromCache || agenciesResult.fromCache,
+      );
+      setCacheTimestamp(
+        membersResult.cachedAt ?? rolesResult.cachedAt ?? agenciesResult.cachedAt,
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de charger les données des collaborateurs.");
     } finally {
       setIsLoading(false);
     }
@@ -213,6 +220,7 @@ export default function UsersSettingsPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
       
       {/* Header section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">

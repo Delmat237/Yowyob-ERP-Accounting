@@ -83,9 +83,9 @@ export const modules: Record<ModuleKey, Module> = {
         icon: Users,
         composeActionLabel: "",
         sidebarLinks: [
-            { title: "Factures Clients", icon: Receipt, href: "/invoices" },
-            { title: "Avoirs", icon: PenSquare, href: "/sales/new-order" },
-            { title: "Paiements", icon: CreditCard, href: "/sales/order-journal" },
+            { title: "Factures Clients", icon: Receipt, href: "/accounting/clients/invoices", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
+            { title: "Avoirs", icon: PenSquare, href: "/accounting/clients/credit-notes", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
+            { title: "Paiements", icon: CreditCard, href: "/accounting/clients/payments", allowedRoles: ['COMPTABLE', 'RESPONSABLE_COMPTABLE', 'AIDE_COMPTABLE'] },
             { title: "Produits", icon: PackageSearch, href: "/products" },
             { title: "Clients", icon: Users, href: "/customers" },
             { title: "Fournisseurs", icon: Truck, href: "/suppliers" },
@@ -96,7 +96,7 @@ export const modules: Record<ModuleKey, Module> = {
         icon: Truck,
         composeActionLabel: "",
         sidebarLinks: [
-            { title: "Factures Fournisseurs", icon: Receipt, href: "/invoices" },
+            { title: "Factures Fournisseurs", icon: Receipt, href: "/accounting/suppliers/invoices" },
             { title: "Remboursements", icon: Coins, href: "/stock/entries" },
             { title: "Paiements", icon: ArrowRightLeft, href: "/stock/transfer" },
             { title: "Produits", icon: PackagePlus, href: "/stock/transformation" },

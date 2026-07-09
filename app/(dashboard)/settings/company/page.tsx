@@ -19,6 +19,9 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
 import { Organization } from "@/src/lib/models/Organization";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 /** Affiche une paire libellé / valeur ; masque la ligne si la valeur est vide. */
 function Field({
@@ -47,6 +50,8 @@ export default function CompanySettingsPage() {
   const { user } = useAuth();
   const [org, setOrg] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const orgId =
     user?.organizationId ||
@@ -61,8 +66,16 @@ export default function CompanySettingsPage() {
     (async () => {
       setIsLoading(true);
       try {
-        const data = await OrganizationsService.getOrganizationById(orgId);
-        if (!cancelled) setOrg(data ?? null);
+        const result = await fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.organization(orgId),
+          fetcher: () => OrganizationsService.getOrganizationById(orgId),
+          emptyValue: null as Organization | null,
+        });
+        if (!cancelled) {
+          setOrg(result.data ?? null);
+          setUsingCache(result.fromCache);
+          setCacheTimestamp(result.cachedAt);
+        }
       } catch (error) {
         console.error(error);
         if (!cancelled)
@@ -112,6 +125,7 @@ export default function CompanySettingsPage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
       {/* En-tête */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-4">

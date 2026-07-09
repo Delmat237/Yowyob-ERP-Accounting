@@ -37,8 +37,8 @@ export const DeviseListView: React.FC<DeviseListViewProps> = ({
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredDevises = devises.filter((devise) =>
-        devise.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        devise.code.toLowerCase().includes(searchTerm.toLowerCase())
+        (devise.name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (devise.code ?? '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const nationalCurrency = devises.find(d => d.estNationale);

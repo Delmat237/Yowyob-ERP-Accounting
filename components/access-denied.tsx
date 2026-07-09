@@ -1,7 +1,7 @@
 "use client";
 
 import { ShieldX } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getRoleLabel } from "@/src/lib/auth/roles";
@@ -28,6 +28,10 @@ interface AccessDeniedProps {
  */
 export function AccessDenied({ variant = "no-role", currentRole, requiredRoles }: AccessDeniedProps) {
     const router = useRouter();
+    const pathname = usePathname();
+    const dashboardPath = pathname.startsWith("/analytique")
+        ? "/analytique/dashboard"
+        : "/accounting/dashboard";
 
     return (
         <div className="flex min-h-[70vh] w-full items-center justify-center p-4">
@@ -76,7 +80,7 @@ export function AccessDenied({ variant = "no-role", currentRole, requiredRoles }
                         <Button variant="outline" size="sm" onClick={() => router.back()}>
                             Retour
                         </Button>
-                        <Button size="sm" onClick={() => router.push("/accounting/dashboard")}>
+                        <Button size="sm" onClick={() => router.push(dashboardPath)}>
                             Tableau de bord
                         </Button>
                     </div>

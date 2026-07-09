@@ -27,7 +27,7 @@ interface ReportCardProps {
 
 function ReportCard({ title, description, href, icon, color }: ReportCardProps) {
   return (
-    <Link href={href}>
+    <Link href={href} prefetch={false}>
       <Card className="hover:shadow-md transition-all group border-l-4" style={{ borderLeftColor: color }}>
         <CardHeader className="flex flex-row items-center gap-4 pb-2">
           <div className="p-2 rounded-lg bg-gray-50 group-hover:scale-110 transition-transform">

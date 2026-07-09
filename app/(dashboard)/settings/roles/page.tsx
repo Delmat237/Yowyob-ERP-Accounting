@@ -8,18 +8,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { EmployeesRolesService } from "@/src/lib/services/EmployeesRolesService";
 import { Role } from "@/src/lib/models/Role";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function RolesSettingsPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setIsLoading(true);
       try {
-        const data = await EmployeesRolesService.getRoles();
-        if (!cancelled) setRoles(data || []);
+        const result = await fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.ROLES,
+          fetcher: () => EmployeesRolesService.getRoles(),
+          emptyValue: [] as Role[],
+        });
+        if (!cancelled) {
+          setRoles(result.data);
+          setUsingCache(result.fromCache);
+          setCacheTimestamp(result.cachedAt);
+        }
       } catch (error) {
         console.error(error);
         if (!cancelled) toast.error("Impossible de charger les rôles & droits.");
@@ -38,6 +51,7 @@ export default function RolesSettingsPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
           Rôles &amp; Droits

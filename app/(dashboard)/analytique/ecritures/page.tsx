@@ -13,7 +13,9 @@ import {
 } from "@/lib/analytique/analytique-config-store";
 import {
     createEcritureAnalytique,
+    initEcrituresAnalytiquesStore,
     listEcrituresAnalytiques,
+    reloadEcrituresFromCache,
 } from "@/lib/analytique/ecritures-analytiques-store";
 import { importFluxDepuisCG } from "@/lib/analytique/import-flux-cg";
 import {
@@ -28,6 +30,10 @@ import {
     type EcritureAnalytiqueFormData,
 } from "@/components/analytique/ecriture-analytique-form";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { hasPermission } from "@/src/lib/auth/roles";
+import { useNetworkStatus } from "@/hooks/use-network-status";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 const STATUT_STYLE: Record<EcritureAnalytique["statut"], string> = {
     BROUILLON: "bg-amber-100 text-amber-800",
@@ -42,21 +48,26 @@ function isVisibleOnEcrituresPage(e: EcritureAnalytique): boolean {
 
 export default function EcrituresAnalytiquesPage() {
     const router = useRouter();
+    const { accountingRole } = useAuth();
+    const { isOffline } = useNetworkStatus();
+    const canValidate = hasPermission(accountingRole, "analytical_entries", "validate");
     const [ecritures, setEcritures] = useState<EcritureAnalytique[]>([]);
     const [search, setSearch] = useState("");
     const [importActive, setImportActive] = useState(false);
     const [importing, setImporting] = useState(false);
     const { openForm, closeForm } = useAnalytiqueCompose();
 
-    const reload = useCallback((options?: AutoRefreshOptions) => {
+    const reload = useCallback(async (options?: AutoRefreshOptions) => {
+        await initEcrituresAnalytiquesStore();
         if (!options?.silent) {
             setImportActive(getAnalytiqueConfig().importComptabiliteGeneraleActive);
         }
+        await reloadEcrituresFromCache();
         setEcritures(listEcrituresAnalytiques().filter(isVisibleOnEcrituresPage));
     }, []);
 
     useEffect(() => {
-        reload();
+        void reload();
     }, [reload]);
 
     useAutoRefresh(reload, [reload]);
@@ -97,9 +108,13 @@ export default function EcrituresAnalytiquesPage() {
                 });
             } else {
                 toast.success(`${created.length} écriture(s) importée(s)`, {
-                    description: "Redirection vers la validation…",
+                    description: canValidate
+                        ? "Redirection vers la validation…"
+                        : "En attente de validation par un comptable ou un responsable.",
                 });
-                router.push("/analytique/ecritures/validation");
+                if (canValidate) {
+                    router.push("/analytique/ecritures/validation");
+                }
             }
         } finally {
             setImporting(false);
@@ -108,6 +123,10 @@ export default function EcrituresAnalytiquesPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner
+                visible={isOffline}
+                label="Données analytiques enregistrées localement"
+            />
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
@@ -120,12 +139,14 @@ export default function EcrituresAnalytiquesPage() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Link
-                        href="/analytique/ecritures/validation"
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary"
-                    >
-                        <ShieldCheck className="h-4 w-4" /> Validation
-                    </Link>
+                    {canValidate ? (
+                        <Link
+                            href="/analytique/ecritures/validation"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-secondary"
+                        >
+                            <ShieldCheck className="h-4 w-4" /> Validation
+                        </Link>
+                    ) : null}
                     <button
                         type="button"
                         onClick={openManualForm}

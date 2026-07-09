@@ -25,20 +25,35 @@ import {
     FileClock,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { loadOfflineList, persistOfflineList } from '@/lib/offline/ca-offline-list';
+import { CA_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 
 export default function ConfigurationPage() {
     const router = useRouter();
     const [config, setConfig] = useState<AnalytiqueConfig>(() => getAnalytiqueConfig());
     const [isSaving, setIsSaving] = useState(false);
+    const [usingCache, setUsingCache] = useState(false);
+    const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
     useEffect(() => {
-        setConfig(getAnalytiqueConfig());
+        void (async () => {
+            const result = await loadOfflineList({
+                cacheKey: CA_CACHE_KEYS.CONFIG,
+                loader: () => getAnalytiqueConfig(),
+                fallback: mockGlobalConfig as unknown as AnalytiqueConfig,
+            });
+            setConfig(result.data);
+            setUsingCache(result.fromCache);
+            setCacheTimestamp(result.cachedAt);
+        })();
     }, []);
 
     const handleSave = () => {
         setIsSaving(true);
         const previous = getAnalytiqueConfig();
         saveAnalytiqueConfig(config);
+        void persistOfflineList(CA_CACHE_KEYS.CONFIG, config);
         const justEnabled =
             config.importComptabiliteGeneraleActive && !previous.importComptabiliteGeneraleActive;
 
@@ -74,6 +89,7 @@ export default function ConfigurationPage() {
 
     return (
         <div className="space-y-8 animate-fade-in-up max-w-5xl mx-auto pb-12">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             <div className="flex items-center justify-between border-b border-border pb-6">
                 <div>
                     <h1 className="text-3xl font-bold text-foreground tracking-tight flex items-center gap-3">

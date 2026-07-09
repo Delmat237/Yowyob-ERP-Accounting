@@ -19,6 +19,10 @@ import {
 import { PlanCompteAnalytiqueForm } from "@/components/analytique/plan-compte-analytique-form";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { useOfflineMockList } from "@/hooks/use-offline-mock-list";
+import { useOfflineMockMutations } from "@/hooks/use-offline-mock-mutations";
+import { CA_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 const CLASS_CONFIG = Object.fromEntries(
     CLASSES_ANALYTIQUES.map((cl) => [
@@ -61,7 +65,13 @@ function PlanCard({ plan }: { plan: PlanAnalytique }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PlanAnalytiquePage() {
-    const [comptes, setComptes] = useState<CompteAnalytique[]>(mockComptesAnalytiques);
+    const listHook = useOfflineMockList(CA_CACHE_KEYS.PLAN_COMPTES, mockComptesAnalytiques);
+    const { data: comptes, usingCache, cacheTimestamp } = listHook;
+    const { upsertItem, removeItem } = useOfflineMockMutations(
+        CA_CACHE_KEYS.PLAN_COMPTES,
+        "ca.plan_comptes",
+        listHook,
+    );
     const [search, setSearch] = useState("");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const { openForm, closeForm } = useAnalytiqueCompose();
@@ -82,12 +92,8 @@ export default function PlanAnalytiquePage() {
         return result;
     }, [comptes, search]);
 
-    const handleSave = (data: Partial<CompteAnalytique>) => {
-        if (data.id) {
-            setComptes(p => p.map(c => c.id === data.id ? { ...c, ...data } as CompteAnalytique : c));
-        } else {
-            setComptes(p => [...p, { ...data, id: `c-${Date.now()}` } as CompteAnalytique]);
-        }
+    const handleSave = async (data: Partial<CompteAnalytique>) => {
+        await upsertItem(data);
     };
 
     const openCompteForm = (initial?: Partial<CompteAnalytique>) => {
@@ -96,8 +102,8 @@ export default function PlanAnalytiquePage() {
             <PlanCompteAnalytiqueForm
                 initial={initial}
                 onCancel={closeForm}
-                onSubmit={(data) => {
-                    handleSave(data);
+                onSubmit={async (data) => {
+                    await handleSave(data);
                     closeForm();
                 }}
             />,
@@ -109,12 +115,13 @@ export default function PlanAnalytiquePage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             {/* Confirm delete */}
             {deleteId && (
                 <ConfirmDialog
                     title="Supprimer le compte ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => { setComptes((p) => p.filter((c) => c.id !== deleteId)); }}
+                    onConfirm={() => void removeItem(deleteId!)}
                 >
                     <p className="text-sm text-muted-foreground">
                         Voulez-vous supprimer le compte <strong>{compteToDelete?.numero} - {compteToDelete?.libelle}</strong> ? Cette action est irréversible.

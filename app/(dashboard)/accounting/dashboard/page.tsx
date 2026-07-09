@@ -2,7 +2,7 @@
 /* eslint-disable react/no-unescaped-entities */
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import {
   Card,
@@ -66,6 +66,14 @@ import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { toast } from 'sonner';
 import { formatDateForApi } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import { networkStatus } from '@/lib/offline/network-status';
+import { loadDashboardSnapshot, saveDashboardSnapshot } from '@/lib/offline/dashboard-cache';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import {
+  getPeriodeComptableCourante,
+  getPeriodesVisiblesUtilisateur,
+} from '@/lib/accounting/periode-utilisateur';
+import { useOnPeriodesChanged } from '@/hooks/use-on-periodes-changed';
 
 /* ────────────────── helpers ────────────────── */
 const fmtAmount = (v: number, currency: string) =>
@@ -141,15 +149,82 @@ export default function AccountingDashboard() {
   ]);
   const [periodsList, setPeriodsList] = useState<any[]>([]);
   const [hasNoPeriods, setHasNoPeriods] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
+
+  const dashboardStateRef = useRef({
+    kpis,
+    ratios,
+    systemHealth,
+    journalActivity,
+    balanceLines,
+    cashFlowData,
+    recentOps,
+    incomeVsExpense,
+    periodsList,
+    activePeriodCode,
+    hasNoPeriods,
+  });
+
+  useEffect(() => {
+    dashboardStateRef.current = {
+      kpis,
+      ratios,
+      systemHealth,
+      journalActivity,
+      balanceLines,
+      cashFlowData,
+      recentOps,
+      incomeVsExpense,
+      periodsList,
+      activePeriodCode,
+      hasNoPeriods,
+    };
+  }, [
+    kpis,
+    ratios,
+    systemHealth,
+    journalActivity,
+    balanceLines,
+    cashFlowData,
+    recentOps,
+    incomeVsExpense,
+    periodsList,
+    activePeriodCode,
+    hasNoPeriods,
+  ]);
 
   /* ── fetch ── */
   const fetchDashboardData = useCallback(async (options?: AutoRefreshOptions) => {
     if (!options?.silent) setIsLoading(true);
     try {
+      if (!networkStatus.isOnline()) {
+        const snapshot = await loadDashboardSnapshot();
+        if (snapshot) {
+          setKpis(snapshot.kpis);
+          setRatios(snapshot.ratios);
+          setSystemHealth(snapshot.systemHealth);
+          setJournalActivity(snapshot.journalActivity);
+          setBalanceLines(snapshot.balanceLines);
+          setCashFlowData(snapshot.cashFlowData);
+          setRecentOps(snapshot.recentOps);
+          setIncomeVsExpense(snapshot.incomeVsExpense);
+          setPeriodsList(snapshot.periodsList);
+          setActivePeriodCode(snapshot.activePeriodCode);
+          setHasNoPeriods(snapshot.hasNoPeriods);
+          setUsingCache(true);
+          setCacheTimestamp(snapshot.cachedAt);
+          return;
+        }
+      }
+
+      setUsingCache(false);
+      setCacheTimestamp(undefined);
+
       /* 1. Periods */
       const periodsRes = await AccountingPeriodsService.getAllPeriodeComptables();
       const periods = periodsRes.data || [];
-      setPeriodsList(periods);
+      setPeriodsList(getPeriodesVisiblesUtilisateur(periods));
 
       if (periods.length === 0) {
         setHasNoPeriods(true);
@@ -158,12 +233,7 @@ export default function AccountingDashboard() {
       }
       setHasNoPeriods(false);
 
-      const now = new Date();
-      const activePeriod = periods.find(p => {
-        const s = new Date(p.dateDebut);
-        const e = new Date(p.dateFin);
-        return now >= s && now <= e;
-      }) || periods[0];
+      const activePeriod = getPeriodeComptableCourante(periods);
 
       if (!activePeriod) {
         setHasNoPeriods(true);
@@ -343,8 +413,25 @@ export default function AccountingDashboard() {
       if (trends.length > 1) setIncomeVsExpense(trends);
 
     } catch (error) {
-      console.error("Dashboard Fetch Error:", error);
-      toast.error("Erreur lors de la mise à jour du tableau de bord");
+      const snapshot = await loadDashboardSnapshot();
+      if (snapshot) {
+        setKpis(snapshot.kpis);
+        setRatios(snapshot.ratios);
+        setSystemHealth(snapshot.systemHealth);
+        setJournalActivity(snapshot.journalActivity);
+        setBalanceLines(snapshot.balanceLines);
+        setCashFlowData(snapshot.cashFlowData);
+        setRecentOps(snapshot.recentOps);
+        setIncomeVsExpense(snapshot.incomeVsExpense);
+        setPeriodsList(snapshot.periodsList);
+        setActivePeriodCode(snapshot.activePeriodCode);
+        setHasNoPeriods(snapshot.hasNoPeriods);
+        setUsingCache(true);
+        setCacheTimestamp(snapshot.cachedAt);
+      } else {
+        console.error("Dashboard Fetch Error:", error);
+        toast.error("Erreur lors de la mise à jour du tableau de bord");
+      }
     } finally {
       if (!options?.silent) setIsLoading(false);
     }
@@ -352,6 +439,49 @@ export default function AccountingDashboard() {
 
   useEffect(() => { void fetchDashboardData(); }, [fetchDashboardData]);
   useAutoRefresh(fetchDashboardData, [fetchDashboardData]);
+
+  useOnPeriodesChanged((event) => {
+    setPeriodsList(getPeriodesVisiblesUtilisateur(event.periodes));
+    if (event.nextPeriode) {
+      setActivePeriodCode(event.nextPeriode.code || 'Période Active');
+      setHasNoPeriods(false);
+    } else {
+      setHasNoPeriods(true);
+    }
+    void fetchDashboardData({ silent: true });
+  });
+
+  useEffect(() => {
+    if (isLoading || usingCache) return;
+    const snap = dashboardStateRef.current;
+    void saveDashboardSnapshot({
+      kpis: snap.kpis,
+      ratios: snap.ratios,
+      systemHealth: snap.systemHealth,
+      journalActivity: snap.journalActivity,
+      balanceLines: snap.balanceLines,
+      cashFlowData: snap.cashFlowData,
+      recentOps: snap.recentOps,
+      incomeVsExpense: snap.incomeVsExpense,
+      periodsList: snap.periodsList,
+      activePeriodCode: snap.activePeriodCode,
+      hasNoPeriods: snap.hasNoPeriods,
+    });
+  }, [
+    isLoading,
+    usingCache,
+    kpis,
+    ratios,
+    systemHealth,
+    journalActivity,
+    balanceLines,
+    cashFlowData,
+    recentOps,
+    incomeVsExpense,
+    periodsList,
+    activePeriodCode,
+    hasNoPeriods,
+  ]);
 
   if (isLoading && kpis.totalRevenue === 0 && kpis.totalDebit === 0) {
     return <CustomPageLoader />;
@@ -425,6 +555,8 @@ export default function AccountingDashboard() {
           <p className="text-sm text-slate-500 mt-1">{roleConfig.subtitle}</p>
         </div>
       </div>
+
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
       {/* ── KPI Row ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -19,6 +19,10 @@ import {
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
 import { CompteAnalytiqueForm } from "@/components/analytique/compte-analytique-form-modal";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
+import { useOfflineMockList } from "@/hooks/use-offline-mock-list";
+import { useOfflineMockMutations } from "@/hooks/use-offline-mock-mutations";
+import { CA_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 // ─── Config classes OHADA ──────────────────────────────────────────────────────
 const CLASSE_CONFIG = Object.fromEntries(
@@ -32,7 +36,13 @@ const CLASSES = CLASSES_ANALYTIQUES;
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 export default function ComptesAnalytiquesPage() {
-    const [comptes, setComptes] = useState<CompteAnalytique[]>(mockComptesAnalytiques);
+    const listHook = useOfflineMockList(CA_CACHE_KEYS.COMPTES, mockComptesAnalytiques);
+    const { data: comptes, usingCache, cacheTimestamp } = listHook;
+    const { upsertItem, removeItem } = useOfflineMockMutations(
+        CA_CACHE_KEYS.COMPTES,
+        "ca.comptes",
+        listHook,
+    );
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
     const [classeFilter, setClasseFilter] = useState<ClasseAnalytique | "all">("all");
@@ -59,20 +69,14 @@ export default function ComptesAnalytiquesPage() {
         }, emptyComptesParClasse<CompteAnalytique>());
     }, [filtered]);
 
-    function handleSave(data: Partial<CompteAnalytique>) {
-        const payload = {
+    async function handleSave(data: Partial<CompteAnalytique>) {
+        await upsertItem({
             ...data,
             numero: data.numero!.trim(),
             libelle: data.libelle!.trim(),
             classe: data.classe!,
             actif: data.actif ?? true,
-        } as CompteAnalytique;
-
-        setComptes((p) =>
-            payload.id && p.find((c) => c.id === payload.id)
-                ? p.map((c) => (c.id === payload.id ? { ...c, ...payload } : c))
-                : [...p, { ...payload, id: payload.id ?? `ca-${Date.now()}` }],
-        );
+        });
     }
 
     function openCompteForm(initial?: Partial<CompteAnalytique>) {
@@ -81,8 +85,8 @@ export default function ComptesAnalytiquesPage() {
             <CompteAnalytiqueForm
                 initial={initial}
                 onCancel={closeForm}
-                onSubmit={(data) => {
-                    handleSave(data);
+                onSubmit={async (data) => {
+                    await handleSave(data);
                     closeForm();
                 }}
             />,
@@ -90,7 +94,7 @@ export default function ComptesAnalytiquesPage() {
     }
 
     function handleDelete(id: string) {
-        setComptes((p) => p.filter((c) => c.id !== id));
+        void removeItem(id);
         setDeleteId(null);
     }
 
@@ -106,6 +110,7 @@ export default function ComptesAnalytiquesPage() {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             {/* Modal de Suppression */}
             {deleteId && (
                 <ConfirmDialog

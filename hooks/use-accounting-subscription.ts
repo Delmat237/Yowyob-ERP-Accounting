@@ -1,7 +1,42 @@
-import { create } from "zustand";
+import { create } from 'zustand/react';
 import { AccountingSubscriptionService } from "@/src/lib2/services/AccountingSubscriptionService";
 import { syncStoredAccountingChoiceWithSubscription } from "@/lib/accounting-choice-resolver";
 import { useAccountingChoiceStore } from "@/hooks/use-accounting-choice-store";
+import { networkStatus } from "@/lib/offline/network-status";
+
+const SUBSCRIPTION_CACHE_KEY = "offline.cache.accounting_subscription";
+
+type SubscriptionCache = {
+  generale: boolean;
+  analytique: boolean;
+};
+
+function readSubscriptionCache(): SubscriptionCache | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(SUBSCRIPTION_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as SubscriptionCache) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSubscriptionCache(generale: boolean, analytique: boolean): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(
+    SUBSCRIPTION_CACHE_KEY,
+    JSON.stringify({ generale, analytique } satisfies SubscriptionCache),
+  );
+}
+
+function isApiFailure(res: unknown): boolean {
+  return Boolean(
+    res &&
+      typeof res === "object" &&
+      "success" in res &&
+      (res as { success?: boolean }).success === false,
+  );
+}
 
 interface AccountingSubscriptionState {
   /** Comptabilité générale active pour l'organisation courante. */
@@ -20,20 +55,46 @@ interface AccountingSubscriptionState {
 // Défaut conservateur tant que le backend n'a pas répondu : seule la générale est
 // supposée active (cohérent avec le défaut côté serveur). La sidebar n'affichera
 // l'analytique qu'une fois l'abonnement confirmé.
+const initialCached = readSubscriptionCache();
+const bootstrapOffline =
+  typeof navigator !== "undefined" && !navigator.onLine;
+
 export const useAccountingSubscription = create<AccountingSubscriptionState>((set, get) => ({
-  generale: true,
-  analytique: false,
-  loaded: false,
+  generale: initialCached?.generale ?? true,
+  analytique: initialCached?.analytique ?? false,
+  loaded: bootstrapOffline || Boolean(initialCached),
   loading: false,
 
   load: async (force = false) => {
     if (!force && (get().loaded || get().loading)) return;
+
+    const cached = readSubscriptionCache();
+    if (!networkStatus.isOnline()) {
+      set({
+        generale: cached?.generale ?? true,
+        analytique: cached?.analytique ?? false,
+        loaded: true,
+        loading: false,
+      });
+      return;
+    }
+
     set({ loading: true });
     try {
       const res = await AccountingSubscriptionService.getSubscription();
+      if (isApiFailure(res)) {
+        set({
+          generale: cached?.generale ?? true,
+          analytique: cached?.analytique ?? false,
+          loaded: true,
+          loading: false,
+        });
+        return;
+      }
       const data = res?.data;
       const nextGenerale = data?.generale ?? true;
       const nextAnalytique = data?.analytique ?? false;
+      writeSubscriptionCache(nextGenerale, nextAnalytique);
       set({
         generale: nextGenerale,
         analytique: nextAnalytique,
@@ -41,9 +102,12 @@ export const useAccountingSubscription = create<AccountingSubscriptionState>((se
         loading: false,
       });
     } catch {
-      // En cas d'échec (non authentifié, backend indisponible), on garde le défaut
-      // et on marque comme chargé pour ne pas boucler.
-      set({ loaded: true, loading: false });
+      set({
+        generale: cached?.generale ?? true,
+        analytique: cached?.analytique ?? false,
+        loaded: true,
+        loading: false,
+      });
     }
   },
 
@@ -57,6 +121,7 @@ export const useAccountingSubscription = create<AccountingSubscriptionState>((se
       analytique: nextAnalytique,
       loaded: true,
     });
+    writeSubscriptionCache(nextGenerale, nextAnalytique);
     const synced = syncStoredAccountingChoiceWithSubscription(nextGenerale, nextAnalytique);
     const store = useAccountingChoiceStore.getState();
     if (synced) store.setChoice(synced);

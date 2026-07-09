@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
 import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
 import { PeriodeComptableDto } from '@/src/lib2/models/PeriodeComptableDto';
@@ -14,6 +14,13 @@ import { AlertCircle, Edit, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { ensureLocalId } from '@/lib/offline/ensure-local-id';
+import { upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
+import { getPeriodeComptableCourante, triPeriodesComptablesParCode } from '@/lib/accounting/periode-utilisateur';
+import { closePeriodeComptableAndAdvance } from '@/lib/accounting/periode-cloture';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -34,19 +41,34 @@ export default function PeriodsPage() {
     const [closeId, setCloseId] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<'list' | 'detail'>('list');
     const [viewData, setViewData] = useState<PeriodeComptableDto | null>(null);
+    const [usingCache, setUsingCache] = useState(false);
+    const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
     const { onOpen, onClose: closeCompose } = useCompose();
+
+    const periodesTriees = useMemo(
+        () => triPeriodesComptablesParCode(periodes),
+        [periodes],
+    );
+
+    const periodeCourante = useMemo(
+        () => getPeriodeComptableCourante(periodes),
+        [periodes],
+    );
 
     const fetchPeriodes = useCallback(async (options?: AutoRefreshOptions) => {
         if (!options?.silent) setIsLoading(true);
         setError(null);
         try {
-            const response = await AccountingPeriodsService.getAllPeriodeComptables();
-            if (response && response.data) {
-                setPeriodes(response.data);
-            } else {
-                setPeriodes([]);
-            }
+            const result = await fetchWithOfflineCache({
+                cacheKey: CG_CACHE_KEYS.PERIODES,
+                fetcher: () => AccountingPeriodsService.getAllPeriodeComptables(),
+                emptyValue: [] as PeriodeComptableDto[],
+            });
+            setPeriodes(result.data);
+            setUsingCache(result.fromCache);
+            setCacheTimestamp(result.cachedAt);
+            if (result.fromCache) setError(null);
         } catch (err: any) {
             let reason = "Impossible de charger les périodes.";
             if (err.body?.message) reason = err.body.message;
@@ -62,9 +84,15 @@ export default function PeriodsPage() {
 
     const fetchExercices = useCallback(async () => {
         try {
-            const response = await AccountingFiscalYearsService.getAllExercices();
-            if (response && response.data) {
-                setExercices(response.data);
+            const result = await fetchWithOfflineCache({
+                cacheKey: CG_CACHE_KEYS.EXERCICES,
+                fetcher: () => AccountingFiscalYearsService.getAllExercices(),
+                emptyValue: [] as ExerciceComptableDto[],
+            });
+            setExercices(result.data);
+            if (result.fromCache) {
+                setUsingCache(true);
+                setCacheTimestamp((prev) => prev ?? result.cachedAt);
             }
         } catch (err) {
             console.error('Error fetching exercices:', err);
@@ -81,6 +109,18 @@ export default function PeriodsPage() {
 
     useAutoRefresh(loadPeriodsData, [loadPeriodsData]);
 
+    useEffect(() => {
+        const visible = periodeCourante;
+        if (!visible?.id) return;
+        if (viewMode === 'list') {
+            setSelectedPeriodeId(visible.id);
+        }
+        if (viewMode === 'detail' && viewData?.id && viewData.cloturee) {
+            setViewData(visible);
+            setSelectedPeriodeId(visible.id);
+        }
+    }, [periodeCourante, viewMode, viewData?.id, viewData?.cloturee]);
+
     const handleSave = async (data: PeriodeComptableDto) => {
         try {
             // Business rule: only one period can be open at a time
@@ -95,10 +135,28 @@ export default function PeriodsPage() {
             }
 
             if (data.id) {
-                await AccountingPeriodsService.updatePeriodeComptable(data.id, data);
+                const item: PeriodeComptableDto = { ...data, id: data.id };
+                await upsertListItemWithOutbox({
+                    cacheKey: CG_CACHE_KEYS.PERIODES,
+                    entity: 'cg.periodes',
+                    action: 'UPDATE',
+                    item,
+                    onlineMutator: () =>
+                        AccountingPeriodsService.updatePeriodeComptable(item.id!, item),
+                });
                 toast.success('Période mise à jour avec succès');
             } else {
-                await AccountingPeriodsService.createPeriodeComptable(data);
+                const item: PeriodeComptableDto = {
+                    ...data,
+                    id: ensureLocalId(),
+                };
+                await upsertListItemWithOutbox({
+                    cacheKey: CG_CACHE_KEYS.PERIODES,
+                    entity: 'cg.periodes',
+                    action: 'CREATE',
+                    item,
+                    onlineMutator: () => AccountingPeriodsService.createPeriodeComptable(item),
+                });
                 toast.success('Période créée avec succès');
             }
             await fetchPeriodes();
@@ -120,9 +178,20 @@ export default function PeriodsPage() {
         if (!closeId) return;
 
         try {
-            await AccountingPeriodsService.closePeriodeComptable(closeId);
-            toast.success('Période clôturée avec succès');
-            await fetchPeriodes();
+            const { periodes: updated, nextPeriode } = await closePeriodeComptableAndAdvance(closeId, periodes);
+            setPeriodes(updated);
+            setViewMode('list');
+            setViewData(null);
+            if (nextPeriode?.id) {
+                setSelectedPeriodeId(nextPeriode.id);
+                toast.success('Période clôturée', {
+                    description: nextPeriode.cloturee
+                        ? undefined
+                        : `La période ${nextPeriode.code} est maintenant visible.`,
+                });
+            } else {
+                toast.success('Période clôturée avec succès');
+            }
         } catch (err: any) {
             let reason = "Impossible de clôturer.";
             if (err.body?.message) reason = err.body.message;
@@ -222,8 +291,12 @@ export default function PeriodsPage() {
             <div className="w-full max-w-7xl mx-auto bg-white p-6 rounded-lg shadow-lg">
                 <div className="mb-6">
                     <h2 className="text-xl font-semibold text-gray-700 mb-1">Périodes Comptables</h2>
-                    <p className="text-sm text-gray-500">Gérez les périodes comptables (mois) pour chaque exercice.</p>
+                    <p className="text-sm text-gray-500">
+                        Gérez toutes les périodes comptables. La période courante est mise en évidence pour les opérations.
+                    </p>
                 </div>
+
+                <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
                 {error && (
                     <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">
@@ -234,14 +307,14 @@ export default function PeriodsPage() {
                 )}
 
                 <PeriodeComptableListView
-                    periodes={periodes}
+                    periodes={periodesTriees}
                     exercices={exercices}
                     isLoading={isLoading}
                     onSelectPeriode={handleSelectPeriode}
                     onEditPeriode={handleEditPeriode}
                     onClosePeriode={confirmClose}
                     onAddNew={handleAddNew}
-                    selectedId={selectedPeriodeId || undefined}
+                    selectedId={selectedPeriodeId || periodeCourante?.id || undefined}
                 />
 
                 <AlertDialog open={!!closeId} onOpenChange={(open) => !open && setCloseId(null)}>

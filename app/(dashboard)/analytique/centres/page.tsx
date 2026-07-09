@@ -7,9 +7,19 @@ import { CentresAnalyseList } from "@/components/analytique/centres-analyse-list
 import { CentreAnalytiqueForm } from "@/components/analytique/centre-form-modal";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { useOfflineMockList } from "@/hooks/use-offline-mock-list";
+import { useOfflineMockMutations } from "@/hooks/use-offline-mock-mutations";
+import { CA_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function CentresAnalysePage() {
-    const [centres, setCentres] = useState<CentreAnalyse[]>(mockCentres);
+    const listHook = useOfflineMockList(CA_CACHE_KEYS.CENTRES, mockCentres);
+    const { data: centres, usingCache, cacheTimestamp } = listHook;
+    const { upsertItem, removeItem } = useOfflineMockMutations(
+        CA_CACHE_KEYS.CENTRES,
+        "ca.centres",
+        listHook,
+    );
     const [search, setSearch] = useState("");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [filter, setFilter] = useState<"all" | "principal" | "auxiliaire">("all");
@@ -27,29 +37,15 @@ export default function CentresAnalysePage() {
     const principaux = centres.filter((c) => c.nature !== "CENTRE_AUXILIAIRE");
     const auxiliaires = centres.filter((c) => c.nature === "CENTRE_AUXILIAIRE");
 
-    const handleSave = (data: Partial<CentreAnalyse>) => {
-        if (data.id) {
-            setCentres((p) => p.map((c) => (c.id === data.id ? { ...c, ...data } : c)));
-        } else {
-            setCentres((p) => [
-                ...p,
-                {
-                    id: `c${Date.now()}`,
-                    code: data.code ?? "",
-                    libelle: data.libelle ?? "",
-                    nature: data.nature ?? "CENTRE_PRINCIPAL",
-                    uniteOeuvre: data.uniteOeuvre ?? "",
-                    axeId: data.axeId ?? "",
-                    actif: data.actif ?? true,
-                    compteAnalytiqueId: data.compteAnalytiqueId,
-                    responsable: data.responsable,
-                    budgetAlloue: data.budgetAlloue,
-                    typePrestation: data.typePrestation,
-                    exerciceId: data.exerciceId,
-                    periodeId: data.periodeId,
-                },
-            ]);
-        }
+    const handleSave = async (data: Partial<CentreAnalyse>) => {
+        await upsertItem(data, {
+            code: "",
+            libelle: "",
+            nature: "CENTRE_PRINCIPAL",
+            uniteOeuvre: "",
+            axeId: "",
+            actif: true,
+        });
     };
 
     const openCentreForm = (initial?: Partial<CentreAnalyse>) => {
@@ -58,8 +54,8 @@ export default function CentresAnalysePage() {
             <CentreAnalytiqueForm
                 initial={initial}
                 onCancel={closeForm}
-                onSubmit={(data) => {
-                    handleSave(data);
+                onSubmit={async (data) => {
+                    await handleSave(data);
                     closeForm();
                 }}
             />,
@@ -68,11 +64,12 @@ export default function CentresAnalysePage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             {deleteId && (
                 <ConfirmDialog
                     title="Confirmer la suppression"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => setCentres((p) => p.filter((c) => c.id !== deleteId))}
+                    onConfirm={() => void removeItem(deleteId!)}
                 >
                     <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
                 </ConfirmDialog>

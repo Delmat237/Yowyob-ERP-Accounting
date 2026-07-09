@@ -1,6 +1,10 @@
 "use client";
 
 import { modules } from "@/config/navigation";
+import {
+    ANALYTIQUE_ALL_ROLES,
+    ANALYTIQUE_ROUTE_ROLE_OVERRIDES,
+} from "@/lib/analytique-route-access";
 
 /**
  * Résout les rôles autorisés pour un chemin donné à partir de la configuration
@@ -37,7 +41,17 @@ export function getAllowedRolesForPath(pathname: string): string[] | null {
         }
     }
 
-    if (matches.length === 0) return null;
+    if (matches.length === 0) {
+        for (const [path, roles] of Object.entries(ANALYTIQUE_ROUTE_ROLE_OVERRIDES)) {
+            if (pathname === path || pathname.startsWith(`${path}/`)) {
+                return [...roles];
+            }
+        }
+        if (pathname === "/analytique" || pathname.startsWith("/analytique/")) {
+            return [...ANALYTIQUE_ALL_ROLES];
+        }
+        return null;
+    }
 
     // Une seule correspondance sans restriction => route libre.
     const roles = new Set<string>();

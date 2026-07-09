@@ -40,10 +40,13 @@ interface CentreAnalytiqueFormProps {
 }
 
 export function CentreAnalytiqueForm({ initial, onCancel, onSubmit }: CentreAnalytiqueFormProps) {
-  const { periodes, exercices, loading: loadingContexte } = usePeriodesAnalytiquesAlignees();
+  const { periodes, periodesCG, periodeCourante, exercices, loading: loadingContexte } = usePeriodesAnalytiquesAlignees();
   const { axes, loading: loadingAxes } = useAxesAnalytiques();
   const exerciceOuvert = useMemo(() => getExerciceAnalytiqueOuvert(exercices), [exercices]);
-  const periodeEnCours = useMemo(() => getPeriodeAnalytiqueEnCours(periodes), [periodes]);
+  const periodeEnCours = useMemo(
+    () => periodeCourante ?? getPeriodeAnalytiqueEnCours(periodes, periodesCG),
+    [periodeCourante, periodes, periodesCG],
+  );
 
   const [form, setForm] = useState<Partial<CentreAnalyse>>({
     code: "",

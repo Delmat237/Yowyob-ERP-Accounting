@@ -11,11 +11,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AccountingSettingService, AccountingSettingDto } from "@/src/lib2/services/AccountingSettingService";
 import { Loader2, Save } from "lucide-react";
 import { CustomPageLoader } from "@/components/ui/custom-page-loader";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
+
+const DEFAULT_SETTING_TYPES = ["FACTURE_FOURNISSEUR", "FACTURE_CLIENT", "MOUVEMENT_STOCK", "PAIEMENT"] as const;
+
+function mergeAccountingSettings(data: AccountingSettingDto[]): AccountingSettingDto[] {
+    return DEFAULT_SETTING_TYPES.map((type) => {
+        const existing = data.find((s) => s.objetType === type);
+        return (
+            existing || {
+                objetType: type,
+                modeSaisie: "SEMI_AUTOMATIQUE" as "AUTOMATIQUE" | "SEMI_AUTOMATIQUE",
+                actif: true,
+            }
+        );
+    });
+}
 
 export default function AccountingSettingsPage() {
     const [settings, setSettings] = useState<AccountingSettingDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [usingCache, setUsingCache] = useState(false);
+    const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
     useEffect(() => {
         fetchSettings();
@@ -23,21 +43,14 @@ export default function AccountingSettingsPage() {
 
     const fetchSettings = async () => {
         try {
-            const data = await AccountingSettingService.getAllSettings();
-            // Initialize default settings if API returns empty array, or map existing
-            // API currently might not return all types, so we pre-fill known types:
-            const defaultTypes = ["FACTURE_FOURNISSEUR", "FACTURE_CLIENT", "MOUVEMENT_STOCK", "PAIEMENT"];
-
-            const mergedSettings = defaultTypes.map(type => {
-                const existing = data.find(s => s.objetType === type);
-                return existing || {
-                    objetType: type,
-                    modeSaisie: "SEMI_AUTOMATIQUE" as "AUTOMATIQUE" | "SEMI_AUTOMATIQUE",
-                    actif: true
-                };
+            const result = await fetchWithOfflineCache({
+                cacheKey: SETTINGS_CACHE_KEYS.ACCOUNTING,
+                fetcher: async () => mergeAccountingSettings(await AccountingSettingService.getAllSettings()),
+                emptyValue: mergeAccountingSettings([]),
             });
-
-            setSettings(mergedSettings);
+            setSettings(result.data);
+            setUsingCache(result.fromCache);
+            setCacheTimestamp(result.cachedAt);
         } catch (error) {
             toast.error("Échec du chargement des paramètres comptables");
         } finally {
@@ -73,6 +86,7 @@ export default function AccountingSettingsPage() {
 
     return (
         <div className="p-6 max-w-5xl mx-auto space-y-6">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Paramètres Comptables</h1>

@@ -1,13 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,9 +14,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
 import { AccountingAuditService } from '@/src/lib2/services/AccountingAuditService';
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import { usePeriodeComptableVisible } from '@/hooks/use-periode-comptable-visible';
+import { PeriodeComptableVisibleSelector } from '@/components/accounting/periode-comptable-visible-selector';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { ANALYSE_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 
 interface SystemAudit {
   id: string;
@@ -38,79 +35,61 @@ interface SystemAudit {
 }
 
 export default function AuditJournalPage() {
-  const [periodes, setPeriodes] = useState<any[]>([]);
-  const [selectedPeriodeId, setSelectedPeriodeId] = useState<string | null>(null);
+  const { periode, periodeId, loading: isLoadingPeriods, refresh } = usePeriodeComptableVisible();
   const [auditLogs, setAuditLogs] = useState<SystemAudit[]>([]);
-  const [isLoadingPeriods, setIsLoadingPeriods] = useState(true);
   const [isFetchingAudits, setIsFetchingAudits] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAudit, setSelectedAudit] = useState<SystemAudit | null>(null);
-
-  const fetchPeriodesData = useCallback(async () => {
-    setIsLoadingPeriods(true);
-    try {
-      const response = await AccountingPeriodsService.getAllPeriodeComptables();
-      const data = response.data || [];
-      setPeriodes(data);
-      if (data.length > 0 && !selectedPeriodeId) {
-        setSelectedPeriodeId(data[0].id || null);
-      }
-    } catch (error) {
-      console.error('Error fetching periods:', error);
-      toast.error("Erreur lors de la récupération des périodes");
-    } finally {
-      setIsLoadingPeriods(false);
-    }
-  }, [selectedPeriodeId]);
-
-  useEffect(() => {
-    fetchPeriodesData();
-  }, [fetchPeriodesData]);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string>();
 
   const fetchAuditsData = useCallback(async () => {
-    if (!selectedPeriodeId) return;
+    if (!periodeId) return;
     setIsFetchingAudits(true);
     try {
       const tenantId = localStorage.getItem('organization_id') || '';
-      const selectedPeriod = periodes.find((p) => p.id === selectedPeriodeId);
-      
-      let response;
-      if (selectedPeriod && selectedPeriod.dateDebut && selectedPeriod.dateFin) {
-        response = await AccountingAuditService.getByPeriode(
-          tenantId,
-          selectedPeriod.dateDebut,
-          selectedPeriod.dateFin
-        );
-      } else {
-        response = await AccountingAuditService.getAllByOrganization(tenantId, 100);
-      }
 
-      const audits = response.data || [];
-      const formattedAudits = audits.map((a) => ({
-        id: a.id || '',
-        user: a.utilisateur || 'Système',
-        action: a.action || 'INCONNU',
-        date: a.dateAction || a.createdAt || '',
-        description: a.details || 'Aucune description',
-        details: a.details || '',
-        adresseIp: a.adresseIp || 'N/A',
-        donneesAvant: a.donneesAvant,
-        donneesApres: a.donneesApres
-      }));
-      setAuditLogs(formattedAudits);
+      const result = await fetchWithOfflineCache({
+        cacheKey: ANALYSE_CACHE_KEYS.audits(periodeId),
+        fetcher: async () => {
+          const response = periode && periode.dateDebut && periode.dateFin
+            ? await AccountingAuditService.getByPeriode(tenantId, periode.dateDebut, periode.dateFin)
+            : await AccountingAuditService.getAllByOrganization(tenantId, 100);
+          const audits = response.data || [];
+          return {
+            success: true,
+            data: audits.map((a) => ({
+              id: a.id || '',
+              user: a.utilisateur || 'Système',
+              action: a.action || 'INCONNU',
+              date: a.dateAction || a.createdAt || '',
+              description: a.details || 'Aucune description',
+              details: a.details || '',
+              adresseIp: a.adresseIp || 'N/A',
+              donneesAvant: a.donneesAvant,
+              donneesApres: a.donneesApres,
+            })),
+          };
+        },
+        emptyValue: [] as SystemAudit[],
+      });
+
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
+      setAuditLogs(result.data);
     } catch (error) {
       console.error('Error fetching audits:', error);
       toast.error("Échec de la récupération des journaux d'audit");
     } finally {
       setIsFetchingAudits(false);
     }
-  }, [selectedPeriodeId, periodes]);
+  }, [periodeId, periode]);
 
   useEffect(() => {
-    if (selectedPeriodeId) {
+    if (periodeId) {
       fetchAuditsData();
     }
-  }, [selectedPeriodeId, fetchAuditsData]);
+  }, [periodeId, periode, fetchAuditsData]);
 
   const handleGeneratePDF = () => {
     toast.info("L'export PDF sera disponible prochainement");
@@ -149,16 +128,17 @@ export default function AuditJournalPage() {
     >
     <div className="min-h-screen p-4 bg-gray-50">
       <div className="max-w-7xl mx-auto space-y-6">
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-gray-800">Journal d&#39;Audit</h1>
             {isFetchingAudits && <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleGeneratePDF} disabled={isFetchingAudits || !selectedPeriodeId}>
+            <Button variant="outline" onClick={handleGeneratePDF} disabled={isFetchingAudits || !periodeId}>
               <Download className="h-4 w-4 mr-2" /> PDF
             </Button>
-            <Button variant="outline" onClick={handleGenerateXLSX} disabled={isFetchingAudits || !selectedPeriodeId}>
+            <Button variant="outline" onClick={handleGenerateXLSX} disabled={isFetchingAudits || !periodeId}>
               <Download className="h-4 w-4 mr-2" /> XLSX
             </Button>
           </div>
@@ -166,18 +146,11 @@ export default function AuditJournalPage() {
 
         <div className="space-y-4">
           <div className="flex gap-4 items-center">
-            <Select value={selectedPeriodeId || ''} onValueChange={setSelectedPeriodeId} disabled={isFetchingAudits}>
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Sélectionner une période" />
-              </SelectTrigger>
-              <SelectContent>
-                {periodes.map((periode) => (
-                  <SelectItem key={periode.id} value={periode.id!}>
-                    {periode.code} ({new Date(periode.dateDebut).toLocaleDateString()} - {new Date(periode.dateFin).toLocaleDateString()})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PeriodeComptableVisibleSelector
+              periode={periode}
+              loading={isLoadingPeriods}
+              onRefresh={() => void refresh()}
+            />
             <div className="relative w-96">
               <Input
                 placeholder="Rechercher par utilisateur, action ou détails..."

@@ -13,6 +13,10 @@ import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { getCachedListData, replaceListWithOutbox } from "@/lib/offline/list-outbox-mutations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,43 +34,53 @@ export default function DevisesPage() {
   const [selectedDeviseId, setSelectedDeviseId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const { onOpen, onClose: closeCompose } = useCompose();
+
+  const mapDevises = useCallback(
+    (currencies: DeviseDto[], rates: { devise_source_id?: string; devise_cible_id?: string; taux?: number }[]) => {
+      const nationalCurrency = currencies.find((c) => c.est_nationale);
+      return currencies.map((c) => {
+        const rateEntry = rates.find(
+          (r) => r.devise_source_id === c.id && r.devise_cible_id === nationalCurrency?.id,
+        );
+        return {
+          id: c.id!,
+          name: c.nom,
+          code: c.code,
+          symbol: c.symbole || '',
+          rate: rateEntry ? rateEntry.taux : c.est_nationale ? 1.0 : 0,
+          estNationale: c.est_nationale,
+          isActive: c.actif,
+        } satisfies Devise;
+      });
+    },
+    [],
+  );
 
   const fetchDevises = useCallback(async (options?: AutoRefreshOptions) => {
     if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
-      const [currenciesRes, ratesRes] = await Promise.all([
-        CurrencyManagementService.getAllDevises(),
-        ExchangeRateManagementService.getOrganizationRates()
-      ]);
-
-      if (currenciesRes.success && currenciesRes.data) {
-        const currencies = currenciesRes.data;
-        const rates = (ratesRes.success && ratesRes.data) ? ratesRes.data : [];
-        const nationalCurrency = currencies.find(c => c.est_nationale);
-
-        const mapped: Devise[] = currencies.map(c => {
-          const rateEntry = rates.find(r =>
-            (r.devise_source_id === c.id && r.devise_cible_id === nationalCurrency?.id)
-          );
-
-          return {
-            id: c.id!,
-            name: c.nom,
-            code: c.code,
-            symbol: c.symbole || '',
-            rate: rateEntry ? rateEntry.taux : (c.est_nationale ? 1.0 : 0),
-            estNationale: c.est_nationale,
-            isActive: c.actif
-          };
-        });
-
-        setDevises(mapped);
-      } else {
-        setDevises([]);
-      }
+      const result = await fetchWithOfflineCache({
+        cacheKey: CG_CACHE_KEYS.DEVISES,
+        fetcher: async () => {
+          const [currenciesRes, ratesRes] = await Promise.all([
+            CurrencyManagementService.getAllDevises(),
+            ExchangeRateManagementService.getOrganizationRates(),
+          ]);
+          if (!currenciesRes.success || !currenciesRes.data) return [] as Devise[];
+          const rates = ratesRes.success && ratesRes.data ? ratesRes.data : [];
+          return mapDevises(currenciesRes.data, rates);
+        },
+        emptyValue: [] as Devise[],
+      });
+      setDevises(result.data);
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
+      if (result.fromCache) setError(null);
     } catch (err: any) {
       let reason = "Impossible de charger les devises.";
       if (err.body?.message) reason = err.body.message;
@@ -81,7 +95,7 @@ export default function DevisesPage() {
     } finally {
       if (!options?.silent) setIsLoading(false);
     }
-  }, []);
+  }, [mapDevises]);
 
   useEffect(() => {
     void fetchDevises();
@@ -103,10 +117,31 @@ export default function DevisesPage() {
       };
 
       if (isNew) {
-        await CurrencyManagementService.createDevise(deviseDto);
+        // Optimiste : met à jour la liste locale immédiatement (visible offline).
+        const prev = await getCachedListData<Devise[]>(CG_CACHE_KEYS.DEVISES, devises);
+        const next = [{ ...data, id: deviseDto.id }, ...prev.filter((d) => d.id !== deviseDto.id)];
+        await replaceListWithOutbox({
+          cacheKey: CG_CACHE_KEYS.DEVISES,
+          entity: "cg.devises",
+          action: "CREATE",
+          entityId: deviseDto.id!,
+          nextList: next,
+          payload: deviseDto,
+          onlineMutator: () => CurrencyManagementService.createDevise(deviseDto),
+        });
         toast.success('Devise créée avec succès');
       } else {
-        await CurrencyManagementService.updateDevise(data.id, deviseDto);
+        const prev = await getCachedListData<Devise[]>(CG_CACHE_KEYS.DEVISES, devises);
+        const next = prev.map((d) => (d.id === data.id ? { ...d, ...data } : d));
+        await replaceListWithOutbox({
+          cacheKey: CG_CACHE_KEYS.DEVISES,
+          entity: "cg.devises",
+          action: "UPDATE",
+          entityId: data.id,
+          nextList: next,
+          payload: deviseDto,
+          onlineMutator: () => CurrencyManagementService.updateDevise(data.id, deviseDto),
+        });
         toast.success('Devise mise à jour avec succès');
       }
       await fetchDevises();
@@ -129,22 +164,26 @@ export default function DevisesPage() {
 
   const handleDelete = async () => {
     if (!deleteId) return;
-    // NOTE: CurrencyManagementService.deleteDevise is presumed to exist, check if not
-    // If not, we might need to implement it or check how it was done.
-    // Assuming it exists for now based on pattern.
-    // Actually, let's double check if I have deleteDevise available. 
-    // If not, I'll assume standard service pattern or leave it if it was missing in original?
-    // Original code had handleDelete logic? No, it used setDeviseToDelete but didn't show full implementation.
-    // I'll assume standard service.
-    setError("La suppression de devise n'est pas complètement implémentée dans ce refactoring (vérifier service).");
-    setDeleteId(null);
-    /* 
     try {
-        await CurrencyManagementService.deleteDevise(deleteId);
-        toast.success('Devise supprimée');
-        await fetchDevises();
-    } catch ...
-    */
+      const prev = await getCachedListData<Devise[]>(CG_CACHE_KEYS.DEVISES, devises);
+      const next = prev.filter((d) => d.id !== deleteId);
+      await replaceListWithOutbox({
+        cacheKey: CG_CACHE_KEYS.DEVISES,
+        entity: "cg.devises",
+        action: "DELETE",
+        entityId: deleteId,
+        nextList: next,
+        payload: { id: deleteId },
+        onlineMutator: () => CurrencyManagementService.deleteDevise(deleteId),
+      });
+      toast.success("Devise supprimée");
+      await fetchDevises();
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erreur de suppression");
+    } finally {
+      setDeleteId(null);
+    }
   };
 
   const handleUpdateRate = (id: string) => {
@@ -172,11 +211,22 @@ export default function DevisesPage() {
 
   const handleSaveRate = async (sourceId: string, targetId: string, rate: number) => {
     try {
-      await ExchangeRateManagementService.createTauxChange({
+      // Optimiste : met à jour le rate local de la devise source.
+      const prev = await getCachedListData<Devise[]>(CG_CACHE_KEYS.DEVISES, devises);
+      const next = prev.map((d) => (d.id === sourceId ? { ...d, rate } : d));
+      await replaceListWithOutbox({
+        cacheKey: CG_CACHE_KEYS.DEVISES,
+        entity: "cg.devises_rates",
+        action: "CREATE",
+        entityId: `${sourceId}:${targetId}`,
+        nextList: next,
+        payload: { sourceId, targetId, rate },
+        onlineMutator: () => ExchangeRateManagementService.createTauxChange({
         devise_source_id: sourceId,
         devise_cible_id: targetId,
         taux: rate,
         date_effet: new Date().toISOString()
+      }),
       });
       toast.success("Taux de change mis à jour");
       await fetchDevises();
@@ -222,6 +272,8 @@ export default function DevisesPage() {
           <h2 className="text-xl font-semibold text-gray-700 mb-1">Devises</h2>
           <p className="text-sm text-gray-500">Gérez les devises et taux de change.</p>
         </div>
+
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
         {error && (
           <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">

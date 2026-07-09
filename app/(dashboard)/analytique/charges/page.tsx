@@ -7,9 +7,19 @@ import { Plus, Pencil, Trash2, RefreshCw, FileText, Search, TrendingUp, Trending
 import { ChargeAnalytiqueForm } from "@/components/analytique/charge-form-modal";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { useOfflineMockList } from "@/hooks/use-offline-mock-list";
+import { useOfflineMockMutations } from "@/hooks/use-offline-mock-mutations";
+import { CA_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function ChargesPage() {
-    const [charges, setCharges] = useState<ChargeAnalytique[]>(mockCharges);
+    const listHook = useOfflineMockList(CA_CACHE_KEYS.CHARGES, mockCharges);
+    const { data: charges, usingCache, cacheTimestamp } = listHook;
+    const { upsertItem, removeItem } = useOfflineMockMutations(
+        CA_CACHE_KEYS.CHARGES,
+        "ca.charges",
+        listHook,
+    );
     const [search, setSearch] = useState("");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [typeFilter, setTypeFilter] = useState<"all" | "DIRECTE" | "INDIRECTE">("all");
@@ -21,12 +31,8 @@ export default function ChargesPage() {
         return matchSearch && matchType;
     });
 
-    const handleSave = (data: Partial<ChargeAnalytique>) => {
-        if (data.id) {
-            setCharges((p) => p.map((c) => (c.id === data.id ? { ...c, ...data } as ChargeAnalytique : c)));
-        } else {
-            setCharges((p) => [...p, { ...data, id: `ch-${Date.now()}` } as ChargeAnalytique]);
-        }
+    const handleSave = async (data: Partial<ChargeAnalytique>) => {
+        await upsertItem(data);
     };
 
     const openChargeForm = (initial?: Partial<ChargeAnalytique>) => {
@@ -36,8 +42,8 @@ export default function ChargesPage() {
                 initial={initial}
                 centres={mockCentres}
                 onCancel={closeForm}
-                onSubmit={(data) => {
-                    handleSave(data);
+                onSubmit={async (data) => {
+                    await handleSave(data);
                     closeForm();
                 }}
             />,
@@ -49,11 +55,12 @@ export default function ChargesPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             {deleteId && (
                 <ConfirmDialog
                     title="Supprimer cette charge ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => setCharges((p) => p.filter((c) => c.id !== deleteId))}
+                    onConfirm={() => void removeItem(deleteId!)}
                 >
                     <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
                 </ConfirmDialog>
