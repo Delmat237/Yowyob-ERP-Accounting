@@ -7,6 +7,7 @@ import type { LigneImputationDto } from '@/src/lib2/models/LigneImputationDto';
 import type { PeriodeAnalytiqueDto } from '@/src/lib2/models/PeriodeAnalytiqueDto';
 import type { UniteOeuvreDto } from '@/src/lib2/models/UniteOeuvreDto';
 import type { ChargeVentileeDto } from '@/src/lib2/models/ChargeVentileeDto';
+import type { LigneConcordanceDto } from '@/src/lib2/models/LigneConcordanceDto';
 import type {
   EcritureAnalytique,
   LigneEcritureAnalytique,
@@ -18,6 +19,7 @@ import type {
   CentreAnalyse,
   CompteAnalytique,
   ChargeVentilee,
+  LigneConcordance,
   NatureUO,
   PeriodeCG,
   StatutPeriode,
@@ -392,4 +394,36 @@ export function mapChargeVentileeUiToDto(data: ChargeVentilee): ChargeVentileeDt
     periodeCgId: isUuid(data.periodeCGId) ? data.periodeCGId : undefined,
     ventilations,
   };
+}
+
+export function mapLigneConcordanceDtoToUi(dto: LigneConcordanceDto): LigneConcordance {
+  return {
+    id: dto.id ?? '',
+    type: dto.type as LigneConcordance['type'],
+    label: dto.label ?? '',
+    description: dto.description ?? '',
+    signe: (dto.signe === '-' ? '-' : '+') as '+' | '-',
+    montant: Number(dto.montant ?? 0),
+    chargeVentileeId: dto.chargeVentileeId,
+  };
+}
+
+export function mapLigneConcordanceUiToDto(data: LigneConcordance): LigneConcordanceDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    type: data.type,
+    label: data.label,
+    description: data.description,
+    signe: data.signe,
+    montant: data.montant,
+    chargeVentileeId:
+      data.chargeVentileeId && isUuid(data.chargeVentileeId)
+        ? data.chargeVentileeId
+        : undefined,
+    autoGeneree: false,
+  };
+}
+
+export function mapLignesConcordanceUiToDto(lignes: LigneConcordance[]): LigneConcordanceDto[] {
+  return lignes.map(mapLigneConcordanceUiToDto);
 }

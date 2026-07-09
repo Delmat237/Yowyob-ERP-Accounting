@@ -138,6 +138,7 @@ export default function ConcordancePage() {
         loading,
         error,
         usingApiEcritures,
+        usingConcordanceApi,
         usingMockFallback,
         hasLignesAuto,
     } = useConcordanceApi();
@@ -157,11 +158,11 @@ export default function ConcordancePage() {
         concordanceOk,
     } = concordance;
 
-    const handleSaveLigne = (data: LigneConcordance) => {
+    const handleSaveLigne = async (data: LigneConcordance) => {
         const next = lignesManuelles.find((l) => l.id === data.id)
             ? lignesManuelles.map((l) => (l.id === data.id ? data : l))
             : [...lignesManuelles, data];
-        saveLignes(next);
+        await saveLignes(next);
     };
 
     if (loading && periodes.length === 0) {
@@ -181,8 +182,9 @@ export default function ConcordancePage() {
                 <ConfirmDialog
                     title="Supprimer cette ligne ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => {
-                        saveLignes(lignesManuelles.filter((l) => l.id !== deleteId));
+                    onConfirm={async () => {
+                        await saveLignes(lignesManuelles.filter((l) => l.id !== deleteId));
+                        setDeleteId(null);
                     }}
                 >
                     <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
@@ -195,6 +197,7 @@ export default function ConcordancePage() {
                     <span>
                         {error ?? "Certaines données proviennent du mode démonstration."}
                         {hasLignesAuto && " Lignes non incorporables générées depuis les charges ventilées."}
+                        {usingConcordanceApi && " Concordance synchronisée avec le serveur."}
                         {usingApiEcritures && ` Écritures validées : ${formatCurrency(totalAnalytiqueEcritures)}.`}
                     </span>
                 </div>

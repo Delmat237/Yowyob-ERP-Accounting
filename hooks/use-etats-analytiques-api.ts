@@ -14,14 +14,23 @@ import {
   computeConcordance,
   mergeLignesConcordance,
 } from '@/lib/analytique/concordance-calculs';
+import {
+  isConcordancePeriodeApiReady,
+  mergeConcordanceApiWithLocal,
+} from '@/lib/analytique/concordance-api-merge';
 import { enrichCoutsProduits } from '@/lib/analytique/couts-calculs';
+import { unwrapApiData } from '@/lib/analytique/analytique-api';
+import { mapLigneConcordanceDtoToUi } from '@/lib/analytique/analytique-mappers';
 import {
   mockCoutsProduits,
   mockChargesVentilees,
   type PeriodeAnalytique,
+  type LigneConcordance,
 } from '@/lib/analytique/mock-data';
 import { listChargesVentilees } from '@/lib/analytique/charges-ventilees-store';
 import { listLignesConcordance } from '@/lib/analytique/methodes-couts-store';
+import { AccountingConcordanceService } from '@/src/lib2/services/AccountingConcordanceService';
+import type { ConcordanceCalculDto } from '@/src/lib2/models/ConcordanceCalculDto';
 
 export function useEtatsAnalytiquesApi() {
   const {
@@ -38,9 +47,14 @@ export function useEtatsAnalytiquesApi() {
     error: ecrituresError,
     usingMockFallback: ecrituresMock,
   } = useEcrituresAnalytiquesApi();
-  const { charges, loading: chargesLoading } = useChargesVentilees();
+  const { charges, loading: chargesLoading, usingMockFallback: chargesMock } = useChargesVentilees();
 
   const [periodeId, setPeriodeId] = useState<string>('');
+  const [lignesManuelles, setLignesManuelles] = useState<LigneConcordance[]>(() =>
+    listLignesConcordance(),
+  );
+  const [apiCalcul, setApiCalcul] = useState<ConcordanceCalculDto | null>(null);
+  const [usingConcordanceApi, setUsingConcordanceApi] = useState(false);
 
   useEffect(() => {
     if (periodes.length === 0 || periodeId) return;
@@ -48,6 +62,42 @@ export function useEtatsAnalytiquesApi() {
     const ouvert = periodes.find((p) => p.statut === 'OUVERT');
     setPeriodeId(enCours?.id ?? ouvert?.id ?? periodes[0]?.id ?? '');
   }, [periodes, periodeId]);
+
+  useEffect(() => {
+    if (!periodeId || !isConcordancePeriodeApiReady(periodeId)) {
+      setUsingConcordanceApi(false);
+      setApiCalcul(null);
+      setLignesManuelles(listLignesConcordance());
+      return;
+    }
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = unwrapApiData(
+          await AccountingConcordanceService.getPeriode(periodeId),
+          'Impossible de charger la concordance.',
+        );
+        if (cancelled) return;
+        setLignesManuelles(
+          (data.lignesManuelles ?? data.calcul?.lignesManuelles ?? []).map(
+            mapLigneConcordanceDtoToUi,
+          ),
+        );
+        setApiCalcul(data.calcul ?? null);
+        setUsingConcordanceApi(true);
+      } catch {
+        if (cancelled) return;
+        setUsingConcordanceApi(false);
+        setApiCalcul(null);
+        setLignesManuelles(listLignesConcordance());
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [periodeId]);
 
   const selectedPeriode: PeriodeAnalytique | undefined =
     periodes.find((p) => p.id === periodeId) ?? periodes[0];
@@ -89,54 +139,67 @@ export function useEtatsAnalytiquesApi() {
     [periodeId],
   );
 
-  const lignesManuelles = useMemo(() => listLignesConcordance(), []);
+  const lignesAuto = useMemo(() => {
+    if (usingConcordanceApi && apiCalcul?.lignesAuto) {
+      return apiCalcul.lignesAuto.map(mapLigneConcordanceDtoToUi);
+    }
+    return buildLignesAutoFromCharges(chargesEffectives, periodeId);
+  }, [usingConcordanceApi, apiCalcul, chargesEffectives, periodeId]);
 
-  const lignesAuto = useMemo(
-    () => buildLignesAutoFromCharges(chargesEffectives, periodeId),
-    [chargesEffectives, periodeId],
-  );
-
-  const lignesConcordance = useMemo(
-    () => mergeLignesConcordance(lignesManuelles, lignesAuto),
-    [lignesManuelles, lignesAuto],
-  );
+  const lignesConcordance = useMemo(() => {
+    if (usingConcordanceApi && apiCalcul?.lignes) {
+      return apiCalcul.lignes.map(mapLigneConcordanceDtoToUi);
+    }
+    return mergeLignesConcordance(lignesManuelles, lignesAuto);
+  }, [usingConcordanceApi, apiCalcul, lignesManuelles, lignesAuto]);
 
   const produitsEnrichis = useMemo(
     () => enrichCoutsProduits(mockCoutsProduits, ecritures, periodeId),
     [ecritures, periodeId],
   );
 
-  const concordance = useMemo(() => {
-    const computed = computeConcordance({
-      periode: selectedPeriode,
+  const concordanceLocal = useMemo(
+    () =>
+      computeConcordance({
+        periode: selectedPeriode,
+        periodesCG,
+        charges: chargesEffectives,
+        ecritures,
+        produits: produitsEnrichis,
+        lignes: lignesConcordance,
+        periodeId,
+      }),
+    [
+      selectedPeriode,
       periodesCG,
-      charges: chargesEffectives,
+      chargesEffectives,
       ecritures,
-      produits: produitsEnrichis,
-      lignes: lignesConcordance,
+      produitsEnrichis,
+      lignesConcordance,
       periodeId,
-    });
-    return {
-      periodeCG: computed.periodeCG,
-      resultatCG: computed.resultCG,
-      totalChargesCG: computed.totalChargesCG,
-      totalProduitsCG: computed.totalProduitsCG,
-      chargesNonInc: computed.totalNonInc,
-      ajustements: computed.sommeDiff,
+    ],
+  );
+
+  const concordanceMerged = useMemo(
+    () => mergeConcordanceApiWithLocal(concordanceLocal, apiCalcul, lignesConcordance),
+    [concordanceLocal, apiCalcul, lignesConcordance],
+  );
+
+  const concordance = useMemo(
+    () => ({
+      periodeCG: concordanceMerged.periodeCG,
+      resultatCG: concordanceMerged.resultCG,
+      totalChargesCG: concordanceMerged.totalChargesCG,
+      totalProduitsCG: concordanceMerged.totalProduitsCG,
+      chargesNonInc: concordanceMerged.totalNonInc,
+      ajustements: concordanceMerged.sommeDiff,
       lignes: lignesConcordance,
-      resultatCA: computed.resultCA,
-      concordanceOk: computed.concordanceOk,
-      ecartVerif: computed.ecartVerif,
-    };
-  }, [
-    selectedPeriode,
-    periodesCG,
-    chargesEffectives,
-    ecritures,
-    produitsEnrichis,
-    lignesConcordance,
-    periodeId,
-  ]);
+      resultatCA: concordanceMerged.resultCA,
+      concordanceOk: concordanceMerged.concordanceOk,
+      ecartVerif: concordanceMerged.ecartVerif,
+    }),
+    [concordanceMerged, lignesConcordance],
+  );
 
   const usingApiEcritures = !ecrituresMock && ecritures.some((e) => e.statut === 'VALIDEE');
   const loading = periodesLoading || centresLoading || ecrituresLoading || chargesLoading;
@@ -153,7 +216,8 @@ export function useEtatsAnalytiquesApi() {
     loading,
     error,
     usingApiEcritures,
-    usingMockFallback: periodesMock || ecrituresMock,
+    usingConcordanceApi,
+    usingMockFallback: periodesMock || ecrituresMock || chargesMock || !usingConcordanceApi,
     ecrituresValideesCount: ecritures.filter(
       (e) => e.statut === 'VALIDEE' && e.exerciceAnalytiqueId === periodeId,
     ).length,
