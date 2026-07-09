@@ -14,6 +14,8 @@ import type { FicheCoutStandardDto, LigneCoutStandardDto } from '@/src/lib2/mode
 import type { ChargeAnalytiqueDto } from '@/src/lib2/models/ChargeAnalytiqueDto';
 import type { RegleValorisationStockDto } from '@/src/lib2/models/RegleValorisationStockDto';
 import type { MethodeCalculCoutDto } from '@/src/lib2/models/MethodeCalculCoutDto';
+import type { RegleIncorporationDto } from '@/src/lib2/models/RegleIncorporationDto';
+import type { ConfigurationAnalytiqueDto } from '@/src/lib2/models/ConfigurationAnalytiqueDto';
 import type {
   EcritureAnalytique,
   LigneEcritureAnalytique,
@@ -45,7 +47,10 @@ import type {
   MethodeCalculCout,
   StatutMethode,
   ActiviteNormale,
+  RegleIncorporation,
+  ModeIncorporation,
 } from '@/lib/analytique/mock-data';
+import type { AnalytiqueConfig } from '@/lib/analytique/analytique-config-store';
 import type {
   CleRepartitionUi,
   LigneCleRepartition,
@@ -656,5 +661,68 @@ export function mapMethodeCalculCoutUiToDto(data: MethodeCalculCoût): MethodeCa
       activiteNormale: a.activiteNormale,
       unite: a.unite,
     })),
+  };
+}
+
+export function mapRegleIncorporationDtoToUi(dto: RegleIncorporationDto): RegleIncorporation {
+  return {
+    id: dto.id ?? '',
+    compteCGId: dto.compteCgId ?? '',
+    compteCGNo: dto.compteCgNo ?? '',
+    libelle: dto.libelle ?? '',
+    mode: (dto.mode as ModeIncorporation) ?? 'INCORPORABLE',
+    tauxSubstitution: dto.tauxSubstitution,
+    montantSubstitution: dto.montantSubstitution,
+    baseCalcul: dto.baseCalcul,
+    justification: dto.justification,
+    compteEcart97: dto.compteEcart97,
+    periodeId: dto.periodeId,
+    dateDebut: dto.dateDebut,
+    dateFin: dto.dateFin,
+    hasEcritures: dto.hasEcritures ?? false,
+  };
+}
+
+export function mapRegleIncorporationUiToDto(data: RegleIncorporation): RegleIncorporationDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    compteCgId: data.compteCGId,
+    compteCgNo: data.compteCGNo,
+    libelle: data.libelle,
+    mode: data.mode,
+    tauxSubstitution: data.tauxSubstitution,
+    montantSubstitution: data.montantSubstitution,
+    baseCalcul: data.baseCalcul,
+    justification: data.justification,
+    compteEcart97: data.compteEcart97,
+    periodeId: data.periodeId && isUuid(data.periodeId) ? data.periodeId : undefined,
+    dateDebut: data.dateDebut,
+    dateFin: data.dateFin,
+  };
+}
+
+export function mapConfigurationAnalytiqueDtoToUi(dto: ConfigurationAnalytiqueDto): AnalytiqueConfig {
+  return {
+    devise: dto.devise ?? 'FCFA',
+    precision: dto.precision ?? 0,
+    separateurMilliers: dto.separateurMilliers ?? ' ',
+    bloquerApresClotureCG: dto.bloquerApresClotureCg ?? true,
+    joursGraceCloture: dto.joursGraceCloture ?? 5,
+    autoriserSaisieRetroactive: dto.autoriserSaisieRetroactive ?? false,
+    methodeValorisationStocks: (dto.methodeValorisationStocks as MethodeStock) ?? 'CUMP',
+    importComptabiliteGeneraleActive: dto.importComptabiliteGeneraleActive ?? false,
+  };
+}
+
+export function mapConfigurationAnalytiqueUiToDto(config: AnalytiqueConfig): ConfigurationAnalytiqueDto {
+  return {
+    devise: config.devise,
+    precision: config.precision,
+    separateurMilliers: config.separateurMilliers,
+    bloquerApresClotureCg: config.bloquerApresClotureCG,
+    joursGraceCloture: config.joursGraceCloture,
+    autoriserSaisieRetroactive: config.autoriserSaisieRetroactive,
+    methodeValorisationStocks: config.methodeValorisationStocks,
+    importComptabiliteGeneraleActive: config.importComptabiliteGeneraleActive,
   };
 }

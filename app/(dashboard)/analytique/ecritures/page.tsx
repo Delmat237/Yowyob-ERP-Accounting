@@ -9,10 +9,8 @@ import { formatCurrency } from "@/lib/utils";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
 import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
 import { useEcrituresAnalytiquesApi } from "@/hooks/use-ecritures-analytiques-api";
+import { useAnalytiqueConfigApi } from "@/hooks/use-analytique-config-api";
 import { useControleBudgetaireData } from "@/hooks/use-controle-budgetaire-data";
-import {
-    getAnalytiqueConfig,
-} from "@/lib/analytique/analytique-config-store";
 import {
     getJournalAnalytiqueById,
     NATURES_CHARGE,
@@ -50,6 +48,7 @@ export default function EcrituresAnalytiquesPage() {
         createEcriture,
         importCg,
     } = useEcrituresAnalytiquesApi();
+    const { config: analytiqueConfig } = useAnalytiqueConfigApi();
     const { centres } = useCentresAnalyseApi();
     const { periodes } = usePeriodesAnalytiquesAlignees();
     useControleBudgetaireData();
@@ -61,11 +60,11 @@ export default function EcrituresAnalytiquesPage() {
     const refresh = useCallback(
         (options?: AutoRefreshOptions) => {
             if (!options?.silent) {
-                setImportActive(getAnalytiqueConfig().importComptabiliteGeneraleActive);
+                setImportActive(analytiqueConfig.importComptabiliteGeneraleActive);
             }
             void reload();
         },
-        [reload],
+        [reload, analytiqueConfig.importComptabiliteGeneraleActive],
     );
 
     useEffect(() => {

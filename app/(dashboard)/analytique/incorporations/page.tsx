@@ -2,16 +2,14 @@
 
 import { useState } from "react";
 import {
-    listReglesIncorporation,
-    saveReglesIncorporation,
-} from "@/lib/analytique/methodes-couts-store";
-import {
     RegleIncorporation, ModeIncorporation,
 } from "@/lib/analytique/mock-data";
 import { useComptesComptablesCG } from "@/hooks/use-comptes-comptables-cg";
+import { useIncorporationsApi } from "@/hooks/use-incorporations-api";
 import { Plus, Pencil, Trash2, AlertTriangle, Upload, Search, Loader2 } from "lucide-react";
 import { FloatingModal } from "@/components/ui/floating-modal";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 const MODE_CONFIG: Record<ModeIncorporation, { label: string; color: string }> = {
     INCORPORABLE: { label: "Incorporable", color: "bg-emerald-50 text-emerald-700 border-emerald-200" },
@@ -21,7 +19,7 @@ const MODE_CONFIG: Record<ModeIncorporation, { label: string; color: string }> =
 
 
 export default function IncorporationsPage() {
-    const [regles, setRegles] = useState<RegleIncorporation[]>(() => listReglesIncorporation());
+    const { regles, loading, saveRegle, removeRegle, error, usingMockFallback } = useIncorporationsApi();
     const [modal, setModal] = useState<{ open: boolean; initial?: Partial<RegleIncorporation> }>({ open: false });
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
@@ -34,15 +32,19 @@ export default function IncorporationsPage() {
     });
 
     function handleSave(data: RegleIncorporation) {
-        const next = regles.find((r) => r.id === data.id)
-            ? regles.map((r) => (r.id === data.id ? data : r))
-            : [...regles, data];
-        setRegles(next);
-        saveReglesIncorporation(next);
+        void saveRegle(data);
     }
+
+    if (loading) return <CustomPageLoader />;
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {usingMockFallback && error && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>{error}</p>
+                </div>
+            )}
             {modal.open && <Modal initial={modal.initial} onClose={() => setModal({ open: false })} onSave={handleSave} />}
             {deleteId && (
                 <ConfirmDialog
@@ -51,9 +53,8 @@ export default function IncorporationsPage() {
                     cancelLabel="Fermer"
                     showConfirm={!regles.find((r) => r.id === deleteId)?.hasEcritures}
                     onConfirm={() => {
-                        const next = regles.filter((r) => r.id !== deleteId);
-                        setRegles(next);
-                        saveReglesIncorporation(next);
+                        void removeRegle(deleteId!);
+                        setDeleteId(null);
                     }}
                 >
                     {regles.find((r) => r.id === deleteId)?.hasEcritures ? (
