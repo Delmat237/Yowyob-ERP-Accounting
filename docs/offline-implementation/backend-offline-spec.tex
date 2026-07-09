@@ -1,0 +1,887 @@
+% =============================================================================
+% Spécification Backend — Offline-First
+% Yowyob ERP — Comptabilité Générale et Analytique
+% =============================================================================
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+
+\geometry{margin=2.5cm}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize Backend Offline-First --- Yowyob ERP}
+\fancyhead[R]{\footnotesize Spécification technique}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\textbf{YOWYOB ERP}\\[0.4em]Comptabilité Générale et Analytique\par}
+  \vspace{1.8cm}
+  {\Huge\textbf{Spécification Backend\\[0.35em]Mode Offline-First}\par}
+  \vspace{1.2cm}
+  {\large Spécification backend, architecture offline-first et idempotence\par}
+  \vspace{2.2cm}
+  \begin{tabular}{rl}
+    \textbf{Version} & 1.2 \\
+    \textbf{Date} & Juillet 2026 \\
+    \textbf{Révision} & Alignement handlers frontend CG/CA \\
+    \textbf{Public} & Équipe backend, architectes, chefs de projet \\
+    \textbf{Statut} & Document de référence contractuel \\
+  \end{tabular}
+  \vfill
+  {\small Le frontend gère IndexedDB, outbox et détection réseau. Le backend accepte la synchronisation différée.\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% =============================================================================
+\chapter{Introduction}
+% =============================================================================
+
+\section{Objectif}
+
+Ce document liste \textbf{uniquement} les exigences côté backend pour un fonctionnement offline-first complet de l'ERP Yowyob.
+
+\section{Principe fondamental}
+
+\begin{quote}
+\textbf{Le backend n'est jamais ``offline''.} Il reçoit les requêtes HTTP quand elles arrivent, y compris avec retard après une coupure réseau côté client.
+\end{quote}
+
+Le frontend applique la règle suivante :
+\begin{itemize}
+  \item \textbf{En ligne} : communication directe avec l'API (source de vérité serveur).
+  \item \textbf{Hors ligne} : stockage local (IndexedDB) + file d'attente (outbox).
+  \item \textbf{Retour en ligne} : rejeu automatique de la file vers le backend.
+\end{itemize}
+
+\section{État d'alignement frontend $\leftrightarrow$ backend (juillet 2026)}
+
+Le frontend a implémenté IndexedDB, outbox, cache lecture et handlers de sync. Le tableau ci-dessous résume l'\textbf{écart actuel} avec les exigences backend de ce document :
+
+\begin{longtable}{@{}p{5cm}p{8.5cm}@{}}
+\hline
+\textbf{Composant} & \textbf{État frontend (implémenté)} \\
+\hline
+\endhead
+Outbox + cache lecture CG & Écritures, journaux, plan comptable, exercices, périodes, budgets, opérations, taxes, devises, taux de change \\
+\hline
+Outbox notifications & Marquage \texttt{POST .../notifications/\{id\}/read} \\
+\hline
+Outbox CA (mock) & Centres, charges, comptes, plan analytique, journaux CA --- en attente d'API \\
+\hline
+En-tête \texttt{Idempotency-Key} & \textbf{Non envoyé} encore par le client (stocké localement comme \texttt{clientMutationId}) \\
+\hline
+Champ \texttt{clientId} dans le corps & \textbf{Non envoyé} --- IDs locaux \texttt{local-*} / \texttt{ec-offline-*} retirés avant POST, mapping client$\rightarrow$serveur en IndexedDB \\
+\hline
+Gestion HTTP 409 & Non gérée côté UI \\
+\hline
+Sync delta \texttt{?since=} & Non consommée --- les listes font un GET complet \\
+\hline
+Session UI hors ligne & JWT expiré accepté si snapshot local ; \textbf{la sync API exige un token valide} \\
+\hline
+Service Worker (PWA) & Shell + pré-cache routes (production) --- sans impact backend \\
+\hline
+\end{longtable}
+
+\textbf{Conséquence pour le backend :} les endpoints listés dans ce document doivent être rendus \textbf{idempotents} même si le client n'envoie pas encore toutes les clés --- le rejeu de file est déjà actif côté frontend.
+
+% =============================================================================
+\chapter{Architecture offline-first}
+% =============================================================================
+
+\section{Vue d'ensemble}
+
+L'architecture retenue est \textbf{online-first avec repli offline}. Le backend reste la \textbf{source de vérité} lorsque le réseau est disponible. Le frontend assure la continuité de service hors ligne via un cache local et une file de synchronisation.
+
+\begin{verbatim}
+┌──────────────────────────────────────────────────────────────┐
+│                    COUCHE PRÉSENTATION (Frontend)             │
+│   Pages React — mise à jour optimiste, indicateurs discrets   │
+└────────────────────────────┬─────────────────────────────────┘
+                             │
+┌────────────────────────────▼─────────────────────────────────┐
+│              COUCHE DÉTECTION RÉSEAU (Frontend)               │
+│   navigator.onLine + échecs API consécutifs                   │
+└────────────────────────────┬─────────────────────────────────┘
+                             │
+          ┌──────────────────┴──────────────────┐
+          │ EN LIGNE                          │ HORS LIGNE
+          ▼                                     ▼
+┌─────────────────────┐               ┌─────────────────────┐
+│   API REST Backend  │               │  Cache IndexedDB    │
+│  (source de vérité) │               │  (lecture locale)   │
+└──────────┬──────────┘               └──────────┬──────────┘
+           │                                       │
+           │                              ┌────────▼────────┐
+           │                              │  Outbox (file)  │
+           │                              │  mutations      │
+           │                              └────────┬────────┘
+           │                                       │
+           └───────────────┬───────────────────────┘
+                           ▼
+                ┌─────────────────────┐
+                │  Moteur de sync     │
+                │  (retour en ligne)  │
+                └──────────┬──────────┘
+                           ▼
+                ┌─────────────────────┐
+                │  Handlers par       │
+                │  entité métier      │
+                └──────────┬──────────┘
+                           ▼
+                ┌─────────────────────┐
+                │  API REST Backend   │
+                │  + idempotence      │
+                └─────────────────────┘
+\end{verbatim}
+
+\section{Les cinq couches}
+
+\begin{longtable}{@{}cp{3.2cm}p{4.5cm}p{4.5cm}@{}}
+\hline
+\textbf{\#} & \textbf{Couche} & \textbf{Rôle} & \textbf{Responsable} \\
+\hline
+\endhead
+1 & Présentation & Affichage immédiat, pas de blocage UI & Frontend \\
+\hline
+2 & Détection réseau & Décision online / offline & Frontend \\
+\hline
+3 & Cache lecture & Consultation hors ligne des listes & Frontend (IndexedDB) \\
+\hline
+4 & Outbox & File d'attente des écritures & Frontend (IndexedDB) \\
+\hline
+5 & Sync + API & Persistance définitive, règles métier & \textbf{Backend} \\
+\hline
+\end{longtable}
+
+\section{Patterns architecturaux}
+
+\subsection{Pattern Outbox (file d'attente)}
+
+Toute mutation effectuée hors ligne est sérialisée dans une outbox persistante :
+
+\begin{verbatim}
+Action → IndexedDB → outbox (status: pending)
+       → [retour en ligne] → API Backend → outbox (status: done)
+\end{verbatim}
+
+\textbf{Exigence backend :} accepter le rejeu idempotent de ces opérations (voir chapitre Idempotence).
+
+\subsection{Pattern Repository (façade métier)}
+
+Le frontend n'appelle pas l'API directement depuis les pages. Une couche intermédiaire décide :
+
+\begin{verbatim}
+if (en ligne)  → appel API backend
+if (hors ligne) → cache + outbox
+\end{verbatim}
+
+\textbf{Exigence backend :} API stables, format de réponse uniforme.
+
+\subsection{Pattern Online-first}
+
+Tant que le réseau et l'API répondent, \textbf{toute lecture et écriture} passe par le backend. Le cache local est un \textbf{repli}, pas la source principale.
+
+\subsection{Pattern Optimistic UI}
+
+L'interface se met à jour avant la confirmation serveur. Le backend valide ensuite et peut rejeter (422) ou signaler un conflit (409).
+
+\section{Répartition des responsabilités}
+
+\begin{longtable}{@{}p{5.5cm}p{7cm}@{}}
+\hline
+\textbf{Frontend} & \textbf{Backend} \\
+\hline
+\endhead
+IndexedDB, outbox, détection réseau & Persistance définitive en base \\
+\hline
+Cache des listes pour lecture offline & Endpoints REST CRUD \\
+\hline
+Rejeu de la file à la reconnexion & Idempotence (Idempotency-Key) \\
+\hline
+Mapping ID client $\rightarrow$ ID serveur & Acceptation de clientId à la création \\
+\hline
+Indicateurs UI (sync en attente) & Versionnement (version / updatedAt) \\
+\hline
+Service Worker (shell PWA, optionnel) & Gestion des conflits (HTTP 409) \\
+\hline
+Pause du polling AJAX hors ligne & Règles métier comptables (validation, clôture) \\
+\hline
+Sync delta (consommation) & Sync delta (fourniture ?since=) \\
+\hline
+\end{longtable}
+
+\section{Flux de lecture}
+
+\begin{enumerate}
+  \item \textbf{En ligne} : \texttt{GET API} $\rightarrow$ mise à jour cache local $\rightarrow$ affichage.
+  \item \textbf{Hors ligne} : lecture cache IndexedDB $\rightarrow$ affichage.
+  \item \textbf{Échec réseau} : repli sur le cache sans bloquer l'utilisateur.
+\end{enumerate}
+
+\textbf{Backend :} fournir \texttt{GET /ressource?since=timestamp} pour optimiser la resynchronisation.
+
+\section{Flux d'écriture}
+
+\begin{enumerate}
+  \item \textbf{En ligne} : \texttt{POST/PUT/DELETE} direct $\rightarrow$ réponse serveur $\rightarrow$ mise à jour UI.
+  \item \textbf{Hors ligne} : sauvegarde locale + ajout outbox $\rightarrow$ UI optimiste.
+  \item \textbf{Retour en ligne} : flush outbox dans l'ordre chronologique $\rightarrow$ API backend.
+  \item \textbf{Succès} : statut outbox = \texttt{done} (uniquement après accusé serveur).
+  \item \textbf{Conflit} : HTTP 409 $\rightarrow$ résolution manuelle côté UI.
+\end{enumerate}
+
+\textbf{Backend :} idempotence + versionnement sur chaque mutation.
+
+\section{Organisation backend recommandée}
+
+\begin{verbatim}
+Controller REST
+    ↓
+Service métier (règles comptables)
+    ↓
+Repository / DAO
+    ↓
+Base de données
+
+Couche transversale :
+  - Filtre Idempotency-Key (avant controller)
+  - Gestion version / If-Match (sur PUT)
+  - Table idempotency_keys (TTL 24-72h)
+  - Journal d'audit sync
+\end{verbatim}
+
+\section{Handlers par entité (contrat frontend $\rightarrow$ backend)}
+
+Le frontend enregistre un handler de sync par type d'entité (\texttt{lib/offline/sync-engine.ts}). Le backend doit exposer les endpoints correspondants :
+
+\begin{longtable}{@{}p{3.2cm}p{5.2cm}p{3.6cm}@{}}
+\hline
+\textbf{Entité outbox} & \textbf{Endpoints backend} & \textbf{Statut} \\
+\hline
+\endhead
+ecriture\_comptable & /api/accounting/ecritures (+ validate, deactivate) & Existe --- à étendre (P0) \\
+\hline
+cg.journaux & /api/accounting/journals & Existe --- à étendre (P0 bis) \\
+\hline
+cg.plan\_comptable & /api/accounting/plan-comptable & Existe --- à étendre (P0 bis) \\
+\hline
+cg.exercices & /api/accounting/exercices (+ close) & Existe --- à étendre (P0 bis) \\
+\hline
+cg.periodes & /api/accounting/periodes (+ close) & Existe --- à étendre (P0 bis) \\
+\hline
+cg.budgets & /api/accounting/budgets (+ validate, activate) & Existe --- à étendre (P0 bis) \\
+\hline
+cg.operations & /api/accounting/operations & Existe --- à étendre (P0 bis) \\
+\hline
+cg.taxes & /api/accounting/taxes & Existe --- à étendre (P0 bis) \\
+\hline
+cg.devises & /api/accounting/currencies & Existe --- à étendre (P0 bis) \\
+\hline
+cg.devises\_rates & /api/accounting/exchange-rates (POST taux) & Existe --- cas particulier \\
+\hline
+notifications & /api/accounting/notifications/\{id\}/read & Existe --- idempotent POST \\
+\hline
+ecriture\_analytique & /api/accounting/analytic-entries & \textbf{À créer} (P0) \\
+\hline
+ca.centres & /api/accounting/analytic-centres (proposé) & \textbf{À créer} (P0 CA) \\
+\hline
+ca.charges & /api/accounting/analytic-charges (proposé) & \textbf{À créer} (P0 CA) \\
+\hline
+ca.comptes & /api/accounting/analytic-accounts (proposé) & \textbf{À créer} (P0 CA) \\
+\hline
+ca.plan\_comptes & /api/accounting/analytic-accounts/plan (proposé) & \textbf{À créer} (P1 CA) \\
+\hline
+ca.journaux & /api/accounting/analytic-journals & \textbf{À créer} (P0) \\
+\hline
+\end{longtable}
+
+\textbf{Note --- taux de change (\texttt{cg.devises\_rates}) :} le frontend ne crée pas une ligne de liste dédiée ; il envoie un \texttt{POST /api/accounting/exchange-rates} avec \texttt{devise\_source\_id}, \texttt{devise\_cible\_id} et \texttt{taux}. La clé outbox est composite (\texttt{sourceId:targetId}).
+
+\subsection{Double mécanisme d'identification client (recommandé)}
+
+Le backend doit accepter \textbf{l'un ou l'autre} (idéalement les deux) :
+\begin{enumerate}
+  \item \textbf{Idempotency-Key} = \texttt{clientMutationId} de l'outbox (en-tête HTTP).
+  \item \textbf{clientId} explicite dans le corps JSON à la création.
+  \item \textbf{Déduplication par préfixe} : si un enregistrement avec le même \texttt{clientId} existe déjà pour l'organisation, retourner \texttt{200 ALREADY\_PROCESSED}.
+\end{enumerate}
+
+Le frontend actuel utilise surtout le mécanisme (3) implicitement via suppression de l'\texttt{id} local ; le mécanisme (1) est la priorité d'implémentation conjointe frontend/backend. Voir aussi le tableau d'alignement au chapitre~1.
+
+\section{Phases d'implémentation}
+
+\begin{longtable}{@{}cp{10cm}@{}}
+\hline
+\textbf{Phase} & \textbf{Contenu} \\
+\hline
+\endhead
+1 & Fondations : idempotence, clientId, format réponse, health check \\
+\hline
+2 & Sync delta : paramètre ?since= sur les listes \\
+\hline
+3 & APIs comptabilité analytique complètes \\
+\hline
+4 & Endpoint batch /api/accounting/sync/push (optionnel) \\
+\hline
+\end{longtable}
+
+\section{Anti-patterns à éviter}
+
+\begin{longtable}{@{}p{5cm}p{7.5cm}@{}}
+\hline
+\textbf{Anti-pattern} & \textbf{Conséquence} \\
+\hline
+\endhead
+Pas d'idempotence & Doublons à la reconnexion \\
+\hline
+Écrasement silencieux (pas de 409) & Perte de données \\
+\hline
+Session ``offline'' côté serveur & Complexité inutile \\
+\hline
+Validation uniquement côté client & Écritures invalides en base \\
+\hline
+\end{longtable}
+
+% =============================================================================
+\chapter{L'idempotence --- explication détaillée}
+% =============================================================================
+
+\section{Définition}
+
+Une opération est \textbf{idempotente} si l'exécuter \textbf{une fois} ou \textbf{plusieurs fois} produit le \textbf{même résultat final}, sans effet de bord supplémentaire.
+
+En pratique pour une API REST :
+\begin{quote}
+Si le client envoie deux fois la même requête de création (à cause d'un timeout, d'une reconnexion ou d'un rejeu de file d'attente), le serveur ne doit \textbf{pas créer deux enregistrements identiques}.
+\end{quote}
+
+\section{Pourquoi c'est indispensable en offline-first}
+
+Lorsqu'un utilisateur travaille hors ligne, le frontend enregistre chaque action dans une \textbf{outbox} (file d'attente). Au retour en ligne, le moteur de synchronisation \textbf{rejoue} ces opérations.
+
+Scénario sans idempotence :
+\begin{enumerate}
+  \item L'utilisateur crée une écriture hors ligne.
+  \item La connexion revient ; le frontend envoie \texttt{POST /ecritures}.
+  \item Le serveur reçoit la requête, crée l'écriture, mais la réponse HTTP est perdue (timeout).
+  \item Le frontend considère l'échec et \textbf{rejoue} la même requête.
+  \item Sans idempotence : \textbf{deux écritures identiques} en base.
+\end{enumerate}
+
+Scénario avec idempotence :
+\begin{enumerate}
+  \item Même contexte : le client renvoie la requête avec la même \texttt{Idempotency-Key}.
+  \item Le serveur reconnaît la clé déjà traitée.
+  \item Il retourne \texttt{200 OK} avec l'entité existante (pas de doublon).
+\end{enumerate}
+
+\section{Mécanisme recommandé}
+
+\subsection{En-tête Idempotency-Key}
+
+Chaque mutation (CREATE, UPDATE critique, VALIDATE) doit accepter :
+
+\begin{verbatim}
+POST /api/accounting/ecritures
+Headers:
+  Authorization: Bearer {token}
+  X-Organization-Id: {orgId}
+  X-Tenant-Id: {tenantId}
+  Idempotency-Key: cm-uuid-unique-par-operation-client
+\end{verbatim}
+
+\subsection{Corps avec clientId}
+
+En complément, le corps peut porter un identifiant stable généré côté client :
+
+\begin{verbatim}
+{
+  "clientId": "ec-offline-20260708-abc123",
+  "libelle": "Facture fournisseur",
+  "dateEcriture": "2026-07-08",
+  ...
+}
+\end{verbatim}
+
+\textbf{État frontend (v1.2) :} le champ \texttt{clientId} n'est pas encore envoyé dans le corps. Le client génère un ID local (\texttt{local-*} ou \texttt{ec-offline-*}), le retire du corps au \texttt{POST}, puis enregistre le mapping vers l'UUID serveur après \texttt{201 Created}. Le backend doit néanmoins accepter \texttt{clientId} dès que le frontend l'enverra, et peut d'ores et déjà dédupliquer via \texttt{Idempotency-Key}.
+
+\subsection{Comportement serveur attendu}
+
+\begin{longtable}{@{}p{4.5cm}p{8cm}@{}}
+\hline
+\textbf{Situation} & \textbf{Réponse attendue} \\
+\hline
+\endhead
+Première requête avec une clé inconnue & \texttt{201 Created} + entité créée \\
+\hline
+Rejeu avec la \emph{même} Idempotency-Key & \texttt{200 OK} + \emph{même} entité, message \texttt{ALREADY\_PROCESSED} \\
+\hline
+Requête avec une nouvelle clé mais même clientId déjà en base & \texttt{200 OK} + entité existante (déduplication) \\
+\hline
+Clé expirée (ex. > 24 h) & Traiter comme nouvelle requête ou \texttt{409} selon politique \\
+\hline
+\end{longtable}
+
+\subsection{Stockage côté serveur}
+
+Le backend doit conserver temporairement (Redis, table dédiée) :
+\begin{itemize}
+  \item \texttt{idempotency\_key}
+  \item \texttt{organization\_id}
+  \item \texttt{http\_status} de la réponse originale
+  \item \texttt{response\_body} (ou référence entité créée)
+  \item \texttt{expires\_at} (TTL recommandé : 24 à 72 heures)
+\end{itemize}
+
+\section{Exemples concrets}
+
+\subsection{Création d'écriture comptable}
+
+\textbf{Requête 1} (première sync) :
+\begin{verbatim}
+POST /api/accounting/ecritures
+Idempotency-Key: save-ec-offline-001
+
+→ 201 Created
+{ "success": true, "data": { "id": "srv-uuid-99", "clientId": "ec-offline-001" } }
+\end{verbatim}
+
+\textbf{Requête 2} (rejeu accidentel) :
+\begin{verbatim}
+POST /api/accounting/ecritures
+Idempotency-Key: save-ec-offline-001
+
+→ 200 OK
+{ "success": true, "message": "ALREADY_PROCESSED",
+  "data": { "id": "srv-uuid-99", "clientId": "ec-offline-001" } }
+\end{verbatim}
+
+\subsection{Validation d'écriture}
+
+\texttt{POST /ecritures/\{id\}/validate} avec \texttt{Idempotency-Key: validate-ec-001} :
+\begin{itemize}
+  \item 1ère fois : écriture validée, \texttt{200 OK}.
+  \item 2ème fois : écriture déjà validée, \texttt{200 OK} sans erreur (pas de double validation métier).
+\end{itemize}
+
+\section{Ce qui n'est PAS de l'idempotence}
+
+\begin{longtable}{@{}p{5cm}p{7.5cm}@{}}
+\hline
+\textbf{Cas} & \textbf{Explication} \\
+\hline
+\endhead
+Deux factures différentes avec deux clés différentes & Normal : deux créations distinctes \\
+\hline
+Modification (PUT) avec version obsolète & Conflit \texttt{409}, pas idempotence --- voir chapitre Conflits \\
+\hline
+DELETE puis CREATE même clientId & Politique métier à définir (généralement interdit) \\
+\hline
+\end{longtable}
+
+% =============================================================================
+\chapter{Obligations transversales}
+% =============================================================================
+
+\section{Format de réponse}
+
+\begin{verbatim}
+{
+  "success": true,
+  "message": "...",
+  "data": { ... },
+  "timestamp": "2026-07-08T12:00:00Z",
+  "code": 200
+}
+\end{verbatim}
+
+\section{En-têtes obligatoires}
+
+\begin{longtable}{@{}p{4cm}p{8.5cm}@{}}
+\hline
+\textbf{En-tête} & \textbf{Rôle} \\
+\hline
+\endhead
+Authorization & Token JWT \\
+\hline
+X-Organization-Id & Organisation propriétaire des données \\
+\hline
+X-Tenant-Id & Tenant plateforme \\
+\hline
+Idempotency-Key & Idempotence des mutations (voir chapitre 2) \\
+\hline
+If-Match & Version attendue sur PUT/PATCH (optionnel mais recommandé) \\
+\hline
+\end{longtable}
+
+\section{Champs obligatoires sur chaque entité synchronisable}
+
+\begin{longtable}{@{}p{3cm}p{4cm}p{6cm}@{}}
+\hline
+\textbf{Champ} & \textbf{Type} & \textbf{Usage} \\
+\hline
+\endhead
+id & UUID serveur & Référence stable \\
+\hline
+clientId & UUID (optionnel en entrée) & ID généré côté client hors ligne \\
+\hline
+version & entier & Détection conflits (incrémenté à chaque modification) \\
+\hline
+createdAt & ISO 8601 & Ordre chronologique \\
+\hline
+updatedAt & ISO 8601 & Sync delta (\texttt{?since=}) \\
+\hline
+\end{longtable}
+
+\section{Codes d'erreur structurés}
+
+\begin{longtable}{@{}ccp{7cm}@{}}
+\hline
+\textbf{HTTP} & \textbf{Code métier} & \textbf{Cas} \\
+\hline
+\endhead
+422 & VALIDATION\_ERROR & Règle comptable (équilibre, période clôturée) \\
+\hline
+409 & VERSION\_CONFLICT & Modification concurrente \\
+\hline
+403 & FORBIDDEN & Droits insuffisants \\
+\hline
+404 & NOT\_FOUND & Entité supprimée côté serveur \\
+\hline
+\end{longtable}
+
+Réponse conflit \texttt{409} :
+\begin{verbatim}
+{
+  "success": false,
+  "code": "VERSION_CONFLICT",
+  "message": "L'entité a été modifiée par un autre utilisateur",
+  "data": {
+    "serverEntity": { ... },
+    "clientEntity": { ... }
+  }
+}
+\end{verbatim}
+
+\section{Health check}
+
+\begin{verbatim}
+GET /api/health
+→ { "status": "UP" }
+\end{verbatim}
+
+% =============================================================================
+\chapter{Sync incrémentale}
+% =============================================================================
+
+\section{Paramètre since}
+
+Sur chaque liste :
+
+\begin{verbatim}
+GET /api/accounting/ecritures?since=2026-07-08T10:00:00Z
+\end{verbatim}
+
+Réponse :
+\begin{verbatim}
+{
+  "success": true,
+  "data": {
+    "items": [ ... modifications depuis since ... ],
+    "deletedIds": ["uuid-supprime-1"],
+    "syncToken": "2026-07-08T12:00:00Z"
+  }
+}
+\end{verbatim}
+
+\section{Endpoint batch (optionnel P2)}
+
+\begin{verbatim}
+POST /api/accounting/sync/push
+Body: {
+  "operations": [
+    { "clientMutationId": "...", "entity": "ecriture_comptable",
+      "action": "CREATE", "payload": { ... } }
+  ]
+}
+→ { "results": [ { "clientMutationId", "status", "serverId", "error" } ] }
+\end{verbatim}
+
+% =============================================================================
+\chapter{Comptabilité générale (CG)}
+% =============================================================================
+
+\section{État actuel}
+
+Les endpoints CG existent (écritures, plan comptable, journaux, exercices, périodes, budgets, opérations, taxes, devises, taux de change). Il faut les \textbf{étendre} (idempotence, clientId, version), pas les recréer.
+
+\section{Écritures comptables --- P0}
+
+\begin{longtable}{@{}cp{5.5cm}p{5cm}@{}}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} & \textbf{Extension backend requise} \\
+\hline
+\endhead
+POST & /api/accounting/ecritures & clientId + Idempotency-Key \\
+\hline
+PUT & /api/accounting/ecritures/\{id\} & version + 409 si conflit \\
+\hline
+POST & /api/accounting/ecritures/\{id\}/validate & Idempotent \\
+\hline
+DELETE & /api/accounting/ecritures/\{id\} & Idempotent (200 si déjà supprimé) \\
+\hline
+PATCH & /api/accounting/ecritures/\{id\}/deactivate & Idempotent \\
+\hline
+GET & /api/accounting/ecritures & Paramètre ?since= \\
+\hline
+GET & /api/accounting/ecritures/non-validated & Paramètre ?since= \\
+\hline
+\end{longtable}
+
+\textbf{Règles métier serveur obligatoires :}
+\begin{itemize}
+  \item Équilibre débit/crédit
+  \item Période non clôturée
+  \item Contrôle des droits par rôle
+  \item Numérotation des pièces (serveur = source de vérité)
+  \item Validation irréversible une fois confirmée
+\end{itemize}
+
+\section{Autres entités CG --- P0 bis / P1}
+
+Les endpoints suivants \textbf{existent déjà}. Il faut y appliquer le même contrat (clientId, version, \texttt{?since=}, idempotence) sans les recréer :
+
+\begin{longtable}{@{}p{3.5cm}p{6cm}p{3.5cm}@{}}
+\hline
+\textbf{Entité} & \textbf{Endpoint} & \textbf{Priorité} \\
+\hline
+\endhead
+Plan comptable & /api/accounting/plan-comptable & P0 bis \\
+\hline
+Journaux & /api/accounting/journals & P0 bis \\
+\hline
+Exercices & /api/accounting/exercices & P0 bis \\
+\hline
+Périodes & /api/accounting/periodes & P0 bis \\
+\hline
+Budgets & /api/accounting/budgets & P0 bis \\
+\hline
+Opérations comptables & /api/accounting/operations & P0 bis \\
+\hline
+Taxes & /api/accounting/taxes & P0 bis \\
+\hline
+Devises & /api/accounting/currencies & P0 bis \\
+\hline
+Taux de change & /api/accounting/exchange-rates & P0 bis \\
+\hline
+Axes analytiques (lecture CG) & /api/accounting/analytics & P1 \\
+\hline
+Notifications (marquer lu) & /api/accounting/notifications/\{id\}/read & P1 \\
+\hline
+\end{longtable}
+
+\textbf{Cas particulier --- taux de change :} idempotence sur le couple (\texttt{devise\_source\_id}, \texttt{devise\_cible\_id}, \texttt{date\_effet}) ou sur \texttt{Idempotency-Key}. Un rejeu ne doit pas créer deux taux actifs contradictoires.
+
+\section{Paramètres et notifications --- P1}
+
+\begin{longtable}{@{}cp{7cm}@{}}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} \\
+\hline
+\endhead
+POST & /api/accounting/notifications/\{id\}/read (idempotent) \\
+\hline
+GET & /api/accounting/notifications/unread \\
+\hline
+GET & /api/accounting/notifications/stream (SSE, existant) \\
+\hline
+\end{longtable}
+
+% =============================================================================
+\chapter{Comptabilité analytique (CA)}
+% =============================================================================
+
+\section{État actuel et périmètre}
+
+La comptabilité analytique repose encore en partie sur un \textbf{stockage local frontend} (IndexedDB + outbox). Les entités \texttt{ca.*} sont en file d'attente mais le handler sync est un no-op tant que les APIs ci-dessous n'existent pas. Pour un offline-first complet, le backend doit exposer les ressources correspondantes.
+
+\section{APIs à créer --- P0}
+
+\subsection{Écritures analytiques}
+
+\begin{longtable}{@{}cp{7cm}@{}}
+\hline
+\textbf{Méthode} & \textbf{Endpoint} \\
+\hline
+\endhead
+GET & /api/accounting/analytic-entries \\
+\hline
+GET & /api/accounting/analytic-entries/\{id\} \\
+\hline
+GET & /api/accounting/analytic-entries?since= \\
+\hline
+GET & /api/accounting/analytic-entries?statut=BROUILLON \\
+\hline
+POST & /api/accounting/analytic-entries \\
+\hline
+PUT & /api/accounting/analytic-entries/\{id\} \\
+\hline
+DELETE & /api/accounting/analytic-entries/\{id\} \\
+\hline
+POST & /api/accounting/analytic-entries/\{id\}/validate \\
+\hline
+POST & /api/accounting/analytic-entries/\{id\}/reject \\
+\hline
+\end{longtable}
+
+\subsection{Journaux analytiques --- P0}
+
+CRUD sur \texttt{/api/accounting/analytic-journals} (entité outbox \texttt{ca.journaux}).
+
+\subsection{Centres, charges et comptes analytiques --- P0 CA}
+
+Le frontend synchronise déjà ces entités en outbox (mode mock). Endpoints proposés :
+
+\begin{longtable}{@{}p{3.2cm}cp{6.5cm}@{}}
+\hline
+\textbf{Entité outbox} & \textbf{Méthode} & \textbf{Endpoint proposé} \\
+\hline
+\endhead
+ca.centres & CRUD & /api/accounting/analytic-centres \\
+\hline
+ca.charges & CRUD & /api/accounting/analytic-charges \\
+\hline
+ca.comptes & CRUD & /api/accounting/analytic-accounts \\
+\hline
+ca.plan\_comptes & CRUD & /api/accounting/analytic-accounts (plan / nomenclature) \\
+\hline
+\end{longtable}
+
+Même contrat que la CG : \texttt{clientId}, \texttt{Idempotency-Key}, \texttt{version}, \texttt{?since=}, réponses \texttt{409} en conflit.
+
+\subsection{Configuration --- P1}
+
+\begin{verbatim}
+GET/PUT /api/accounting/analytic-config
+→ { "importComptabiliteGeneraleActive": true }
+\end{verbatim}
+
+\subsection{Import CG vers CA --- P1}
+
+\begin{verbatim}
+POST /api/accounting/analytic-entries/import-from-general
+→ { "created": [...], "ignored": 3 }
+\end{verbatim}
+
+% =============================================================================
+\chapter{Pièces jointes et audit}
+% =============================================================================
+
+\section{Pièces jointes --- P2}
+
+\begin{verbatim}
+POST /api/accounting/attachments
+Idempotency-Key + multipart
+→ { "id", "clientId", "url" }
+\end{verbatim}
+
+\section{Audit --- P1}
+
+Chaque opération synchronisée doit être tracée :
+\begin{itemize}
+  \item \texttt{clientMutationId}
+  \item Utilisateur
+  \item Horodatage
+  \item Action (CREATE, UPDATE, VALIDATE, etc.)
+\end{itemize}
+
+% =============================================================================
+\chapter{Ce que le backend ne doit pas faire}
+% =============================================================================
+
+\begin{longtable}{@{}p{5cm}p{7.5cm}@{}}
+\hline
+\textbf{À éviter} & \textbf{Raison} \\
+\hline
+\endhead
+Mode offline côté serveur & Le offline est géré par le client \\
+\hline
+WebSocket obligatoire & Sync à la reconnexion suffit \\
+\hline
+Écrasement silencieux en conflit & Perte de données \\
+\hline
+Doublons sur rejeu de requête & Sans idempotence \\
+\hline
+\end{longtable}
+
+% =============================================================================
+\chapter{Priorisation}
+% =============================================================================
+
+\section{P0 --- Minimum viable}
+
+\begin{enumerate}
+  \item Idempotency-Key + clientId sur POST écritures CG
+  \item version / updatedAt + 409 sur PUT écritures CG
+  \item APIs écritures analytiques complètes
+  \item Format de réponse stable
+  \item GET /api/health
+\end{enumerate}
+
+\section{P0 bis --- Déjà consommé offline (endpoints existants)}
+
+\begin{enumerate}
+  \item Idempotence sur : journaux, plan comptable, exercices, périodes, budgets
+  \item Idempotence sur : opérations comptables, taxes, devises
+  \item Idempotence sur POST taux de change (\texttt{/api/accounting/exchange-rates})
+  \item Retour systématique de l'\texttt{id} serveur dans \texttt{data} après création (pour mapping client)
+\end{enumerate}
+
+\section{P1 --- Production fiable}
+
+\begin{enumerate}
+  \item Paramètre ?since= sur les listes
+  \item APIs centres, charges, comptes analytiques (CA)
+  \item APIs journaux et config analytique
+  \item Import CG $\rightarrow$ CA côté serveur
+  \item Journal d'audit des sync
+  \item POST notifications/\{id\}/read idempotent
+\end{enumerate}
+
+\section{P2 --- Optimisation}
+
+\begin{enumerate}
+  \item POST /api/accounting/sync/push (batch)
+  \item Snapshot dashboard
+  \item Upload pièces jointes idempotent
+\end{enumerate}
+
+% =============================================================================
+\chapter{Résumé}
+% =============================================================================
+
+\begin{quote}
+\textbf{En une phrase :} le backend doit accepter des écritures avec un ID client et une clé d'idempotence, versionner chaque entité, répondre 409 en cas de conflit, étendre l'idempotence aux entités CG déjà synchronisées par le frontend (journaux, taxes, devises, opérations, etc.), exposer les APIs analytiques manquantes (écritures, centres, charges, comptes), et permettre la sync delta via \texttt{?since=}.
+\end{quote}
+
+\textbf{Version 1.2 --- juillet 2026 :} alignement sur l'implémentation frontend réelle (outbox multi-entités CG, CA mock, écarts Idempotency-Key / clientId documentés).
+
+L'\textbf{idempotence} garantit qu'une coupure réseau ou un rejeu de la file d'attente ne crée jamais de doublons en base de données.
+
+\end{document}

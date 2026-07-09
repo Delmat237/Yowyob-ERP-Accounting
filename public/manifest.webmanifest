@@ -1,0 +1,31 @@
+{
+  "name": "Yowyob ERP — Solution Comptable",
+  "short_name": "Yowyob ERP",
+  "description": "Solution de gestion comptable générale et analytique",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f8fc",
+  "theme_color": "#1e40af",
+  "lang": "fr",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/images/yowyob-logo.png",
+      "sizes": "218x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "218x256",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon",
+      "purpose": "any"
+    }
+  ]
+}

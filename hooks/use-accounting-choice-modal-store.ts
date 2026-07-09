@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+import { create } from 'zustand/react';
 
 interface AccountingChoiceModalState {
   /** Force l'ouverture du modal (ex. tentative d'accès analytique sans choix). */

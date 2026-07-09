@@ -23,6 +23,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useIsMounted } from '@/hooks/use-is-mounted';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { ensureLocalId } from '@/lib/offline/ensure-local-id';
+import { removeListItemWithOutbox, upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
 import { hasPermission } from '@/src/lib/auth/roles';
 import { AxeAnalytique } from '@/components/accounting/analytics-list-view';
 import { cn } from '@/lib/utils';
@@ -35,6 +40,7 @@ import { AccountingBudgetsService } from '@/src/lib2/services/AccountingBudgetsS
 import { BudgetDto } from '@/src/lib2/models/BudgetDto';
 import { AxeAnalytiqueDto } from '@/src/lib2/models/AxeAnalytiqueDto';
 import { mapBudgetDtoToItem } from '@/lib/accounting/budget-mappers';
+import { getPeriodesVisiblesUtilisateur } from '@/lib/accounting/periode-utilisateur';
 import { mockCentres, mockAxes } from '@/lib/analytique/mock-data';
 import type { CentreAnalyse } from '@/lib/analytique/mock-data';
 import { AccountingComptesService } from '@/src/lib2/services/AccountingComptesService';
@@ -566,30 +572,27 @@ function SimpleBudgetForm({ budgets, axes, initialBudget, onCancel, onSubmit }: 
     // Stratégie : filtrer par exercice comptable lié si possible, sinon toutes les non clôturées
     const periodesComptablesFiltrees = useMemo<PeriodeComptableDto[]>(() => {
         if (type !== 'PERIODE') return [];
-        const toutesOuvertes = allPeriodesComptables.filter(p => !p.cloturee);
-        if (!parentId) return toutesOuvertes;
+        const visible = getPeriodesVisiblesUtilisateur(allPeriodesComptables);
+        if (!parentId) return visible;
 
         const budgetExercice = budgets.find(b => b.id === parentId);
-        if (!budgetExercice) return toutesOuvertes;
+        if (!budgetExercice) return visible;
 
-        // Essayer de filtrer par exercice_id si on a l'exercice comptable correspondant
         const exComptable = exercicesComptables.find(e =>
             e.date_debut === budgetExercice.dateDebut && e.date_fin === budgetExercice.dateFin
         );
 
         if (exComptable) {
-            const parExercice = toutesOuvertes.filter(p => p.exercice_id === exComptable.id);
+            const parExercice = visible.filter(p => p.exercice_id === exComptable.id);
             if (parExercice.length > 0) return parExercice;
         }
 
-        // Fallback : filtrer par chevauchement de dates avec le budget exercice parent
-        const parDates = toutesOuvertes.filter(p =>
+        const parDates = visible.filter(p =>
             p.dateDebut >= budgetExercice.dateDebut && p.dateFin <= budgetExercice.dateFin
         );
         if (parDates.length > 0) return parDates;
 
-        // Dernier recours : toutes les périodes ouvertes
-        return toutesOuvertes;
+        return visible;
     }, [type, parentId, budgets, allPeriodesComptables, exercicesComptables]);
 
     // Quand on sélectionne une période comptable, remplir les dates automatiquement
@@ -1098,6 +1101,8 @@ export default function BudgetsPage() {
     const [budgetToDelete, setBudgetToDelete] = useState<BudgetItem | null>(null);
     const [selectedBudget, setSelectedBudget] = useState<BudgetItem | null>(null);
     const [axes, setAxes] = useState<AxeAnalytique[]>([]);
+    const [usingCache, setUsingCache] = useState(false);
+    const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
     const { onOpen, onClose: closeCompose } = useCompose();
     const { accountingRole } = useAuth();
     const canManage = hasPermission(accountingRole, 'budgets', 'lock');
@@ -1106,11 +1111,19 @@ export default function BudgetsPage() {
     const loadBudgets = useCallback(async (options?: AutoRefreshOptions) => {
         if (!options?.silent) setIsLoading(true);
         try {
-            const response = await AccountingBudgetsService.getAllBudgets();
+            const result = await fetchWithOfflineCache({
+                cacheKey: CG_CACHE_KEYS.BUDGETS,
+                fetcher: () => AccountingBudgetsService.getAllBudgets(),
+                emptyValue: [] as import('@/src/lib2/models/BudgetDto').BudgetDto[],
+            });
             if (!mountedRef.current) return;
-            const nextBudgets = (response.data ?? []).map(mapBudgetDto);
+            const nextBudgets = result.data.map(mapBudgetDto);
             setBudgets(nextBudgets);
             setSelectedBudget(prev => prev ? nextBudgets.find(b => b.id === prev.id) ?? null : null);
+            if (result.fromCache) {
+                setUsingCache(true);
+                setCacheTimestamp((prev) => prev ?? result.cachedAt);
+            }
         } catch (error) {
             if (!mountedRef.current) return;
             console.error('Failed to load budgets:', error);
@@ -1122,9 +1135,17 @@ export default function BudgetsPage() {
 
     const loadAxes = useCallback(async () => {
         try {
-            const response = await AccountingAnalyticsService.getActiveAxes();
+            const result = await fetchWithOfflineCache({
+                cacheKey: CG_CACHE_KEYS.AXES_ACTIFS,
+                fetcher: () => AccountingAnalyticsService.getActiveAxes(),
+                emptyValue: [] as import('@/src/lib2/models/AxeAnalytiqueDto').AxeAnalytiqueDto[],
+            });
             if (!mountedRef.current) return;
-            setAxes((response.data ?? []).map(mapAxeDto));
+            setAxes(result.data.map(mapAxeDto));
+            if (result.fromCache) {
+                setUsingCache(true);
+                setCacheTimestamp((prev) => prev ?? result.cachedAt);
+            }
         } catch (error) {
             if (!mountedRef.current) return;
             console.error('Failed to load analytical axes:', error);
@@ -1202,8 +1223,15 @@ export default function BudgetsPage() {
                         dto.statut = budgetToEdit.statut === 'BROUILLON' ? 'BROUILLON' : budgetToEdit.statut;
 
                         try {
-                            const response = await AccountingBudgetsService.updateBudget(id, dto);
-                            if (response.data) replaceBudget(mapBudgetDto(response.data));
+                            const item: BudgetDto = { ...dto, id };
+                            await upsertListItemWithOutbox({
+                                cacheKey: CG_CACHE_KEYS.BUDGETS,
+                                entity: 'cg.budgets',
+                                action: 'UPDATE',
+                                item,
+                                onlineMutator: () => AccountingBudgetsService.updateBudget(id, dto),
+                            });
+                            await loadBudgets({ silent: true });
                             closeCompose();
                             toast.success(`Budget "${data.nom}" mis à jour`);
                         } catch (error) {
@@ -1223,8 +1251,13 @@ export default function BudgetsPage() {
     const handleDelete = async () => {
         if (!budgetToDelete) return;
         try {
-            await AccountingBudgetsService.deleteBudget(budgetToDelete.id);
-            setBudgets(prev => prev.filter(b => b.id !== budgetToDelete.id));
+            await removeListItemWithOutbox({
+                cacheKey: CG_CACHE_KEYS.BUDGETS,
+                entity: 'cg.budgets',
+                entityId: budgetToDelete.id,
+                onlineMutator: () => AccountingBudgetsService.deleteBudget(budgetToDelete.id),
+            });
+            await loadBudgets({ silent: true });
             if (selectedBudget?.id === budgetToDelete.id) setSelectedBudget(null);
             toast.success('Budget supprimé');
             setBudgetToDelete(null);
@@ -1248,9 +1281,15 @@ export default function BudgetsPage() {
                         if (!dto) return;
 
                         try {
-                            const response = await AccountingBudgetsService.createBudget(dto);
-                            const newBudget = response.data ? mapBudgetDto(response.data) : null;
-                            if (newBudget) setBudgets(prev => [newBudget, ...prev]);
+                            const item: BudgetDto = { ...dto, id: ensureLocalId() };
+                            await upsertListItemWithOutbox({
+                                cacheKey: CG_CACHE_KEYS.BUDGETS,
+                                entity: 'cg.budgets',
+                                action: 'CREATE',
+                                item,
+                                onlineMutator: () => AccountingBudgetsService.createBudget(dto),
+                            });
+                            await loadBudgets({ silent: true });
                             closeCompose();
                             toast.success(`Budget "${data.nom}" créé en brouillon`);
                         } catch (error) {
@@ -1271,6 +1310,10 @@ export default function BudgetsPage() {
                     <p className="text-sm text-gray-500">
                         Création et gestion des budgets annuels (exercice), mensuels (période) et analytiques. Chaque création démarre en <strong>brouillon</strong> ; seul le Responsable comptable peut valider.
                     </p>
+                </div>
+
+                <div className="px-6 pt-4">
+                    <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
                 </div>
 
                 <div className="flex flex-col lg:flex-row" style={{ minHeight: '600px' }}>

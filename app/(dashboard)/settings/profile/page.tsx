@@ -16,6 +16,9 @@ import { UsersService } from "@/src/lib/services/UsersService";
 import { BusinessActorsService } from "@/src/lib/services/BusinessActorsService";
 import { getRoleLabel } from "@/src/lib/auth/roles";
 import { User as UserType } from "@/src/lib/models/User";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 type ProfileForm = {
   firstName: string;
@@ -64,6 +67,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Identifiant courant : profil chargé, sinon utilisateur de session.
@@ -126,19 +131,36 @@ export default function ProfilePage() {
   const loadProfile = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await UsersService.getMe();
-      setProfile(data);
+      const userResult = await fetchWithOfflineCache({
+        cacheKey: SETTINGS_CACHE_KEYS.PROFILE_USER,
+        fetcher: () => UsersService.getMe(),
+        emptyValue: null as UserType | null,
+      });
+
+      const data = userResult.data;
+      if (data) setProfile(data);
 
       let actorName: string | undefined;
       try {
-        const actor = await BusinessActorsService.getMyProfile();
-        actorName = actor.name;
-        setHasBusinessActor(true);
+        const actorResult = await fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.PROFILE_ACTOR,
+          fetcher: () => BusinessActorsService.getMyProfile(),
+          emptyValue: null as { name?: string } | null,
+        });
+        if (actorResult.data?.name) {
+          actorName = actorResult.data.name;
+          setHasBusinessActor(true);
+        } else {
+          setHasBusinessActor(false);
+        }
       } catch {
         setHasBusinessActor(false);
       }
 
-      syncFormFromProfile(data, actorName);
+      setUsingCache(userResult.fromCache);
+      setCacheTimestamp(userResult.cachedAt);
+
+      if (data) syncFormFromProfile(data, actorName);
     } catch (error) {
       console.error(error);
       toast.error("Impossible de charger les informations de votre profil.");
@@ -246,6 +268,7 @@ export default function ProfilePage() {
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">

@@ -22,15 +22,24 @@ import {
   mapPeriodeDtoToStatutOverrides,
   mapStatutUiToApi,
 } from "@/lib/analytique/analytique-mappers";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { networkStatus } from "@/lib/offline/network-status";
+import { getPeriodeComptableCourante } from "@/lib/accounting/periode-utilisateur";
+import { useOnPeriodesChanged } from "@/hooks/use-on-periodes-changed";
 
 type UsePeriodesAnalytiquesAligneesResult = {
   periodes: PeriodeAnalytique[];
+  periodesVisibles: PeriodeAnalytique[];
+  periodeCourante: PeriodeAnalytique | null;
   periodesCG: PeriodeCG[];
   exercices: ExerciceComptableDto[];
   loading: boolean;
   error: string | null;
   usingMockFallback: boolean;
   usingApiPeriodes: boolean;
+  usingCache: boolean;
+  cacheTimestamp?: string;
   reload: (options?: AutoRefreshOptions) => Promise<void>;
   setStatutLocal: (periodeId: string, statut: StatutPeriode) => Promise<void>;
   synchroniserClotures: () => Promise<void>;
@@ -61,6 +70,29 @@ function applyStatutOverrides(
   }));
 }
 
+async function loadMockFallback(): Promise<{
+  periodesCG: PeriodeCG[];
+  exercices: ExerciceComptableDto[];
+  statutOverrides: Record<string, StatutPeriode>;
+}> {
+  const { mockPeriodes, mockPeriodesCG, mockExercicesCG } = await import(
+    "@/lib/analytique/mock-data"
+  );
+  return {
+    periodesCG: mockPeriodesCG,
+    exercices: mockExercicesCG.map((e) => ({
+      id: e.id,
+      code: e.code,
+      libelle: e.libelle,
+      date_debut: e.dateDebut,
+      date_fin: e.dateFin,
+      cloture: e.cloture,
+      statut: e.statut,
+    })),
+    statutOverrides: Object.fromEntries(mockPeriodes.map((p) => [p.id, p.statut])),
+  };
+}
+
 /**
  * Périodes analytiques alignées 1:1 sur les périodes comptables (API CG).
  * L'exercice analytique est l'exercice comptable (exercice_id).
@@ -74,6 +106,8 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingMockFallback, setUsingMockFallback] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const load = useCallback(async (options?: AutoRefreshOptions) => {
     if (!options?.silent) {
@@ -81,56 +115,54 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
     }
     setError(null);
     setUsingMockFallback(false);
+    setUsingCache(false);
+    setCacheTimestamp(undefined);
+
     try {
-      const [periodesRes, exercicesRes, periodesAnalytiquesRes] = await Promise.all([
-        AccountingPeriodsService.getAllPeriodeComptables(),
-        AccountingFiscalYearsService.getAllExercices(),
-        AccountingPeriodesAnalytiquesService.getAllPeriodes().catch(() => ({ data: [] })),
+      const [periodesResult, exercicesResult, periodesAnalytiquesRes] = await Promise.all([
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.PERIODES,
+          fetcher: () => AccountingPeriodsService.getAllPeriodeComptables(),
+          emptyValue: [] as PeriodeComptableDto[],
+        }),
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.EXERCICES,
+          fetcher: () => AccountingFiscalYearsService.getAllExercices(),
+          emptyValue: [] as ExerciceComptableDto[],
+        }),
+        networkStatus.isOnline()
+          ? AccountingPeriodesAnalytiquesService.getAllPeriodes().catch(() => ({ data: [] }))
+          : Promise.resolve({ data: [] }),
       ]);
 
-      if (periodesRes?.success === false) {
-        throw new Error(periodesRes.message || "Impossible de charger les périodes.");
-      }
-      if (exercicesRes?.success === false) {
-        throw new Error(exercicesRes.message || "Impossible de charger les exercices.");
-      }
+      setUsingCache(periodesResult.fromCache || exercicesResult.fromCache);
+      setCacheTimestamp(periodesResult.cachedAt ?? exercicesResult.cachedAt);
 
-      const periodesList = (periodesRes?.data ?? []).sort((a, b) =>
+      const periodesList = [...periodesResult.data].sort((a, b) =>
         a.code.localeCompare(b.code, undefined, { numeric: true }),
       );
 
+      if (periodesList.length === 0 && !networkStatus.isOnline()) {
+        throw new Error("Aucune période en cache.");
+      }
       if (periodesList.length === 0) {
         throw new Error("Aucune période comptable disponible.");
       }
 
       setPeriodesCG(periodesList.map(mapDtoToPeriodeCG));
-      setExercices(exercicesRes?.data ?? []);
+      setExercices(exercicesResult.data);
 
       const apiPeriodes = periodesAnalytiquesRes?.data ?? [];
       setPeriodesApi(apiPeriodes);
       setUsingApiPeriodes(apiPeriodes.length > 0);
       setStatutOverrides(mapPeriodeDtoToStatutOverrides(apiPeriodes));
     } catch (err: unknown) {
-      const { mockPeriodes, mockPeriodesCG, mockExercicesCG } = await import(
-        "@/lib/analytique/mock-data"
-      );
-      setPeriodesCG(mockPeriodesCG);
-      setExercices(
-        mockExercicesCG.map((e) => ({
-          id: e.id,
-          code: e.code,
-          libelle: e.libelle,
-          date_debut: e.dateDebut,
-          date_fin: e.dateFin,
-          cloture: e.cloture,
-          statut: e.statut,
-        })),
-      );
+      const mock = await loadMockFallback();
+      setPeriodesCG(mock.periodesCG);
+      setExercices(mock.exercices);
+      setStatutOverrides(mock.statutOverrides);
       setPeriodesApi([]);
       setUsingApiPeriodes(false);
-      setStatutOverrides(
-        Object.fromEntries(mockPeriodes.map((p) => [p.id, p.statut])),
-      );
       setUsingMockFallback(true);
       setError(
         err instanceof Error
@@ -150,6 +182,25 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
 
   useAutoRefresh(load, [load]);
 
+  useOnPeriodesChanged((event) => {
+    const sorted = [...event.periodes].sort((a, b) =>
+      a.code.localeCompare(b.code, undefined, { numeric: true }),
+    );
+    setPeriodesCG(sorted.map(mapDtoToPeriodeCG));
+    setStatutOverrides((prev) => {
+      const next = { ...prev };
+      for (const p of sorted) {
+        const id = p.id ?? p.code;
+        if (p.cloturee) {
+          next[id] = "CLOTURE";
+        } else if (next[id] === "CLOTURE") {
+          delete next[id];
+        }
+      }
+      return next;
+    });
+  });
+
   const periodesBase = useMemo(
     () => periodesCG.map((cg) => mapPeriodeCGToAnalytique(cg)),
     [periodesCG],
@@ -159,6 +210,16 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
     () => applyStatutOverrides(periodesBase, statutOverrides),
     [periodesBase, statutOverrides],
   );
+
+  const periodesVisibles = useMemo(() => {
+    const cgCourante = getPeriodeComptableCourante(periodesCG);
+    if (!cgCourante) return [];
+    const cgId = cgCourante.id ?? cgCourante.code;
+    const alignee = periodes.find((p) => p.id === cgId || p.periodeCGId === cgId);
+    return alignee ? [alignee] : [];
+  }, [periodes, periodesCG]);
+
+  const periodeCourante = periodesVisibles[0] ?? null;
 
   const setStatutLocal = useCallback(
     async (periodeId: string, statut: StatutPeriode) => {
@@ -219,12 +280,16 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
 
   return {
     periodes,
+    periodesVisibles,
+    periodeCourante,
     periodesCG,
     exercices,
     loading,
     error,
     usingMockFallback,
     usingApiPeriodes,
+    usingCache,
+    cacheTimestamp,
     reload: load,
     setStatutLocal,
     synchroniserClotures,

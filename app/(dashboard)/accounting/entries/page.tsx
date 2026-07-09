@@ -9,9 +9,22 @@ import { AccountingEntriesService } from '@/src/lib2/services/AccountingEntriesS
 import { AccountingJournalManagementService } from '@/src/lib2/services/AccountingJournalManagementService';
 import { AccountingPlanComptableService } from '@/src/lib2/services/AccountingPlanComptableService';
 import { JournalComptableDto } from '@/src/lib2/models/JournalComptableDto';
+import { PlanComptableDto } from '@/src/lib2/models/PlanComptableDto';
 import { EcritureComptableListView } from '@/components/accounting/ecriture-comptable-list-view';
 import { EcritureComptableDetailView } from '@/components/accounting/ecriture-comptable-detail-view';
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import {
+  saveEcritureComptableOffline,
+  validateEcritureComptableOffline,
+  deleteEcritureComptableOffline,
+  deactivateEcritureComptableOffline,
+  mergeServerEcrituresIntoCache,
+} from '@/lib/offline/cg-ecritures-offline';
+import { getCachedList } from '@/lib/offline/list-cache';
+import { isOfflineClientId } from '@/lib/offline/id-map';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { toast } from 'sonner';
 import { AccountingInvoiceUploadService } from '@/src/lib2/services/AccountingInvoiceUploadService';
@@ -29,33 +42,55 @@ export default function EcritureComptablePage() {
   const [isUploading, setIsUploading] = useState(false);
 
   const [accounts, setAccounts] = useState<{ id: string; noCompte: string }[]>([]);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
   const fetchAndSetEcritures = useCallback(async (options?: AutoRefreshOptions) => {
     if (!options?.silent) setIsLoading(true);
     try {
-      const [entriesRes, journalsRes, accountsRes] = await Promise.all([
-        AccountingEntriesService.getAll1(),
-        AccountingJournalManagementService.getAllJournals(),
-        AccountingPlanComptableService.getAllPlanComptables()
+      const [entriesResult, journalsResult, accountsResult] = await Promise.all([
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.ECRITURES,
+          fetcher: () => AccountingEntriesService.getAll1(),
+          emptyValue: [] as EcritureComptableDto[],
+        }),
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.JOURNAUX,
+          fetcher: () => AccountingJournalManagementService.getAllJournals(),
+          emptyValue: [] as JournalComptableDto[],
+        }),
+        fetchWithOfflineCache({
+          cacheKey: CG_CACHE_KEYS.PLAN_COMPTABLE,
+          fetcher: () => AccountingPlanComptableService.getAllPlanComptables(),
+          emptyValue: [] as PlanComptableDto[],
+        }),
       ]);
 
-      const fetchedJournals = Array.isArray(journalsRes.data) ? journalsRes.data : [];
+      const fetchedJournals = journalsResult.data;
       setJournals(fetchedJournals);
 
-      const fetchedAccounts = Array.isArray(accountsRes.data) ? accountsRes.data : [];
-      setAccounts(fetchedAccounts.map(a => ({ id: a.id!, noCompte: a.noCompte })));
+      const fetchedAccounts = accountsResult.data;
+      setAccounts(fetchedAccounts.map((a) => ({ id: a.id!, noCompte: a.noCompte })));
 
-      const fetchedEntries = Array.isArray(entriesRes.data) ? entriesRes.data : [];
+      const mergedEntries = await mergeServerEcrituresIntoCache(entriesResult.data);
 
-      // Map journal labels
-      const subbedEntries = fetchedEntries.map((entry: EcritureComptableDto) => ({
+      const subbedEntries = mergedEntries.map((entry: EcritureComptableDto) => ({
         ...entry,
-        journalComptableLibelle: fetchedJournals.find((j: JournalComptableDto) => j.id === entry.journalComptableId)?.libelle || entry.journalComptableId
+        journalComptableLibelle:
+          fetchedJournals.find((j: JournalComptableDto) => j.id === entry.journalComptableId)?.libelle ||
+          entry.journalComptableId,
       }));
 
       setEcritures(subbedEntries);
+
+      const fromCache =
+        entriesResult.fromCache || journalsResult.fromCache || accountsResult.fromCache;
+      setUsingCache(fromCache);
+      setCacheTimestamp(
+        entriesResult.cachedAt ?? journalsResult.cachedAt ?? accountsResult.cachedAt,
+      );
     } catch (error) {
       console.error("Failed to fetch ecritures or journals:", error);
       setEcritures([]);
@@ -73,14 +108,16 @@ export default function EcritureComptablePage() {
   const handleSave = async (data: EcritureComptableDto) => {
     const isNew = !data.id;
     try {
-      if (isNew) {
-        await AccountingEntriesService.createEcriture(data);
-      } else {
-        await AccountingEntriesService.updateEcriture(data.id!, data);
-      }
+      const { queued } = await saveEcritureComptableOffline(data);
       closeCompose();
       await fetchAndSetEcritures();
-      toast.success(isNew ? "Écriture créée avec succès" : "Écriture mise à jour avec succès");
+      if (queued) {
+        toast.success("Écriture enregistrée localement", {
+          description: "Elle sera synchronisée dès que la connexion sera rétablie.",
+        });
+      } else {
+        toast.success(isNew ? "Écriture créée avec succès" : "Écriture mise à jour avec succès");
+      }
     } catch (error: any) {
       console.error("Failed to save ecriture:", error);
       toast.error(`Erreur lors de l'enregistrement: ${error.body?.message || error.message || "Erreur inconnue"}`);
@@ -89,9 +126,13 @@ export default function EcritureComptablePage() {
 
   const handleValidate = async (id: string) => {
     try {
-      await AccountingEntriesService.validateEcriture(id);
+      const { queued } = await validateEcritureComptableOffline(id);
       await fetchAndSetEcritures();
-      toast.success("Écriture validée avec succès");
+      if (queued) {
+        toast.success("Validation en attente de synchronisation");
+      } else {
+        toast.success("Écriture validée avec succès");
+      }
     } catch (error: any) {
       console.error("Failed to validate ecriture:", error);
       toast.error(`Erreur lors de la validation: ${error.body?.message || error.message || "Erreur inconnue"}`);
@@ -101,12 +142,12 @@ export default function EcritureComptablePage() {
   const confirmDelete = async () => {
     if (!ecritureToDelete?.id) return;
     try {
-      await AccountingEntriesService.delete(ecritureToDelete.id);
+      const { queued } = await deleteEcritureComptableOffline(ecritureToDelete.id);
       await fetchAndSetEcritures();
       if (selectedEcritureId === ecritureToDelete.id) {
         setSelectedEcritureId(null);
       }
-      toast.success("Écriture supprimée avec succès");
+      toast.success(queued ? "Suppression en attente de synchronisation" : "Écriture supprimée avec succès");
     } catch (error: any) {
       console.error("Failed to delete ecriture:", error);
       toast.error(`Erreur lors de la suppression: ${error.body?.message || error.message || "Erreur inconnue"}`);
@@ -118,9 +159,9 @@ export default function EcritureComptablePage() {
   const confirmDeactivate = async () => {
     if (!ecritureToDeactivate?.id) return;
     try {
-      await AccountingEntriesService.deactivate(ecritureToDeactivate.id);
+      const { queued } = await deactivateEcritureComptableOffline(ecritureToDeactivate.id);
       await fetchAndSetEcritures();
-      toast.success("Écriture désactivée avec succès");
+      toast.success(queued ? "Désactivation en attente de synchronisation" : "Écriture désactivée avec succès");
     } catch (error: any) {
       console.error("Failed to deactivate ecriture:", error);
       toast.error(`Erreur lors de la désactivation: ${error.body?.message || error.message || "Erreur inconnue"}`);
@@ -166,6 +207,14 @@ export default function EcritureComptablePage() {
 
   const handleEditEcriture = async (id: string) => {
     try {
+      if (isOfflineClientId(id)) {
+        const cached = await getCachedList<EcritureComptableDto[]>(CG_CACHE_KEYS.ECRITURES);
+        const entry = cached?.data.find((e) => e.id === id);
+        if (entry) {
+          handleOpenCompose(entry);
+          return;
+        }
+      }
       const response = await AccountingEntriesService.getById(id);
       if (response.success && response.data) {
         handleOpenCompose(response.data);
@@ -206,6 +255,7 @@ export default function EcritureComptablePage() {
           </div>
         </div>
 
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
         <EcritureComptableListView
           ecritures={ecritures}

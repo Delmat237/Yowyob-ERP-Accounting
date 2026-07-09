@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand/react';
 import { ModuleKey, modules } from "@/config/navigation";
 
 interface NavigationState {

@@ -25,6 +25,7 @@ import { clearAccountingChoice } from '@/lib/accounting-choice';
 import { clearUiState } from '@/lib/clear-ui-state';
 import { DEFAULT_ORG_DISPLAY_NAME, pickOrgDisplayName } from '@/lib/organization-display';
 import { useAccountingChoiceStore } from '@/hooks/use-accounting-choice-store';
+import { YowyobLogo } from '@/components/brand/yowyob-logo';
 
 interface LoginModalProps {
     isOpen: boolean;
@@ -381,14 +382,10 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto bg-white rounded-xl shadow-xl border border-gray-200">
                 <DialogHeader className="space-y-3 pb-2 border-b border-gray-100">
-                    <div className="flex items-center justify-center space-x-2">
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-                            <Building2 className="h-5 w-5 text-white" />
-                        </div>
-                        <DialogTitle className="text-xl font-bold text-gray-900 tracking-tight">
-                            KSM
-                        </DialogTitle>
+                    <div className="flex items-center justify-center">
+                        <YowyobLogo size="lg" />
                     </div>
+                    <DialogTitle className="sr-only">Connexion Yowyob ERP</DialogTitle>
                     <DialogDescription className="text-sm text-gray-500 text-center">
                         Accédez à votre espace de gestion comptable
                     </DialogDescription>

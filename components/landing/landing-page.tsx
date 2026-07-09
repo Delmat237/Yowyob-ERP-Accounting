@@ -21,6 +21,7 @@ import { LoginModal } from './login-modal';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { useRedirectIfAuthenticated } from '@/hooks/use-auth-redirect';
 import { CustomPageLoader } from '@/components/ui/custom-page-loader';
+import { YowyobLogo } from '@/components/brand/yowyob-logo';
 
 export function LandingPage() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -386,8 +387,8 @@ export function LandingPage() {
               Fonctionnalité
             </th>
             <th className="py-5 px-6 text-center">
-              <div className="inline-flex flex-col items-center">
-                <span className="text-lg font-bold text-blue-600">KSM</span>
+              <div className="inline-flex flex-col items-center gap-1">
+                <YowyobLogo size="sm" imageClassName="mx-auto" />
                 <span className="text-xs text-gray-500">Notre solution</span>
               </div>
             </th>
@@ -442,10 +443,7 @@ export function LandingPage() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">KSM</h1>
-                <p className="text-xs text-gray-500">Solution Comptable</p>
-              </div>
+              <YowyobLogo size="md" showSubtitle subtitle="Solution Comptable" priority />
             </div>
 
             {/* Desktop Navigation */}

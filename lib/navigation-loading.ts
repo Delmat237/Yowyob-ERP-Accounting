@@ -8,7 +8,11 @@ function isMainContentPending(main: Element): boolean {
   const fullscreenLoader = document.querySelector(
     '[class*="fixed"][class*="inset-0"][class*="z-[9998]"]:not(.navigation-loader)',
   );
-  if (fullscreenLoader && /chargement/i.test(fullscreenLoader.textContent ?? '')) {
+  if (fullscreenLoader && /chargement|vérification|redirection/i.test(fullscreenLoader.textContent ?? '')) {
+    // La vérification de session du layout a son propre loader : ne pas bloquer la navigation globale.
+    if (/vérification de la session/i.test(fullscreenLoader.textContent ?? '')) {
+      return false;
+    }
     return true;
   }
 

@@ -6,11 +6,22 @@ import { AccountingAnalyticsService } from "@/src/lib2/services/AccountingAnalyt
 import { AccountingBudgetsService } from "@/src/lib2/services/AccountingBudgetsService";
 import { AccountingPeriodsService } from "@/src/lib2/services/AccountingPeriodsService";
 import { AccountingFiscalYearsService } from "@/src/lib2/services/AccountingFiscalYearsService";
+import { AccountingEcrituresAnalytiquesService } from "@/src/lib2/services/AccountingEcrituresAnalytiquesService";
 import type { BudgetDto } from "@/src/lib2/models/BudgetDto";
 import type { PeriodeComptableDto } from "@/src/lib2/models/PeriodeComptableDto";
 import type { AxeAnalytiqueDto } from "@/src/lib2/models/AxeAnalytiqueDto";
 import type { BudgetVsRealiseDto } from "@/src/lib2/models/BudgetVsRealiseDto";
-import { AccountingEcrituresAnalytiquesService } from "@/src/lib2/services/AccountingEcrituresAnalytiquesService";
+import type { ExerciceComptableDto } from "@/src/lib2/models/ExerciceComptableDto";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { CA_CACHE_KEYS, CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { getCachedList, setCachedList } from "@/lib/offline/list-cache";
+import { networkStatus } from "@/lib/offline/network-status";
+import {
+    deriveStatutPeriodeComptable,
+    getPeriodesVisiblesUtilisateur,
+} from "@/lib/accounting/periode-utilisateur";
+import { libellePeriodeFromCode } from "@/lib/analytique/periodes-alignees";
+import { useOnPeriodesChanged } from "@/hooks/use-on-periodes-changed";
 
 export type PeriodeStatut = "CLOTURE" | "EN_COURS" | "OUVERT";
 
@@ -47,6 +58,8 @@ export interface BudgetAlerte {
 export interface AnalytiqueDashboardState {
     loading: boolean;
     partialError: boolean;
+    usingCache: boolean;
+    cacheTimestamp?: string;
     axesTotal: number;
     axesActifs: number;
     budgets: BudgetDto[];
@@ -62,15 +75,18 @@ export interface AnalytiqueDashboardState {
     periodes: PeriodeResume[];
     periodeEnCours: string | null;
     periodesOuvertes: number;
-  exerciceLibelle: string | null;
-  vsRealise: BudgetVsRealiseDto | null;
-  ecrituresValidees: number;
-  montantEcrituresValidees: number;
+    exerciceLibelle: string | null;
+    vsRealise: BudgetVsRealiseDto | null;
+    ecrituresValidees: number;
+    montantEcrituresValidees: number;
 }
+
+type DashboardSnapshot = Omit<AnalytiqueDashboardState, "loading">;
 
 const EMPTY: AnalytiqueDashboardState = {
     loading: true,
     partialError: false,
+    usingCache: false,
     axesTotal: 0,
     axesActifs: 0,
     budgets: [],
@@ -86,10 +102,10 @@ const EMPTY: AnalytiqueDashboardState = {
     periodes: [],
     periodeEnCours: null,
     periodesOuvertes: 0,
-  exerciceLibelle: null,
-  vsRealise: null,
-  ecrituresValidees: 0,
-  montantEcrituresValidees: 0,
+    exerciceLibelle: null,
+    vsRealise: null,
+    ecrituresValidees: 0,
+    montantEcrituresValidees: 0,
 };
 
 function budgetTauxConsommation(b: BudgetDto): number {
@@ -121,12 +137,7 @@ function buildAlertesBudgets(budgets: BudgetDto[]): BudgetAlerte[] {
 }
 
 function mapPeriodeStatut(p: PeriodeComptableDto): PeriodeStatut {
-    if (p.cloturee) return "CLOTURE";
-    const now = new Date();
-    const start = new Date(p.dateDebut);
-    const end = new Date(p.dateFin);
-    if (now >= start && now <= end) return "EN_COURS";
-    return "OUVERT";
+    return deriveStatutPeriodeComptable(p);
 }
 
 function buildBudgetParAxe(budgets: BudgetDto[]): BudgetAxeChart[] {
@@ -170,9 +181,7 @@ function buildBudgetBarData(budgets: BudgetDto[]): BudgetBarChart[] {
         .slice(0, 8);
 }
 
-function pickActiveExercice(
-    exercices: Array<{ id?: string; libelle?: string; code?: string; date_debut?: string; date_fin?: string; actif?: boolean }>,
-) {
+function pickActiveExercice(exercices: ExerciceComptableDto[]) {
     const now = new Date();
     return (
         exercices.find((e) => {
@@ -187,6 +196,60 @@ function pickActiveExercice(
     );
 }
 
+function buildStateFromData(
+    axes: AxeAnalytiqueDto[],
+    budgets: BudgetDto[],
+    periodes: PeriodeComptableDto[],
+    vsRealise: BudgetVsRealiseDto | null,
+    exerciceLibelle: string | null,
+    ecrituresValidees: number,
+    montantEcrituresValidees: number,
+    partialError: boolean,
+    usingCache: boolean,
+    cacheTimestamp?: string,
+): AnalytiqueDashboardState {
+    const periodesVisibles = getPeriodesVisiblesUtilisateur(periodes);
+    const periodesResume: PeriodeResume[] = periodesVisibles.map((p) => ({
+        id: p.id ?? p.code,
+        libelle: libellePeriodeFromCode(p.code),
+        statut: mapPeriodeStatut(p),
+        dateDebut: p.dateDebut,
+        dateFin: p.dateFin,
+    }));
+
+    const enCours = periodesResume.find((p) => p.statut === "EN_COURS")
+        ?? periodesResume.find((p) => p.statut !== "CLOTURE");
+    const budgetAlloue = budgets.reduce((s, b) => s + (b.montantAlloue ?? 0), 0);
+    const budgetConsomme = budgets.reduce((s, b) => s + (b.montantConsomme ?? 0), 0);
+    const periodeVisible = periodesVisibles[0];
+
+    return {
+        loading: false,
+        partialError,
+        usingCache,
+        cacheTimestamp,
+        axesTotal: axes.length,
+        axesActifs: axes.filter((a) => a.actif).length,
+        budgets,
+        budgetsAnnuel: budgets.filter((b) => b.type === "EXERCICE").length,
+        budgetsMensuel: budgets.filter((b) => b.type === "PERIODE").length,
+        budgetsAnalytiques: budgets.filter((b) => b.type === "ANALYTIQUE" || (b.axeIds?.length ?? 0) > 0),
+        budgetAlloue,
+        budgetConsomme,
+        budgetTaux: budgetAlloue > 0 ? (budgetConsomme / budgetAlloue) * 100 : 0,
+        budgetParAxe: buildBudgetParAxe(budgets),
+        budgetBarData: buildBudgetBarData(budgets),
+        alertesBudgets: buildAlertesBudgets(budgets),
+        periodes: periodesResume,
+        periodeEnCours: enCours?.libelle ?? null,
+        periodesOuvertes: periodeVisible && !periodeVisible.cloturee ? 1 : 0,
+        exerciceLibelle,
+        vsRealise,
+        ecrituresValidees,
+        montantEcrituresValidees,
+    };
+}
+
 export function useAnalytiqueDashboard() {
     const [state, setState] = useState<AnalytiqueDashboardState>(EMPTY);
 
@@ -195,45 +258,70 @@ export function useAnalytiqueDashboard() {
             setState((s) => ({ ...s, loading: true }));
         }
 
+        if (!networkStatus.isOnline()) {
+            const cached = await getCachedList<DashboardSnapshot>(CA_CACHE_KEYS.DASHBOARD);
+            if (cached) {
+                setState({ ...cached.data, loading: false, usingCache: true, cacheTimestamp: cached.cachedAt });
+                return;
+            }
+        }
+
         let partialError = false;
-        let axes: AxeAnalytiqueDto[] = [];
-        let budgets: BudgetDto[] = [];
-        let periodes: PeriodeComptableDto[] = [];
+        let fromCache = false;
+        let cachedAt: string | undefined;
+
+        const [axesResult, budgetsResult, periodesResult, exercicesResult] = await Promise.all([
+            fetchWithOfflineCache({
+                cacheKey: CA_CACHE_KEYS.AXES,
+                fetcher: () => AccountingAnalyticsService.getAllAxes(),
+                emptyValue: [] as AxeAnalytiqueDto[],
+            }),
+            fetchWithOfflineCache({
+                cacheKey: CA_CACHE_KEYS.BUDGETS,
+                fetcher: () => AccountingBudgetsService.getAllBudgets(),
+                emptyValue: [] as BudgetDto[],
+            }),
+            fetchWithOfflineCache({
+                cacheKey: CG_CACHE_KEYS.PERIODES,
+                fetcher: () => AccountingPeriodsService.getAllPeriodeComptables(),
+                emptyValue: [] as PeriodeComptableDto[],
+            }),
+            fetchWithOfflineCache({
+                cacheKey: CG_CACHE_KEYS.EXERCICES,
+                fetcher: () => AccountingFiscalYearsService.getAllExercices(),
+                emptyValue: [] as ExerciceComptableDto[],
+            }),
+        ]);
+
+        fromCache =
+            axesResult.fromCache ||
+            budgetsResult.fromCache ||
+            periodesResult.fromCache ||
+            exercicesResult.fromCache;
+        cachedAt =
+            axesResult.cachedAt ??
+            budgetsResult.cachedAt ??
+            periodesResult.cachedAt ??
+            exercicesResult.cachedAt;
+
+        if (
+            axesResult.data.length === 0 &&
+            budgetsResult.data.length === 0 &&
+            periodesResult.data.length === 0 &&
+            networkStatus.isOnline()
+        ) {
+            partialError = true;
+        }
+
         let vsRealise: BudgetVsRealiseDto | null = null;
         let exerciceLibelle: string | null = null;
         let ecrituresValidees = 0;
         let montantEcrituresValidees = 0;
 
-        const [axesRes, budgetsRes, periodesRes, exercicesRes, ecrituresRes] = await Promise.allSettled([
-            AccountingAnalyticsService.getAllAxes(),
-            AccountingBudgetsService.getAllBudgets(),
-            AccountingPeriodsService.getAllPeriodeComptables(),
-            AccountingFiscalYearsService.getAllExercices(),
-            AccountingEcrituresAnalytiquesService.getAllEcritures(),
-        ]);
-
-        if (axesRes.status === "fulfilled") {
-            axes = axesRes.value.data ?? [];
-        } else {
-            partialError = true;
-        }
-
-        if (budgetsRes.status === "fulfilled") {
-            budgets = budgetsRes.value.data ?? [];
-        } else {
-            partialError = true;
-        }
-
-        if (periodesRes.status === "fulfilled") {
-            periodes = periodesRes.value.data ?? [];
-        } else {
-            partialError = true;
-        }
-
-        if (exercicesRes.status === "fulfilled") {
-            const active = pickActiveExercice(exercicesRes.value.data ?? []);
-            if (active?.id) {
-                exerciceLibelle = active.libelle ?? active.code ?? null;
+        const active = pickActiveExercice(exercicesResult.data);
+        if (active?.id) {
+            exerciceLibelle = active.libelle ?? active.code ?? null;
+            if (networkStatus.isOnline()) {
                 try {
                     const vsRes = await AccountingBudgetsService.getBudgetVsRealise(active.id);
                     vsRealise = vsRes.data ?? null;
@@ -241,55 +329,40 @@ export function useAnalytiqueDashboard() {
                     partialError = true;
                 }
             }
-        } else {
-            partialError = true;
         }
 
-        if (ecrituresRes.status === "fulfilled") {
-            const dtos = ecrituresRes.value.data ?? [];
-            ecrituresValidees = dtos.filter((e) => e.statut === "VALIDEE").length;
-            montantEcrituresValidees = dtos
-                .filter((e) => e.statut === "VALIDEE")
-                .reduce((s, e) => s + (e.montantTotal ?? 0), 0);
-        } else {
-            partialError = true;
+        if (networkStatus.isOnline()) {
+            try {
+                const ecrituresRes = await AccountingEcrituresAnalytiquesService.getAllEcritures();
+                const ecrituresDtos = ecrituresRes.data ?? [];
+                ecrituresValidees = ecrituresDtos.filter((e) => e.statut === "VALIDEE").length;
+                montantEcrituresValidees = ecrituresDtos
+                    .filter((e) => e.statut === "VALIDEE")
+                    .reduce((s, e) => s + (e.montantTotal ?? 0), 0);
+            } catch {
+                partialError = true;
+            }
         }
 
-        const periodesResume: PeriodeResume[] = periodes.map((p) => ({
-            id: p.id ?? p.code,
-            libelle: p.code || "Période",
-            statut: mapPeriodeStatut(p),
-            dateDebut: p.dateDebut,
-            dateFin: p.dateFin,
-        }));
-
-        const enCours = periodesResume.find((p) => p.statut === "EN_COURS");
-        const budgetAlloue = budgets.reduce((s, b) => s + (b.montantAlloue ?? 0), 0);
-        const budgetConsomme = budgets.reduce((s, b) => s + (b.montantConsomme ?? 0), 0);
-
-        setState({
-            loading: false,
-            partialError,
-            axesTotal: axes.length,
-            axesActifs: axes.filter((a) => a.actif).length,
-            budgets,
-            budgetsAnnuel: budgets.filter((b) => b.type === "EXERCICE").length,
-            budgetsMensuel: budgets.filter((b) => b.type === "PERIODE").length,
-            budgetsAnalytiques: budgets.filter((b) => b.type === "ANALYTIQUE" || (b.axeIds?.length ?? 0) > 0),
-            budgetAlloue,
-            budgetConsomme,
-            budgetTaux: budgetAlloue > 0 ? (budgetConsomme / budgetAlloue) * 100 : 0,
-            budgetParAxe: buildBudgetParAxe(budgets),
-            budgetBarData: buildBudgetBarData(budgets),
-            alertesBudgets: buildAlertesBudgets(budgets),
-            periodes: periodesResume,
-            periodeEnCours: enCours?.libelle ?? null,
-            periodesOuvertes: periodesResume.filter((p) => p.statut === "OUVERT").length,
-            exerciceLibelle,
+        const nextState = buildStateFromData(
+            axesResult.data,
+            budgetsResult.data,
+            periodesResult.data,
             vsRealise,
+            exerciceLibelle,
             ecrituresValidees,
             montantEcrituresValidees,
-        });
+            partialError,
+            fromCache,
+            cachedAt,
+        );
+
+        await setCachedList(CA_CACHE_KEYS.DASHBOARD, {
+            ...nextState,
+            loading: false,
+        } satisfies DashboardSnapshot);
+
+        setState(nextState);
     }, []);
 
     useEffect(() => {
@@ -297,6 +370,10 @@ export function useAnalytiqueDashboard() {
     }, [load]);
 
     useAutoRefresh(load, [load]);
+
+    useOnPeriodesChanged(() => {
+        void load({ silent: true });
+    });
 
     return { ...state, refresh: load };
 }

@@ -1,49 +1,48 @@
-'use client';
+"use client";
 
+import { Cloud, CloudOff, Loader2 } from "lucide-react";
+import { useNetworkStatus } from "@/hooks/use-network-status";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useOffline } from '@/components/offline/offline-provider';
-import { cn } from '@/lib/utils';
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function OfflineStatusIndicator() {
-  const { isOnline, pendingCount, isSyncing } = useOffline();
+    const { isOnline, pendingCount, isOffline } = useNetworkStatus();
 
-  const hasPending = pendingCount > 0;
-  const isWarning = !isOnline || hasPending || isSyncing;
+    const showWarning = isOffline || pendingCount > 0;
+    const label = isOffline
+        ? "Hors ligne — vos modifications sont enregistrées localement"
+        : pendingCount > 0
+          ? `${pendingCount} élément(s) en attente de synchronisation`
+          : "Connecté";
 
-  const tooltip = !isOnline
-    ? 'Hors ligne — vos modifications seront synchronisées au retour de la connexion'
-    : hasPending
-      ? `${pendingCount} élément(s) en attente de synchronisation`
-      : isSyncing
-        ? 'Synchronisation en cours…'
-        : 'En ligne';
-
-  return (
-    <TooltipProvider delayDuration={200}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span
-            className="inline-flex items-center justify-center h-8 w-8"
-            aria-label={tooltip}
-          >
-            <span
-              className={cn(
-                'h-2.5 w-2.5 rounded-full transition-colors',
-                isWarning ? 'bg-orange-500' : 'bg-emerald-500',
-                isSyncing && 'animate-pulse',
-              )}
-            />
-          </span>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs max-w-[240px]">
-          {tooltip}
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+    return (
+        <TooltipProvider delayDuration={200}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span
+                        className="relative inline-flex items-center justify-center h-8 w-8 rounded-md"
+                        aria-label={label}
+                    >
+                        {isOffline ? (
+                            <CloudOff className="h-4 w-4 text-amber-600" />
+                        ) : pendingCount > 0 ? (
+                            <Loader2 className="h-4 w-4 text-amber-600 animate-spin" />
+                        ) : (
+                            <Cloud className="h-4 w-4 text-emerald-600" />
+                        )}
+                        {showWarning && (
+                            <span className="absolute mt-[-18px] ml-[14px] h-2 w-2 rounded-full bg-amber-500" />
+                        )}
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                    <p className="text-xs">{label}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
 }

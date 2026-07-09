@@ -17,19 +17,32 @@ import {
 } from "@/components/ui/table";
 import { SystemAuditsService } from "@/src/lib/services/SystemAuditsService";
 import { SystemAudit } from "@/src/lib/models/SystemAudit";
+import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 
 export default function AuditsSettingsPage() {
   const [audits, setAudits] = useState<SystemAudit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState("");
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setIsLoading(true);
       try {
-        const data = await SystemAuditsService.getOrganizationActivity(100);
-        if (!cancelled) setAudits(data || []);
+        const result = await fetchWithOfflineCache({
+          cacheKey: SETTINGS_CACHE_KEYS.AUDITS,
+          fetcher: () => SystemAuditsService.getOrganizationActivity(100),
+          emptyValue: [] as SystemAudit[],
+        });
+        if (!cancelled) {
+          setAudits(result.data);
+          setUsingCache(result.fromCache);
+          setCacheTimestamp(result.cachedAt);
+        }
       } catch (error) {
         console.error(error);
         if (!cancelled) toast.error("Impossible de charger le journal d'audit.");
@@ -58,6 +71,7 @@ export default function AuditsSettingsPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
+      <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
           Journal d&apos;audit

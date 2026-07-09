@@ -1,13 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,62 +8,40 @@ import { Download, Search, RefreshCw } from 'lucide-react';
 import { AccountingFinancialReportsService } from '@/src/lib2/services/AccountingFinancialReportsService';
 import { BalanceDesComptesDto } from '@/src/lib2/models/BalanceDesComptesDto';
 import { toast } from 'sonner';
-import { cn, formatDateForApi } from '@/lib/utils';
-import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
+import { formatDateForApi } from '@/lib/utils';
 import { useNationalCurrency } from '@/hooks/use-national-currency';
 import { CustomPageLoader } from '@/components/ui/custom-page-loader';
+import { usePeriodeComptableVisible } from '@/hooks/use-periode-comptable-visible';
+import { PeriodeComptableVisibleSelector } from '@/components/accounting/periode-comptable-visible-selector';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { ANALYSE_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 
 export default function GeneralBalancePage() {
-  const [periodes, setPeriodes] = useState<any[]>([]);
-  const [selectedPeriodeId, setSelectedPeriodeId] = useState<string | null>(null);
+  const { periode, periodeId, loading: isLoadingPeriods, refresh } = usePeriodeComptableVisible();
   const [balanceData, setBalanceData] = useState<BalanceDesComptesDto | null>(null);
-  const [isLoadingPeriods, setIsLoadingPeriods] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const fetchPeriodesData = useCallback(async () => {
-    setIsLoadingPeriods(true);
-    try {
-      const response = await AccountingPeriodsService.getAllPeriodeComptables();
-      if (response.success && Array.isArray(response.data)) {
-        setPeriodes(response.data);
-        if (response.data.length > 0 && !selectedPeriodeId) {
-          const today = new Date();
-          const currentPeriod = response.data.find(p => {
-            const start = new Date(p.dateDebut);
-            const end = new Date(p.dateFin);
-            return today >= start && today <= end;
-          });
-          setSelectedPeriodeId(currentPeriod?.id || response.data[0].id || null);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching periods:', error);
-      toast.error("Erreur lors de la récupération des périodes");
-    } finally {
-      setIsLoadingPeriods(false);
-    }
-  }, [selectedPeriodeId]);
-
-  useEffect(() => {
-    fetchPeriodesData();
-  }, [fetchPeriodesData]);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string>();
 
   const generateReport = useCallback(async () => {
-    if (!selectedPeriodeId) return;
-    const periode = periodes.find(p => p.id === selectedPeriodeId);
-    if (!periode) return;
+    if (!periodeId || !periode) return;
 
     setIsGenerating(true);
     try {
-      const response = await AccountingFinancialReportsService.generateBalance(
-        formatDateForApi(periode.dateDebut),
-        formatDateForApi(periode.dateFin)
-      );
-
-      if (response.success && response.data) {
-        setBalanceData(response.data);
-      } else {
+      const result = await fetchWithOfflineCache({
+        cacheKey: ANALYSE_CACHE_KEYS.balance(periodeId),
+        fetcher: () => AccountingFinancialReportsService.generateBalance(
+          formatDateForApi(periode.dateDebut),
+          formatDateForApi(periode.dateFin),
+        ),
+        emptyValue: null,
+      });
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
+      setBalanceData(result.data);
+      if (!result.data && !result.fromCache) {
         toast.error("Erreur lors de la génération de la balance");
       }
     } catch (error) {
@@ -79,18 +50,16 @@ export default function GeneralBalancePage() {
     } finally {
       setIsGenerating(false);
     }
-  }, [selectedPeriodeId, periodes]);
+  }, [periodeId, periode]);
 
   useEffect(() => {
-    if (selectedPeriodeId) {
+    if (periodeId && periode) {
       generateReport();
     }
-  }, [selectedPeriodeId, generateReport]);
+  }, [periodeId, periode, generateReport]);
 
   const handleGeneratePDF = async () => {
-    if (!selectedPeriodeId) return;
-    const periode = periodes.find(p => p.id === selectedPeriodeId);
-    if (!periode) return;
+    if (!periodeId || !periode) return;
 
     try {
       toast.info("Génération du PDF...");
@@ -131,16 +100,17 @@ export default function GeneralBalancePage() {
   return (
     <div className="min-h-screen p-4 bg-gray-50">
       <div className="max-w-[1400px] mx-auto space-y-6">
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold text-gray-800">Balance des Comptes</h1>
             {isGenerating && <RefreshCw className="h-5 w-5 animate-spin text-blue-500" />}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleGeneratePDF} disabled={isGenerating || !selectedPeriodeId}>
+            <Button variant="outline" onClick={handleGeneratePDF} disabled={isGenerating || !periodeId}>
               <Download className="h-4 w-4 mr-2" /> PDF
             </Button>
-            <Button variant="outline" onClick={handleGenerateXLSX} disabled={isGenerating || !selectedPeriodeId}>
+            <Button variant="outline" onClick={handleGenerateXLSX} disabled={isGenerating || !periodeId}>
               <Download className="h-4 w-4 mr-2" /> XLSX
             </Button>
           </div>
@@ -148,18 +118,11 @@ export default function GeneralBalancePage() {
 
         <div className="space-y-4">
           <div className="flex gap-4 items-center">
-            <Select value={selectedPeriodeId || ''} onValueChange={setSelectedPeriodeId} disabled={isGenerating}>
-              <SelectTrigger className="w-64">
-                <SelectValue placeholder="Sélectionner une période" />
-              </SelectTrigger>
-              <SelectContent>
-                {periodes.map((periode) => (
-                  <SelectItem key={periode.id} value={periode.id!}>
-                    {periode.code} ({new Date(periode.dateDebut).toLocaleDateString()} - {new Date(periode.dateFin).toLocaleDateString()})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <PeriodeComptableVisibleSelector
+              periode={periode}
+              loading={isLoadingPeriods}
+              onRefresh={() => void refresh()}
+            />
             <div className="relative w-64">
               <Input
                 placeholder="Rechercher un compte..."
@@ -169,15 +132,12 @@ export default function GeneralBalancePage() {
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             </div>
-            <Button variant="ghost" size="icon" onClick={fetchPeriodesData} title="Rafraîchir les périodes">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
           </div>
 
           <Card className="overflow-hidden">
             <CardHeader className="bg-white border-b">
               <CardTitle className="flex justify-between items-center text-sm font-semibold uppercase tracking-wider text-gray-500">
-                <span>Balance au {selectedPeriodeId ? new Date(periodes.find(p => p.id === selectedPeriodeId)?.dateFin || '').toLocaleDateString('fr-FR') : '...'}</span>
+                <span>Balance au {periode ? new Date(periode.dateFin).toLocaleDateString('fr-FR') : '...'}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">

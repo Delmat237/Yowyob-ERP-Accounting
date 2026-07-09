@@ -2,13 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAutoRefresh, type AutoRefreshOptions } from '@/hooks/use-auto-refresh';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,11 +16,14 @@ import {
   List,
   ArrowRight,
   FileText,
-  Calendar,
   Layers
 } from 'lucide-react';
 import { AccountingFinancialReportsService } from '@/src/lib2/services/AccountingFinancialReportsService';
-import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
+import { usePeriodeComptableVisible } from '@/hooks/use-periode-comptable-visible';
+import { PeriodeComptableVisibleSelector } from '@/components/accounting/periode-comptable-visible-selector';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { ANALYSE_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 import { GrandLivreDto } from '@/src/lib2/models/GrandLivreDto';
 import { toast } from 'sonner';
 import { cn, formatDateForApi } from '@/lib/utils';
@@ -36,11 +32,11 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 type FilterMode = 'tous' | 'plage' | 'groupe' | 'selection';
 
 export default function GeneralLedgerPage() {
-  const [periodes, setPeriodes] = useState<any[]>([]);
-  const [selectedPeriodeId, setSelectedPeriodeId] = useState<string | null>(null);
+  const { periode, periodeId, loading: isLoadingPeriods, refresh } = usePeriodeComptableVisible();
   const [ledgerData, setLedgerData] = useState<GrandLivreDto[]>([]);
-  const [isLoadingPeriods, setIsLoadingPeriods] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string>();
 
   // Advanced Filters
   const [filterMode, setFilterMode] = useState<FilterMode>('tous');
@@ -49,51 +45,25 @@ export default function GeneralLedgerPage() {
   const [accountGroup, setAccountGroup] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchPeriodesData = useCallback(async () => {
-    setIsLoadingPeriods(true);
-    try {
-      const response = await AccountingPeriodsService.getAllPeriodeComptables();
-      if (response.success && Array.isArray(response.data)) {
-        setPeriodes(response.data);
-        if (response.data.length > 0 && !selectedPeriodeId) {
-          // Find period covering today
-          const today = new Date();
-          const currentPeriod = response.data.find(p => {
-            const start = new Date(p.dateDebut);
-            const end = new Date(p.dateFin);
-            return today >= start && today <= end;
-          });
-
-          setSelectedPeriodeId(currentPeriod?.id || response.data[0].id || null);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching periods:', error);
-      toast.error("Erreur lors de la récupération des périodes");
-    } finally {
-      setIsLoadingPeriods(false);
-    }
-  }, [selectedPeriodeId]);
-
-  useEffect(() => {
-    fetchPeriodesData();
-  }, [fetchPeriodesData]);
-
   const generateReport = useCallback(async (options?: AutoRefreshOptions) => {
-    if (!selectedPeriodeId) return;
-    const periode = periodes.find(p => p.id === selectedPeriodeId);
-    if (!periode) return;
+    if (!periodeId || !periode) return;
 
     if (!options?.silent) setIsGenerating(true);
     try {
-      const response = await AccountingFinancialReportsService.generateGrandLivre(
-        formatDateForApi(periode.dateDebut),
-        formatDateForApi(periode.dateFin)
-      );
+      const result = await fetchWithOfflineCache({
+        cacheKey: ANALYSE_CACHE_KEYS.grandLivre(periodeId),
+        fetcher: () => AccountingFinancialReportsService.generateGrandLivre(
+          formatDateForApi(periode.dateDebut),
+          formatDateForApi(periode.dateFin),
+        ),
+        emptyValue: [] as GrandLivreDto[],
+      });
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
 
-      if (response.success && Array.isArray(response.data)) {
-        setLedgerData(response.data);
-      } else {
+      if (Array.isArray(result.data)) {
+        setLedgerData(result.data);
+      } else if (!result.fromCache) {
         toast.error("Erreur lors de la génération du grand livre");
       }
     } catch (error) {
@@ -102,20 +72,18 @@ export default function GeneralLedgerPage() {
     } finally {
       if (!options?.silent) setIsGenerating(false);
     }
-  }, [selectedPeriodeId, periodes]);
+  }, [periodeId, periode]);
 
   useEffect(() => {
-    if (selectedPeriodeId) {
+    if (periodeId && periode) {
       void generateReport();
     }
-  }, [selectedPeriodeId, generateReport]);
+  }, [periodeId, periode, generateReport]);
 
   useAutoRefresh(generateReport, [generateReport]);
 
   const handleGeneratePDF = async () => {
-    if (!selectedPeriodeId) return;
-    const periode = periodes.find(p => p.id === selectedPeriodeId);
-    if (!periode) return;
+    if (!periodeId || !periode) return;
 
     try {
       toast.info("Génération du PDF...");
@@ -217,6 +185,9 @@ export default function GeneralLedgerPage() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-[#f8fafc] text-slate-900 overflow-hidden">
+      <div className="flex-none px-6 pt-2">
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
+      </div>
       {/* Fixed Header Section */}
       <div className="flex-none bg-white border-b z-30 shadow-sm">
         <div className="max-w-[1600px] mx-auto px-6 py-4">
@@ -259,24 +230,11 @@ export default function GeneralLedgerPage() {
                 {/* Period Selector */}
                 <div className="lg:col-span-3 space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Période d'analyse</label>
-                  <Select value={selectedPeriodeId || ''} onValueChange={setSelectedPeriodeId} disabled={isGenerating}>
-                    <SelectTrigger className="h-11 bg-slate-50/50 border-slate-200 focus:ring-blue-500">
-                      <Calendar className="h-4 w-4 text-slate-400 mr-2" />
-                      <SelectValue placeholder={isLoadingPeriods ? "Chargement..." : "Sélectionner une période"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {periodes.map((periode) => (
-                        <SelectItem key={periode.id} value={periode.id!}>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-slate-900">{periode.code}</span>
-                            <span className="text-[10px] text-slate-400">
-                              {new Date(periode.dateDebut).toLocaleDateString()} — {new Date(periode.dateFin).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <PeriodeComptableVisibleSelector
+                    periode={periode}
+                    loading={isLoadingPeriods}
+                    onRefresh={() => void refresh()}
+                  />
                 </div>
 
                 {/* Mode Selector */}

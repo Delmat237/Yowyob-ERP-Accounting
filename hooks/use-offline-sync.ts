@@ -1,70 +1,32 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useState } from 'react';
-import { useNetworkStatus } from '@/hooks/use-network-status';
-import { probeApiHealth } from '@/lib/offline/network-status';
-import {
-  flushOutbox,
-  subscribeSyncComplete,
-  type SyncCompleteEvent,
-} from '@/lib/offline/sync-engine';
-import { getPendingCount } from '@/lib/offline/outbox';
+import { useEffect } from "react";
+import { initEcrituresAnalytiquesStore } from "@/lib/analytique/ecritures-analytiques-store";
+import { networkStatus } from "@/lib/offline/network-status";
+import { flushOutbox } from "@/lib/offline/sync-engine";
 
-export function useOfflineSync() {
-  const { isOnline, pendingCount } = useNetworkStatus();
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSync, setLastSync] = useState<SyncCompleteEvent | null>(null);
+export function useOfflineSync(): void {
+    useEffect(() => {
+        void initEcrituresAnalytiquesStore();
 
-  const refreshPending = useCallback(async () => {
-    return getPendingCount();
-  }, []);
+        const onOnline = () => {
+            networkStatus.reportApiSuccess();
+            void flushOutbox();
+        };
 
-  const syncNow = useCallback(async () => {
-    if (!isOnline) return null;
-    setIsSyncing(true);
-    try {
-      const result = await flushOutbox();
-      setLastSync(result);
-      return result;
-    } finally {
-      setIsSyncing(false);
-    }
-  }, [isOnline]);
+        const interval = window.setInterval(() => {
+            if (networkStatus.isOnline()) {
+                void flushOutbox();
+            }
+        }, 30_000);
 
-  useEffect(() => {
-    if (!isOnline) return undefined;
+        window.addEventListener("online", onOnline);
+        window.addEventListener("network:online", onOnline);
 
-    let cancelled = false;
-    const run = async () => {
-      const healthy = await probeApiHealth();
-      if (!healthy || cancelled) return;
-      setIsSyncing(true);
-      try {
-        const result = await flushOutbox();
-        if (!cancelled) setLastSync(result);
-      } finally {
-        if (!cancelled) setIsSyncing(false);
-      }
-    };
-
-    void run();
-    return () => {
-      cancelled = true;
-    };
-  }, [isOnline]);
-
-  useEffect(() => {
-    return subscribeSyncComplete((event) => {
-      setLastSync(event);
-    });
-  }, []);
-
-  return {
-    isOnline,
-    pendingCount,
-    isSyncing,
-    lastSync,
-    syncNow,
-    refreshPending,
-  };
+        return () => {
+            window.removeEventListener("online", onOnline);
+            window.removeEventListener("network:online", onOnline);
+            window.clearInterval(interval);
+        };
+    }, []);
 }

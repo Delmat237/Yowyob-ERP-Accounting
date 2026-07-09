@@ -1,114 +1,117 @@
+import { markEntitySynced } from "@/lib/offline/entity-cache";
+import { pushEcritureComptable } from "@/lib/offline/handlers/ecriture-comptable-sync";
 import {
-  ENTITY_ECRITURE_ANALYTIQUE,
-  updateEntitySyncStatus,
-} from '@/lib/offline/db';
-import { pushEcritureAnalytiqueOutboxEntry } from '@/lib/offline/handlers/ecriture-analytique-sync';
-import { shouldUseOffline } from '@/lib/offline/network-status';
-import {
-  getPendingOutboxEntries,
-  markOutboxConflict,
-  markOutboxDone,
-  markOutboxFailed,
-  markOutboxPending,
-  markOutboxSyncing,
-} from '@/lib/offline/outbox';
+    pushCgBudget,
+    pushCgDevise,
+    pushCgDeviseRate,
+    pushCgExercice,
+    pushCgJournal,
+    pushCgOperation,
+    pushCgPeriode,
+    pushCgPlanComptable,
+    pushCgTaxe,
+} from "@/lib/offline/handlers/cg-list-sync";
+import { networkStatus } from "@/lib/offline/network-status";
+import { listPendingOutbox, updateOutboxStatus } from "@/lib/offline/outbox";
+import type { OutboxOperation } from "@/lib/offline/types";
+import { ENTITY_ECRITURE_ANALYTIQUE, ENTITY_ECRITURE_COMPTABLE } from "@/lib/offline/types";
+import { pushEcritureAnalytique } from "@/lib/offline/handlers/ecriture-analytique-sync";
+import { pushCaMockList } from "@/lib/offline/handlers/ca-mock-sync";
+import type { EcritureAnalytique } from "@/lib/analytique/ecriture-analytique";
 
-export const SYNC_BACKOFF_MS = [0, 2000, 5000, 15000, 30000] as const;
+type SyncHandler = (op: OutboxOperation) => Promise<void>;
 
-export type SyncCompleteEvent = {
-  synced: number;
-  failed: number;
-  conflicts: number;
-  stoppedByNetwork: boolean;
+const handlers: Record<string, SyncHandler> = {
+    [ENTITY_ECRITURE_ANALYTIQUE]: async (op) => {
+        await pushEcritureAnalytique(op.action as "CREATE" | "UPDATE" | "DELETE", op.payload as EcritureAnalytique);
+        await markEntitySynced(ENTITY_ECRITURE_ANALYTIQUE, op.entityId);
+    },
+    [ENTITY_ECRITURE_COMPTABLE]: async (op) => {
+        await pushEcritureComptable(op);
+    },
+    "cg.operations": pushCgOperation,
+    "cg.taxes": pushCgTaxe,
+    "cg.devises": pushCgDevise,
+    "cg.devises_rates": pushCgDeviseRate,
+    "cg.journaux": pushCgJournal,
+    "cg.plan_comptable": pushCgPlanComptable,
+    "cg.exercices": pushCgExercice,
+    "cg.budgets": pushCgBudget,
+    "cg.periodes": pushCgPeriode,
+    "ca.centres": pushCaMockList,
+    "ca.charges": pushCaMockList,
+    "ca.comptes": pushCaMockList,
+    "ca.plan_comptes": pushCaMockList,
+    "ca.journaux": pushCaMockList,
 };
 
-type SyncListener = (event: SyncCompleteEvent) => void;
-const syncListeners = new Set<SyncListener>();
-
 let flushing = false;
-let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
-export function subscribeSyncComplete(listener: SyncListener): () => void {
-  syncListeners.add(listener);
-  return () => syncListeners.delete(listener);
-}
-
-function emitSyncComplete(event: SyncCompleteEvent): void {
-  syncListeners.forEach((listener) => listener(event));
-}
-
-function getBackoffDelay(retries: number): number {
-  const index = Math.min(Math.max(retries, 0), SYNC_BACKOFF_MS.length - 1);
-  return SYNC_BACKOFF_MS[index];
-}
-
-export function scheduleSyncRetry(retries: number): void {
-  if (retryTimer) {
-    clearTimeout(retryTimer);
-  }
-  const delay = getBackoffDelay(retries);
-  retryTimer = setTimeout(() => {
-    retryTimer = null;
-    void flushOutbox();
-  }, delay);
-}
-
-export async function flushOutbox(): Promise<SyncCompleteEvent> {
-  if (flushing || shouldUseOffline()) {
-    return { synced: 0, failed: 0, conflicts: 0, stoppedByNetwork: shouldUseOffline() };
-  }
-
-  flushing = true;
-  let synced = 0;
-  let failed = 0;
-  let conflicts = 0;
-  let stoppedByNetwork = false;
-
-  try {
-    const entries = await getPendingOutboxEntries();
-
-    for (const entry of entries) {
-      if (shouldUseOffline()) {
-        stoppedByNetwork = true;
-        break;
-      }
-
-      await markOutboxSyncing(entry.id);
-      const result = await pushEcritureAnalytiqueOutboxEntry(entry);
-
-      if (result.ok) {
-        await markOutboxDone(entry.id);
-        await updateEntitySyncStatus(entry.entity, entry.entityId, 'synced');
-        synced += 1;
-        continue;
-      }
-
-      if (result.network) {
-        const retries = entry.retries + 1;
-        await markOutboxPending(entry.id, result.message, retries);
-        stoppedByNetwork = true;
-        scheduleSyncRetry(retries);
-        break;
-      }
-
-      if (result.conflict) {
-        await markOutboxConflict(entry.id, result.message);
-        conflicts += 1;
-        continue;
-      }
-
-      await markOutboxFailed(entry.id, result.message, entry.retries + 1);
-      failed += 1;
+export async function flushOutbox(): Promise<{ synced: number; failed: number; pending: number }> {
+    if (flushing || !networkStatus.isOnline()) {
+        const pending = (await listPendingOutbox()).length;
+        return { synced: 0, failed: 0, pending };
     }
-  } finally {
-    flushing = false;
-  }
 
-  const event: SyncCompleteEvent = { synced, failed, conflicts, stoppedByNetwork };
-  emitSyncComplete(event);
-  return event;
-}
+    flushing = true;
+    let synced = 0;
+    let failed = 0;
 
-export function isFlushingOutbox(): boolean {
-  return flushing;
+    try {
+        const queue = await listPendingOutbox();
+        for (const op of queue) {
+            if (!networkStatus.isOnline()) break;
+
+            const handler = handlers[op.entity];
+            if (!handler) {
+                await updateOutboxStatus(op.id, "failed", {
+                    lastError: `Pas de handler sync pour ${op.entity}`,
+                });
+                failed += 1;
+                continue;
+            }
+
+            await updateOutboxStatus(op.id, "syncing");
+            try {
+                await handler(op);
+                await updateOutboxStatus(op.id, "done");
+                networkStatus.reportApiSuccess();
+                synced += 1;
+            } catch (err) {
+                const message = err instanceof Error ? err.message : "Erreur de synchronisation";
+                const isApiUnavailable = message.includes("non disponible");
+                const isNetwork =
+                    message.includes("connexion") ||
+                    message.includes("Failed to fetch") ||
+                    message.includes("serveur");
+
+                if (isApiUnavailable) {
+                    await updateOutboxStatus(op.id, "pending", { lastError: message });
+                    break;
+                }
+                if (isNetwork && op.retries < 4) {
+                    await updateOutboxStatus(op.id, "pending", {
+                        retries: op.retries + 1,
+                        lastError: message,
+                    });
+                    break;
+                }
+                await updateOutboxStatus(op.id, "failed", {
+                    retries: op.retries + 1,
+                    lastError: message,
+                });
+                failed += 1;
+            }
+        }
+    } finally {
+        flushing = false;
+    }
+
+    const pending = (await listPendingOutbox()).length;
+    if (typeof window !== "undefined") {
+        window.dispatchEvent(
+            new CustomEvent("sync:complete", { detail: { synced, failed, pending } }),
+        );
+    }
+    return { synced, failed, pending };
 }

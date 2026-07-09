@@ -10,6 +10,11 @@ import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { ensureLocalId } from '@/lib/offline/ensure-local-id';
+import { upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -27,6 +32,8 @@ export default function FiscalYearsPage() {
     const [selectedExerciceId, setSelectedExerciceId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [closeId, setCloseId] = useState<string | null>(null);
+    const [usingCache, setUsingCache] = useState(false);
+    const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
     const { onOpen, onClose: closeCompose } = useCompose();
 
@@ -34,12 +41,15 @@ export default function FiscalYearsPage() {
         if (!options?.silent) setIsLoading(true);
         setError(null);
         try {
-            const response = await AccountingFiscalYearsService.getAllExercices();
-            if (response && response.data) {
-                setExercices(response.data);
-            } else {
-                setExercices([]);
-            }
+            const result = await fetchWithOfflineCache({
+                cacheKey: CG_CACHE_KEYS.EXERCICES,
+                fetcher: () => AccountingFiscalYearsService.getAllExercices(),
+                emptyValue: [] as ExerciceComptableDto[],
+            });
+            setExercices(result.data);
+            setUsingCache(result.fromCache);
+            setCacheTimestamp(result.cachedAt);
+            if (result.fromCache) setError(null);
         } catch (err: any) {
             let reason = "Impossible de charger les exercices.";
             if (err.body?.message) reason = err.body.message;
@@ -64,19 +74,29 @@ export default function FiscalYearsPage() {
 
     const handleSave = async (data: ExerciceComptableDto) => {
         try {
-            if (data.id) {
-                await AccountingFiscalYearsService.updateExercice(data.id, data);
-                toast.success('Exercice mis à jour avec succès', {
-                    description: `L'exercice ${data.code} a été modifié.`,
-                    className: "bg-green-50 border-green-200 text-green-800"
-                });
-            } else {
-                await AccountingFiscalYearsService.createExercice(data);
-                toast.success('Exercice créé avec succès', {
-                    description: `Le nouvel exercice ${data.code} a été ajouté.`,
-                    className: "bg-green-50 border-green-200 text-green-800"
-                });
-            }
+            const isNew = !data.id;
+            const item: ExerciceComptableDto = {
+                ...data,
+                id: ensureLocalId(data.id),
+            };
+
+            await upsertListItemWithOutbox({
+                cacheKey: CG_CACHE_KEYS.EXERCICES,
+                entity: 'cg.exercices',
+                action: isNew ? 'CREATE' : 'UPDATE',
+                item,
+                onlineMutator: () =>
+                    isNew
+                        ? AccountingFiscalYearsService.createExercice(item)
+                        : AccountingFiscalYearsService.updateExercice(item.id!, item),
+            });
+
+            toast.success(isNew ? 'Exercice créé avec succès' : 'Exercice mis à jour avec succès', {
+                description: isNew
+                    ? `Le nouvel exercice ${data.code} a été ajouté.`
+                    : `L'exercice ${data.code} a été modifié.`,
+                className: "bg-green-50 border-green-200 text-green-800"
+            });
             await fetchExercices();
             setSelectedExerciceId(null);
         } catch (err: any) {
@@ -207,6 +227,8 @@ export default function FiscalYearsPage() {
                     <h2 className="text-xl font-semibold text-gray-700 mb-1">Exercices Comptables</h2>
                     <p className="text-sm text-gray-500">Gérez les périodes d'activité de votre entreprise et leurs clôtures.</p>
                 </div>
+
+                <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
                 {error && (
                     <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">

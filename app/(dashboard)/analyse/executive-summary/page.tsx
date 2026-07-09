@@ -1,84 +1,50 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Download, RefreshCw, AlertCircle, PieChart, TrendingUp, Wallet, ShieldCheck } from 'lucide-react';
+import { Download, PieChart, TrendingUp, Wallet, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { AccountingFinancialReportsService } from '@/src/lib2/services/AccountingFinancialReportsService';
-import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
 import { CustomPageLoader } from '@/components/ui/custom-page-loader';
 import { useNationalCurrency } from '@/hooks/use-national-currency';
 import { formatDateForApi } from '@/lib/utils';
+import { usePeriodeComptableVisible } from '@/hooks/use-periode-comptable-visible';
+import { PeriodeComptableVisibleSelector } from '@/components/accounting/periode-comptable-visible-selector';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { ANALYSE_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 
 export default function GeneralSummaryPage() {
   const { nationalCurrency } = useNationalCurrency();
   const currencyCode = nationalCurrency?.code || 'XAF';
-  const [periodes, setPeriodes] = useState<any[]>([]);
-  const [selectedPeriodeId, setSelectedPeriodeId] = useState<string | null>(null);
-  const [isLoadingPeriods, setIsLoadingPeriods] = useState(true);
+  const { periode, periodeId, loading: isLoadingPeriods, refresh } = usePeriodeComptableVisible();
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [summaryData, setSummaryData] = useState<any>(null);
-
-  const fetchPeriodesData = useCallback(async () => {
-    setIsLoadingPeriods(true);
-    try {
-      const response = await AccountingPeriodsService.getAllPeriodeComptables();
-      if (response.success && Array.isArray(response.data)) {
-        setPeriodes(response.data);
-        if (response.data.length > 0 && !selectedPeriodeId) {
-          const today = new Date();
-          const currentPeriod = response.data.find(p => {
-            const start = new Date(p.dateDebut);
-            const end = new Date(p.dateFin);
-            return today >= start && today <= end;
-          });
-          setSelectedPeriodeId(currentPeriod?.id || response.data[0].id || null);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching periods:', error);
-      toast.error("Erreur lors de la récupération des périodes");
-    } finally {
-      setIsLoadingPeriods(false);
-    }
-  }, [selectedPeriodeId]);
-
-  useEffect(() => {
-    fetchPeriodesData();
-  }, [fetchPeriodesData]);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string>();
 
   useEffect(() => {
     const fetchSummary = async () => {
-      if (!selectedPeriodeId || periodes.length === 0) {
-        setSummaryData(null);
-        return;
-      }
-
-      const periode = periodes.find(p => p.id === selectedPeriodeId);
-      if (!periode) {
+      if (!periodeId || !periode) {
         setSummaryData(null);
         return;
       }
 
       setIsLoadingData(true);
       try {
-        const response = await AccountingFinancialReportsService.generateExecutiveSummary(
-          formatDateForApi(periode.dateDebut),
-          formatDateForApi(periode.dateFin)
-        );
-
-        if (response.success && response.data) {
-          setSummaryData(response.data);
-        } else {
-          setSummaryData(null);
+        const result = await fetchWithOfflineCache({
+          cacheKey: ANALYSE_CACHE_KEYS.executiveSummary(periodeId),
+          fetcher: () => AccountingFinancialReportsService.generateExecutiveSummary(
+            formatDateForApi(periode.dateDebut),
+            formatDateForApi(periode.dateFin),
+          ),
+          emptyValue: null,
+        });
+        setUsingCache(result.fromCache);
+        setCacheTimestamp(result.cachedAt);
+        setSummaryData(result.data);
+        if (!result.data && !result.fromCache) {
           toast.error("Erreur lors de la génération du résumé exécutif.");
         }
       } catch (error) {
@@ -90,8 +56,8 @@ export default function GeneralSummaryPage() {
       }
     };
 
-    fetchSummary();
-  }, [selectedPeriodeId, periodes]);
+    void fetchSummary();
+  }, [periodeId, periode]);
 
   const handleGeneratePDF = () => {
     toast.info("L'export PDF sera disponible prochainement");
@@ -140,38 +106,27 @@ export default function GeneralSummaryPage() {
   return (
     <div className="min-h-screen p-6 bg-gray-50/30">
       <div className="max-w-6xl mx-auto space-y-8">
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
         <div className="flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Résumé Exécutif</h1>
             <p className="text-gray-500 mt-2">Vue d'ensemble synthétique des indicateurs financiers clés.</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleGeneratePDF} disabled={!selectedPeriodeId || !summaryData}>
+            <Button variant="outline" onClick={handleGeneratePDF} disabled={!periodeId || !summaryData}>
               <Download className="h-4 w-4 mr-2" /> PDF
             </Button>
-            <Button variant="outline" onClick={handleGenerateXLSX} disabled={!selectedPeriodeId || !summaryData}>
+            <Button variant="outline" onClick={handleGenerateXLSX} disabled={!periodeId || !summaryData}>
               <Download className="h-4 w-4 mr-2" /> XLSX
             </Button>
           </div>
         </div>
 
-        <div className="flex gap-4 items-center">
-          <Select value={selectedPeriodeId || ''} onValueChange={setSelectedPeriodeId}>
-            <SelectTrigger className="w-72">
-              <SelectValue placeholder="Sélectionner une période" />
-            </SelectTrigger>
-            <SelectContent>
-              {periodes.map((periode) => (
-                <SelectItem key={periode.id} value={periode.id!}>
-                  {periode.code} ({new Date(periode.dateDebut).toLocaleDateString()} - {new Date(periode.dateFin).toLocaleDateString()})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button variant="ghost" size="icon" onClick={fetchPeriodesData} title="Rafraîchir les périodes">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
+        <PeriodeComptableVisibleSelector
+          periode={periode}
+          loading={isLoadingPeriods}
+          onRefresh={() => void refresh()}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="bg-white border-none shadow-sm overflow-hidden">

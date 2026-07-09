@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import { getCachedList, setCachedList } from "@/lib/offline/list-cache";
+import { networkStatus } from "@/lib/offline/network-status";
+import { mutateWithOfflineOutbox } from "@/lib/offline/mutate-with-outbox";
+import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
 
 export interface AppNotification {
   id: string;
@@ -30,8 +34,21 @@ export function useNotifications(): UseNotificationsReturn {
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8081';
 
+  // Hydrate depuis IndexedDB pour disponibilité offline (rechargement / Ctrl+R / navigation).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const cached = await getCachedList<AppNotification[]>(SETTINGS_CACHE_KEYS.NOTIFICATIONS);
+      if (!cancelled && cached?.data) setNotifications(cached.data);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const connect = useCallback(() => {
     if (typeof window === 'undefined') return;
+    if (!networkStatus.isOnline()) return;
 
     const token = localStorage.getItem('auth_token');
     const organizationId = localStorage.getItem('organization_id');
@@ -54,7 +71,11 @@ export function useNotifications(): UseNotificationsReturn {
     es.addEventListener('notification', (e: MessageEvent) => {
       try {
         const notif: AppNotification = JSON.parse(e.data);
-        setNotifications(prev => [notif, ...prev]);
+        setNotifications(prev => {
+          const next = [notif, ...prev];
+          void setCachedList(SETTINGS_CACHE_KEYS.NOTIFICATIONS, next);
+          return next;
+        });
 
         // Show toast popup based on notification type
         const toastFn =
@@ -93,23 +114,43 @@ export function useNotifications(): UseNotificationsReturn {
       const token = localStorage.getItem('auth_token');
       const organizationId = localStorage.getItem('organization_id');
       const tenantId = localStorage.getItem('tenant_id');
-      await fetch(`${apiBase}/api/accounting/notifications/${id}/read`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'X-Organization-Id': organizationId ?? '',
-          'X-Tenant-Id': tenantId ?? '',
+      const patchLocal = async () => {
+        setNotifications((prev) => {
+          const next = prev.map((n) => (n.id === id ? { ...n, isRead: true } : n));
+          void setCachedList(SETTINGS_CACHE_KEYS.NOTIFICATIONS, next);
+          return next;
+        });
+      };
+
+      await mutateWithOfflineOutbox({
+        entity: "notifications",
+        action: "UPDATE",
+        entityId: id,
+        payload: { id, isRead: true },
+        onlineMutator: async () => {
+          await fetch(`${apiBase}/api/accounting/notifications/${id}/read`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'X-Organization-Id': organizationId ?? '',
+              'X-Tenant-Id': tenantId ?? '',
+            },
+          });
+          return { success: true };
         },
+        onQueued: patchLocal,
       });
-      setNotifications(prev =>
-        prev.map(n => (n.id === id ? { ...n, isRead: true } : n))
-      );
+
+      await patchLocal();
     } catch (err) {
       console.error('Failed to mark notification as read', err);
     }
   }, [apiBase]);
 
-  const clearAll = useCallback(() => setNotifications([]), []);
+  const clearAll = useCallback(() => {
+    setNotifications([]);
+    void setCachedList(SETTINGS_CACHE_KEYS.NOTIFICATIONS, []);
+  }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 

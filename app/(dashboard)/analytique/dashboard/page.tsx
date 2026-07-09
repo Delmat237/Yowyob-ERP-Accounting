@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
 import { useAnalytiqueDashboard } from "@/hooks/use-analytique-dashboard";
 import { CustomPageLoader } from "@/components/ui/custom-page-loader";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 import { Button } from "@/components/ui/button";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -84,7 +85,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function AnalytiqueDashboardPage() {
     const {
-        loading, partialError,
+        loading, partialError, usingCache, cacheTimestamp,
         axesTotal, axesActifs,
         budgets, budgetsAnnuel, budgetsMensuel,
         budgetAlloue, budgetConsomme, budgetTaux,
@@ -154,6 +155,7 @@ export default function AnalytiqueDashboardPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
             {/* En-tête */}
             <div className="rounded-2xl border border-border bg-gradient-to-br from-indigo-50/80 via-card to-cyan-50/50 p-6 shadow-sm">
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -196,10 +198,10 @@ export default function AnalytiqueDashboardPage() {
                                 {alertesBudgets.length} alerte{alertesBudgets.length > 1 ? "s" : ""}
                             </span>
                         )}
-                        {periodesOuvertes > 0 && (
+                        {periodesOuvertes > 0 && periodeEnCours && (
                             <span className="flex items-center gap-1.5 text-sm bg-amber-50 text-amber-700 px-3 py-1.5 rounded-xl border border-amber-200">
                                 <AlertCircle className="h-4 w-4" />
-                                {periodesOuvertes} période(s) ouverte(s)
+                                Période en cours : {periodeEnCours}
                             </span>
                         )}
                     </div>

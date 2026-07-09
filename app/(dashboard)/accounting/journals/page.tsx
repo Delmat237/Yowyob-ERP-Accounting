@@ -10,6 +10,11 @@ import { toast } from 'sonner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCompose } from '@/hooks/use-compose-store';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { ensureLocalId } from '@/lib/offline/ensure-local-id';
+import { removeListItemWithOutbox, upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +32,8 @@ export default function JournalComptablePage() {
   const [selectedJournalId, setSelectedJournalId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [usingCache, setUsingCache] = useState(false);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
   const { onOpen, onClose: closeCompose } = useCompose();
 
@@ -34,12 +41,15 @@ export default function JournalComptablePage() {
     if (!options?.silent) setIsLoading(true);
     setError(null);
     try {
-      const response = await AccountingJournalManagementService.getAllJournals();
-      if (response && response.data) {
-        setJournals(response.data);
-      } else {
-        setJournals([]);
-      }
+      const result = await fetchWithOfflineCache({
+        cacheKey: CG_CACHE_KEYS.JOURNAUX,
+        fetcher: () => AccountingJournalManagementService.getAllJournals(),
+        emptyValue: [] as JournalComptableDto[],
+      });
+      setJournals(result.data);
+      setUsingCache(result.fromCache);
+      setCacheTimestamp(result.cachedAt);
+      if (result.fromCache) setError(null);
     } catch (err: any) {
       let reason = "Impossible de charger les journaux.";
       if (err.body?.message) reason = err.body.message;
@@ -64,19 +74,29 @@ export default function JournalComptablePage() {
 
   const handleSave = async (data: JournalComptableDto) => {
     try {
-      if (data.id) {
-        await AccountingJournalManagementService.updateJournal(data.id, data);
-        toast.success('Journal mis à jour avec succès', {
-          description: `Le journal ${data.codeJournal} a été modifié.`,
-          className: "bg-green-50 border-green-200 text-green-800"
-        });
-      } else {
-        await AccountingJournalManagementService.createJournal(data);
-        toast.success('Journal créé avec succès', {
-          description: `Le nouveau journal ${data.codeJournal} a été ajouté.`,
-          className: "bg-green-50 border-green-200 text-green-800"
-        });
-      }
+      const isNew = !data.id;
+      const item: JournalComptableDto = {
+        ...data,
+        id: ensureLocalId(data.id),
+      };
+
+      await upsertListItemWithOutbox({
+        cacheKey: CG_CACHE_KEYS.JOURNAUX,
+        entity: 'cg.journaux',
+        action: isNew ? 'CREATE' : 'UPDATE',
+        item,
+        onlineMutator: () =>
+          isNew
+            ? AccountingJournalManagementService.createJournal(item)
+            : AccountingJournalManagementService.updateJournal(item.id!, item),
+      });
+
+      toast.success(isNew ? 'Journal créé avec succès' : 'Journal mis à jour avec succès', {
+        description: isNew
+          ? `Le nouveau journal ${data.codeJournal} a été ajouté.`
+          : `Le journal ${data.codeJournal} a été modifié.`,
+        className: 'bg-green-50 border-green-200 text-green-800',
+      });
       await fetchJournals();
       setSelectedJournalId(null);
     } catch (err: any) {
@@ -99,7 +119,12 @@ export default function JournalComptablePage() {
     if (!deleteId) return;
 
     try {
-      await AccountingJournalManagementService.deleteJournal(deleteId);
+      await removeListItemWithOutbox({
+        cacheKey: CG_CACHE_KEYS.JOURNAUX,
+        entity: 'cg.journaux',
+        entityId: deleteId,
+        onlineMutator: () => AccountingJournalManagementService.deleteJournal(deleteId),
+      });
       toast.success('Journal supprimé', {
         description: 'Le journal a été retiré avec succès.',
         className: "bg-green-50 border-green-200 text-green-800"
@@ -213,6 +238,8 @@ export default function JournalComptablePage() {
           <h2 className="text-xl font-semibold text-gray-700 mb-1">Journaux Comptables</h2>
           <p className="text-sm text-gray-500">Gérez vos journaux auxiliaires (Ventes, Achats, Banque, Caisse, OD).</p>
         </div>
+
+        <OfflineCacheBanner visible={usingCache} cachedAt={cacheTimestamp} />
 
         {error && (
           <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50">

@@ -1,134 +1,71 @@
-import { OpenAPI } from '@/src/lib2/core/OpenAPI';
+export type NetworkMode = "online" | "offline";
 
-const FAILURE_THRESHOLD = 2;
+type NetworkListener = (mode: NetworkMode) => void;
 
-let consecutiveNetworkFailures = 0;
-let browserOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-let forcedOffline = false;
+const MAX_CONSECUTIVE_FAILURES = 2;
 
-type NetworkListener = (online: boolean) => void;
-const listeners = new Set<NetworkListener>();
+class NetworkStatusManager {
+    private mode: NetworkMode =
+        typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline";
 
-function notifyListeners(): void {
-  const online = !shouldUseOffline();
-  listeners.forEach((listener) => listener(online));
+    private consecutiveFailures = 0;
+    private listeners = new Set<NetworkListener>();
+
+    constructor() {
+        if (typeof window === "undefined") return;
+        window.addEventListener("online", this.handleBrowserOnline);
+        window.addEventListener("offline", this.handleBrowserOffline);
+    }
+
+    getMode(): NetworkMode {
+        return this.mode;
+    }
+
+    isOnline(): boolean {
+        return this.mode === "online";
+    }
+
+    subscribe(listener: NetworkListener): () => void {
+        this.listeners.add(listener);
+        return () => this.listeners.delete(listener);
+    }
+
+    reportApiSuccess(): void {
+        this.consecutiveFailures = 0;
+        if (this.mode !== "online") this.setMode("online");
+    }
+
+    reportApiNetworkFailure(): void {
+        this.consecutiveFailures += 1;
+        if (this.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+            this.setMode("offline");
+        }
+    }
+
+    private handleBrowserOnline = (): void => {
+        if (this.consecutiveFailures === 0) {
+            this.setMode("online");
+        }
+    };
+
+    private handleBrowserOffline = (): void => {
+        this.setMode("offline");
+    };
+
+    private setMode(next: NetworkMode): void {
+        if (this.mode === next) return;
+        this.mode = next;
+        this.listeners.forEach((l) => l(next));
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent(`network:${next}`));
+        }
+    }
 }
 
-export function shouldUseOffline(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (!browserOnline) return true;
-  if (forcedOffline) return true;
-  if (consecutiveNetworkFailures >= FAILURE_THRESHOLD) return true;
-  return false;
-}
-
-export function isBrowserOnline(): boolean {
-  return browserOnline;
-}
-
-export function reportApiSuccess(): void {
-  consecutiveNetworkFailures = 0;
-  forcedOffline = false;
-  notifyListeners();
-}
-
-export function reportApiFailure(isNetwork: boolean): void {
-  if (!isNetwork) return;
-  consecutiveNetworkFailures += 1;
-  if (consecutiveNetworkFailures >= FAILURE_THRESHOLD) {
-    forcedOffline = true;
-  }
-  notifyListeners();
-}
+export const networkStatus = new NetworkStatusManager();
 
 export function isNetworkError(error: unknown): boolean {
-  if (error instanceof TypeError) return true;
-  if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
-    if (msg.includes('failed to fetch') || msg.includes('network') || msg.includes('connexion')) {
-      return true;
-    }
-  }
-  return false;
-}
-
-export function isApiNetworkResponse(response: { success?: boolean; message?: string } | undefined): boolean {
-  if (!response || response.success !== false) return false;
-  const msg = (response.message ?? '').toLowerCase();
-  return msg.includes('connexion') || msg.includes('réseau') || msg.includes('network');
-}
-
-export function isBusinessErrorStatus(status: number): boolean {
-  return status === 400 || status === 403 || status === 422;
-}
-
-export function isConflictStatus(status: number): boolean {
-  return status === 409;
-}
-
-export function isRetryableServerStatus(status: number): boolean {
-  return status === 500 || status === 502 || status === 503 || status === 504;
-}
-
-async function getHealthUrl(): Promise<string> {
-  const base = OpenAPI.BASE.replace(/\/$/, '');
-  return `${base}/api/health`;
-}
-
-export async function probeApiHealth(): Promise<boolean> {
-  if (typeof window === 'undefined') return true;
-  try {
-    const headers = await (typeof OpenAPI.HEADERS === 'function'
-      ? OpenAPI.HEADERS({} as never)
-      : Promise.resolve(OpenAPI.HEADERS ?? {}));
-
-    const response = await fetch(await getHealthUrl(), {
-      method: 'GET',
-      headers: headers as Record<string, string>,
-      signal: AbortSignal.timeout(5000),
-    });
-    if (response.ok) {
-      reportApiSuccess();
-      return true;
-    }
-    reportApiFailure(true);
-    return false;
-  } catch {
-    reportApiFailure(true);
-    return false;
-  }
-}
-
-export function subscribeNetworkStatus(listener: NetworkListener): () => void {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-export function initNetworkStatus(): () => void {
-  if (typeof window === 'undefined') return () => undefined;
-
-  const handleOnline = () => {
-    browserOnline = true;
-    notifyListeners();
-    void probeApiHealth();
-  };
-
-  const handleOffline = () => {
-    browserOnline = false;
-    notifyListeners();
-  };
-
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
-
-  return () => {
-    window.removeEventListener('online', handleOnline);
-    window.removeEventListener('offline', handleOffline);
-  };
-}
-
-export function resetNetworkStatusForTests(): void {
-  consecutiveNetworkFailures = 0;
-  forcedOffline = false;
-  browserOnline = true;
+    if (error instanceof TypeError) return true;
+    const status = (error as { status?: number })?.status;
+    return status === 0;
 }

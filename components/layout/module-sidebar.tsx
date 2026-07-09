@@ -9,6 +9,7 @@ import { modules } from "@/config/navigation";
 import { Button } from "../ui/button";
 import { Menu } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { YowyobLogo } from "@/components/brand/yowyob-logo";
 
 export function ModuleSidebar() {
   const { isCollapsed, toggle } = useModuleSidebar();
@@ -39,9 +40,7 @@ export function ModuleSidebar() {
           <Menu className="h-5 w-5 text-gray-600" />
         </Button>
         {!isCollapsed && (
-          <span className="font-semibold text-lg tracking-tight text-gray-700 ml-2">
-            KSM
-          </span>
+          <YowyobLogo size="sm" />
         )}
       </div>
       

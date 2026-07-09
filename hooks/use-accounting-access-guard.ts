@@ -6,6 +6,7 @@ import { isAnalytiqueRoute } from '@/config/navigation';
 import { useAccountingSubscription } from '@/hooks/use-accounting-subscription';
 import { useAccountingChoiceModalStore } from '@/hooks/use-accounting-choice-modal-store';
 import { useEffectiveAccountingChoice } from '@/hooks/use-effective-accounting-choice';
+import { networkStatus } from '@/lib/offline/network-status';
 import {
   ANALYTIQUE_DASHBOARD_PATH,
   GENERALE_DASHBOARD_PATH,
@@ -15,6 +16,7 @@ import {
   isAnalytiqueBridgedAccountingRoute,
   isGeneraleAccountingRoute,
   isWorkspaceChoiceRequired,
+  resolveSidebarWorkspaceChoice,
 } from '@/lib/accounting-workspace-routes';
 
 /**
@@ -34,6 +36,17 @@ export function useAccountingAccessGuard() {
 
   useEffect(() => {
     if (!loaded) return;
+
+    if (!networkStatus.isOnline()) {
+      const resolved = resolveSidebarWorkspaceChoice(effectiveChoice, generale, analytique);
+      if (resolved) {
+        const redirect = getRedirectForWorkspaceViolation(pathname, resolved);
+        if (redirect) {
+          router.replace(redirect);
+        }
+      }
+      return;
+    }
 
     if (!analytique && (isAnalytiqueRoute(pathname) || isAnalytiqueBridgedAccountingRoute(pathname))) {
       router.replace(GENERALE_DASHBOARD_PATH);

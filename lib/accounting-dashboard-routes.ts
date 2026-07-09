@@ -2,6 +2,7 @@ import { LayoutDashboard } from 'lucide-react';
 import { modules, type ModuleKey } from '@/config/navigation';
 import type { SidebarLink } from '@/config/navigation';
 import type { AccountingChoice } from '@/lib/accounting-choice';
+import { resolveSidebarWorkspaceChoice } from '@/lib/accounting-choice-resolver';
 
 export const GENERALE_DASHBOARD_PATH = '/accounting/dashboard';
 export const ANALYTIQUE_DASHBOARD_PATH = '/analytique/dashboard';
@@ -39,17 +40,19 @@ export function resolveDashboardSidebarLinks(options: {
   choice: AccountingChoice | null;
 }): SidebarLink[] {
   const { generale, analytique, choice } = options;
+  const workspaceChoice = resolveSidebarWorkspaceChoice(choice, generale, analytique);
   const links: SidebarLink[] = [];
-  const both = generale && analytique && choice === null;
 
-  if (generale && (choice === null || choice === 'generale')) {
+  const both = generale && analytique && workspaceChoice === null;
+
+  if (generale && (workspaceChoice === null || workspaceChoice === 'generale')) {
     links.push({
       title: both ? 'Tableau de bord (comptabilité générale)' : 'Tableau de bord',
       icon: LayoutDashboard,
       href: GENERALE_DASHBOARD_PATH,
     });
   }
-  if (analytique && (choice === null || choice === 'analytique')) {
+  if (analytique && (workspaceChoice === null || workspaceChoice === 'analytique')) {
     links.push({
       title: both ? 'Tableau de bord (comptabilité analytique)' : 'Tableau de bord',
       icon: LayoutDashboard,
@@ -81,18 +84,19 @@ function filterModuleLinks(
   },
 ): SidebarLink[] {
   const { generale, analytique, choice, accountingRole } = options;
+  const workspaceChoice = resolveSidebarWorkspaceChoice(choice, generale, analytique);
 
   return links.filter((link) => {
-    if (moduleKey === 'analytique' && choice !== 'analytique' && choice !== null) {
+    if (moduleKey === 'analytique' && workspaceChoice !== 'analytique' && workspaceChoice !== null) {
       return false;
     }
-    if (moduleKey === 'analyseAnalytique' && choice !== 'analytique' && choice !== null) {
+    if (moduleKey === 'analyseAnalytique' && workspaceChoice !== 'analytique' && workspaceChoice !== null) {
       return false;
     }
-    if (moduleKey === 'analyse' && choice === 'analytique') {
+    if (moduleKey === 'analyse' && workspaceChoice === 'analytique') {
       return false;
     }
-    if (moduleKey === 'configurationAnalytique' && choice !== 'analytique' && choice !== null) {
+    if (moduleKey === 'configurationAnalytique' && workspaceChoice !== 'analytique' && workspaceChoice !== null) {
       return false;
     }
     if (
@@ -101,7 +105,7 @@ function filterModuleLinks(
         moduleKey === 'analyse' ||
         moduleKey === 'clients' ||
         moduleKey === 'fournisseurs') &&
-      choice === 'analytique'
+      workspaceChoice === 'analytique'
     ) {
       return false;
     }

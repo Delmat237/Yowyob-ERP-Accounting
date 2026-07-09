@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { networkStatus } from "@/lib/offline/network-status";
 
 /** Intervalle court pour le rafraîchissement AJAX automatique (ms). */
-export const AUTO_REFRESH_INTERVAL_MS = 2500;
+export const AUTO_REFRESH_INTERVAL_MS = 30_000;
 
 export type AutoRefreshOptions = {
   silent?: boolean;
@@ -14,6 +15,7 @@ export type AutoRefreshCallback = (options?: AutoRefreshOptions) => void | Promi
 /**
  * Rafraîchit automatiquement les données via AJAX à intervalle régulier.
  * Les appels périodiques passent `{ silent: true }` pour éviter les loaders plein écran.
+ * Le polling est suspendu automatiquement hors ligne.
  */
 export function useAutoRefresh(
   callback: AutoRefreshCallback,
@@ -24,8 +26,16 @@ export function useAutoRefresh(
   const callbackRef = useRef(callback);
   callbackRef.current = callback;
 
+  const [isOnline, setIsOnline] = useState(() => networkStatus.isOnline());
+
   useEffect(() => {
-    if (!enabled) return undefined;
+    return networkStatus.subscribe((mode) => setIsOnline(mode === "online"));
+  }, []);
+
+  const effectiveEnabled = enabled && isOnline;
+
+  useEffect(() => {
+    if (!effectiveEnabled) return undefined;
 
     const timer = window.setInterval(() => {
       void callbackRef.current({ silent: true });
@@ -33,5 +43,13 @@ export function useAutoRefresh(
 
     return () => window.clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, intervalMs, ...deps]);
+  }, [effectiveEnabled, intervalMs, ...deps]);
+
+  useEffect(() => {
+    const onSync = () => {
+      void callbackRef.current({ silent: true });
+    };
+    window.addEventListener("sync:complete", onSync);
+    return () => window.removeEventListener("sync:complete", onSync);
+  }, []);
 }

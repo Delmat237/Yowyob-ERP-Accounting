@@ -26,6 +26,7 @@ import {
   isPlaceholderOrgName,
   pickOrgDisplayName,
 } from "@/lib/organization-display";
+import { OfflineStatusIndicator } from "@/components/offline/offline-status-indicator";
 
 // ─── Contenu du centre d'aide par rôle ───────────────────────────────────────
 
@@ -253,6 +254,7 @@ export function Header() {
           </DropdownMenu>
         </div>
 
+        <OfflineStatusIndicator />
         <NotificationBell />
         <UserNav />
       </div>

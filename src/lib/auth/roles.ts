@@ -126,6 +126,53 @@ export const rolePermissions: Record<string, Record<string, AccountingRole[]>> =
     financial_states: {
         read: [AccountingRoles.AIDE_COMPTABLE, AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
     },
+
+    // ---------- Comptabilité analytique — écritures ----------
+    analytical_entries: {
+        read: [AccountingRoles.AIDE_COMPTABLE, AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        create: [AccountingRoles.AIDE_COMPTABLE, AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        update: [AccountingRoles.AIDE_COMPTABLE, AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        validate: [AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        reject: [AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+    },
+
+    // ---------- Comptabilité analytique — journaux ----------
+    analytical_journals: {
+        read: [AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        create: [AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        update: [AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+    },
+
+    // ---------- Comptabilité analytique — opérations courantes (charges, coûts, plan…) ----------
+    analytical_operations: {
+        read: [AccountingRoles.AIDE_COMPTABLE, AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        create: [AccountingRoles.AIDE_COMPTABLE, AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+        update: [AccountingRoles.AIDE_COMPTABLE, AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+    },
+
+    // ---------- Comptabilité analytique — périodes ----------
+    analytical_periods: {
+        read: [AccountingRoles.RESPONSABLE_COMPTABLE],
+        close: [AccountingRoles.RESPONSABLE_COMPTABLE],
+        synchronize: [AccountingRoles.RESPONSABLE_COMPTABLE],
+    },
+
+    // ---------- Comptabilité analytique — configuration globale ----------
+    analytical_config: {
+        read: [AccountingRoles.RESPONSABLE_COMPTABLE],
+        update: [AccountingRoles.RESPONSABLE_COMPTABLE],
+    },
+
+    // ---------- Comptabilité analytique — budget vs réalisé ----------
+    analytical_budget_vs_realise: {
+        read: [AccountingRoles.COMPTABLE, AccountingRoles.RESPONSABLE_COMPTABLE],
+    },
+
+    // ---------- Comptabilité analytique — validation des budgets ----------
+    analytical_budget_validation: {
+        read: [AccountingRoles.RESPONSABLE_COMPTABLE],
+        validate: [AccountingRoles.RESPONSABLE_COMPTABLE],
+    },
 };
 
 /**

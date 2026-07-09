@@ -14,6 +14,16 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useCompose } from '@/hooks/use-compose-store';
 import { EcritureComptableDetailView } from '@/components/accounting/ecriture-comptable-detail-view';
 import { PermissionGuard } from '@/components/auth/permission-guard';
+import {
+  saveEcritureComptableOffline,
+  validateEcritureComptableOffline,
+  deleteEcritureComptableOffline,
+} from '@/lib/offline/cg-ecritures-offline';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { getCachedList } from '@/lib/offline/list-cache';
+import { isOfflineClientId } from '@/lib/offline/id-map';
+import { toast } from 'sonner';
 
 export default function EcritureComptableDetailsPage() {
     const params = useParams();
@@ -27,37 +37,56 @@ export default function EcritureComptableDetailsPage() {
     const fetchEcriture = async () => {
         setIsLoading(true);
         try {
+            if (isOfflineClientId(id)) {
+                const cached = await getCachedList<EcritureComptableDto[]>(CG_CACHE_KEYS.ECRITURES);
+                const entry = cached?.data.find((e) => e.id === id);
+                if (entry) {
+                    setEcriture(entry);
+                    return;
+                }
+            }
+
             const [entryRes, journalsRes, accountsRes] = await Promise.all([
-                AccountingEntriesService.getById(id),
-                AccountingJournalManagementService.getAllJournals(),
-                AccountingPlanComptableService.getAllPlanComptables()
+                fetchWithOfflineCache({
+                    cacheKey: `cg.ecriture.${id}`,
+                    fetcher: () => AccountingEntriesService.getById(id),
+                    emptyValue: null as EcritureComptableDto | null,
+                }),
+                fetchWithOfflineCache({
+                    cacheKey: CG_CACHE_KEYS.JOURNAUX,
+                    fetcher: () => AccountingJournalManagementService.getAllJournals(),
+                    emptyValue: [] as JournalComptableDto[],
+                }),
+                fetchWithOfflineCache({
+                    cacheKey: CG_CACHE_KEYS.PLAN_COMPTABLE,
+                    fetcher: () => AccountingPlanComptableService.getAllPlanComptables(),
+                    emptyValue: [] as import('@/src/lib2/models/PlanComptableDto').PlanComptableDto[],
+                }),
             ]);
 
-            if (entryRes.success && entryRes.data) {
-                const entry = entryRes.data;
-                const journals = (Array.isArray(journalsRes.data) ? journalsRes.data : []) as JournalComptableDto[];
-                const accounts = (Array.isArray(accountsRes.data) ? accountsRes.data : []) as any[];
+            const entry = entryRes.data;
+            if (entry) {
+                const journals = journalsRes.data;
+                const accounts = accountsRes.data;
 
-                // Map Journal Label
                 if (!entry.journalComptableLibelle) {
-                    const journal = journals.find(j => j.id === entry.journalComptableId);
+                    const journal = journals.find((j) => j.id === entry.journalComptableId);
                     if (journal) entry.journalComptableLibelle = journal.libelle;
                 }
 
-                // Map Account Numbers in Lines
                 if (entry.detailsEcriture) {
-                    entry.detailsEcriture = entry.detailsEcriture.map(detail => {
-                        const acc = accounts.find(a => a.id === detail.compteComptableId);
+                    entry.detailsEcriture = entry.detailsEcriture.map((detail) => {
+                        const acc = accounts.find((a) => a.id === detail.compteComptableId);
                         return {
                             ...detail,
-                            compteComptableNo: acc?.noCompte || detail.compteComptableId
-                        } as any;
+                            compteComptableNo: acc?.noCompte || detail.compteComptableId,
+                        } as typeof detail;
                     });
                 }
 
                 setEcriture(entry);
             } else {
-                router.push('/accounting/entries'); // Redirect if not found
+                router.push('/accounting/entries');
             }
         } catch (error) {
             console.error("Failed to fetch ecriture details:", error);
@@ -74,19 +103,23 @@ export default function EcritureComptableDetailsPage() {
 
     const handleSave = async (data: EcritureComptableDto) => {
         try {
-            await AccountingEntriesService.updateEcriture(data.id!, data);
+            const { queued } = await saveEcritureComptableOffline(data);
             onClose();
-            fetchEcriture();
+            await fetchEcriture();
+            if (queued) {
+                toast.success("Modification enregistrée localement");
+            }
         } catch (error) {
             console.error("Failed to update ecriture:", error);
         }
     };
 
-    const handleValidate = async (id: string) => {
+    const handleValidate = async (validateId: string) => {
         try {
-            await AccountingEntriesService.validateEcriture(id);
+            const { queued } = await validateEcritureComptableOffline(validateId);
             onClose();
-            fetchEcriture();
+            await fetchEcriture();
+            toast.success(queued ? "Validation en attente de synchronisation" : "Écriture validée");
         } catch (error) {
             console.error("Failed to validate:", error);
         }
@@ -95,7 +128,10 @@ export default function EcritureComptableDetailsPage() {
     const confirmDelete = async () => {
         if (!ecritureToDelete?.id) return;
         try {
-            await AccountingEntriesService.delete(ecritureToDelete.id);
+            const { queued } = await deleteEcritureComptableOffline(ecritureToDelete.id);
+            if (queued) {
+                toast.success("Suppression en attente de synchronisation");
+            }
             router.push('/accounting/entries');
         } catch (error) {
             console.error("Failed to delete:", error);

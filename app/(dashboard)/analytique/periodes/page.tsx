@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { StatutPeriode } from "@/lib/analytique/mock-data";
+import { hasPermission } from "@/src/lib/auth/roles";
 import { isPeriodeDesynchronisee, resolvePeriodeCG } from "@/lib/analytique/periodes-alignees";
 import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import { formatCurrency, formatDateDisplay } from "@/lib/utils";
+import { OfflineCacheBanner } from "@/components/offline/offline-cache-banner";
 import {
     CheckCircle2, AlertCircle, Clock, Calendar,
     Lock, AlertTriangle, ArrowRightLeft, RefreshCw, Link2,
@@ -20,14 +22,19 @@ const STATUTS: Record<StatutPeriode, { label: string; color: string; icon: React
 
 export default function PeriodesPage() {
     const { accountingRole } = useAuth();
-    const isResponsable = accountingRole === "RESPONSABLE_COMPTABLE";
+    const isResponsable = hasPermission(accountingRole, "analytical_periods", "close");
+    const canSynchronize = hasPermission(accountingRole, "analytical_periods", "synchronize");
     const {
         periodes,
+        periodesVisibles,
+        periodeCourante,
         periodesCG,
         exercices,
         loading,
         error,
         usingMockFallback,
+        usingCache,
+        cacheTimestamp,
         reload,
         setStatutLocal,
         synchroniserClotures,
@@ -54,11 +61,12 @@ export default function PeriodesPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            <OfflineCacheBanner visible={usingCache && !usingMockFallback} cachedAt={cacheTimestamp} />
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Périodes analytiques</h1>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                        Calendrier aligné sur la comptabilité générale — une période analytique = une période comptable (mêmes dates).
+                        Période comptable courante alignée sur la comptabilité générale — une seule période visible à la fois.
                     </p>
                 </div>
             </div>
@@ -94,7 +102,7 @@ export default function PeriodesPage() {
                             {desynchros.map((p) => p.libelle).join(", ")} — clôturée(s) en comptabilité générale, ouverte(s) en analytique.
                         </p>
                     </div>
-                    {isResponsable && (
+                    {canSynchronize && (
                         <button
                             onClick={handleSynchronize}
                             disabled={isSyncing}
@@ -109,10 +117,10 @@ export default function PeriodesPage() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {[
-                    { label: "Ouvertes", val: periodes.filter((p) => p.statut === "OUVERT").length, color: "text-slate-600" },
-                    { label: "En cours", val: periodes.find((p) => p.statut === "EN_COURS")?.libelle ?? "Aucune", color: "text-amber-600" },
-                    { label: "Clôturées", val: periodes.filter((p) => p.statut === "CLOTURE").length, color: "text-emerald-600" },
-                    { label: "Alignées comptabilité générale", val: periodes.length, color: "text-indigo-600" },
+                    { label: "Période visible", val: periodeCourante?.libelle ?? "Aucune", color: "text-indigo-600" },
+                    { label: "Statut", val: periodeCourante ? (STATUTS[periodeCourante.statut]?.label ?? "—") : "—", color: "text-amber-600" },
+                    { label: "Exercice", val: periodeCourante ? exerciceLabel(periodeCourante.exerciceId) : "—", color: "text-slate-600" },
+                    { label: "Alignée CG", val: periodeCourante ? "Oui" : "Non", color: "text-emerald-600" },
                 ].map((s, i) => (
                     <div key={i} className="bg-card rounded-xl border border-border p-4 shadow-sm text-center">
                         <p className={`text-xl font-bold ${s.color}`}>{s.val}</p>
@@ -134,14 +142,14 @@ export default function PeriodesPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {periodes.length === 0 ? (
+                            {periodesVisibles.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-5 py-12 text-center text-muted-foreground italic">
                                         Aucune période comptable. Créez les périodes dans la comptabilité générale.
                                     </td>
                                 </tr>
                             ) : (
-                                periodes.map((p) => {
+                                periodesVisibles.map((p) => {
                                     const cg = resolvePeriodeCG(p, periodesCG);
                                     const desync = isPeriodeDesynchronisee(p, periodesCG);
                                     const SIcon = STATUTS[p.statut].icon;

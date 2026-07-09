@@ -354,12 +354,33 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions): C
             const headers = await getHeaders(config, options);
 
             if (!onCancel.isCancelled) {
+                const { tryOfflineApiReadFallback, shouldPreferOfflineReadFallback, cacheApiListResponseIfApplicable } =
+                    await import("@/lib/offline/offline-api-read-fallback");
+
+                if (shouldPreferOfflineReadFallback()) {
+                    const offlinePayload = await tryOfflineApiReadFallback(url, options.method);
+                    if (offlinePayload) {
+                        resolve(offlinePayload as T);
+                        return;
+                    }
+                }
+
                 let response: Response;
                 try {
                     response = await sendRequest(config, options, url, body, formData, headers, onCancel);
                 } catch (fetchError: any) {
                     // Stop network failures from crashing the UI
                     console.warn(`[Network Error] Failed to fetch: ${url}`, fetchError);
+                    if (typeof window !== "undefined") {
+                        void import("@/lib/offline/network-status").then(({ networkStatus }) => {
+                            networkStatus.reportApiNetworkFailure();
+                        });
+                    }
+                    const offlinePayload = await tryOfflineApiReadFallback(url, options.method);
+                    if (offlinePayload) {
+                        resolve(offlinePayload as T);
+                        return;
+                    }
                     resolve({
                         success: false,
                         message: "Erreur de connexion au serveur",
@@ -382,9 +403,20 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions): C
                 // Si le serveur retourne une erreur HTTP, on tente quand même de resolver avec le message
                 try {
                     catchErrorCodes(options, result);
+                    if (typeof window !== "undefined" && response.ok) {
+                        void import("@/lib/offline/network-status").then(({ networkStatus }) => {
+                            networkStatus.reportApiSuccess();
+                        });
+                        void cacheApiListResponseIfApplicable(url, options.method, result.body);
+                    }
                     resolve(result.body);
                 } catch (apiError: any) {
                     console.warn(`[API Error] HTTP ${result.status} on ${url}`, apiError);
+                    const offlinePayload = await tryOfflineApiReadFallback(url, options.method);
+                    if (offlinePayload) {
+                        resolve(offlinePayload as T);
+                        return;
+                    }
                     resolve({
                         success: false,
                         message: apiError?.message || "Erreur retournée par le serveur",
@@ -394,6 +426,15 @@ export const request = <T>(config: OpenAPIConfig, options: ApiRequestOptions): C
             }
         } catch (error) {
             console.error("[General Error] Request execution failed", error);
+            const { tryOfflineApiReadFallback } = await import("@/lib/offline/offline-api-read-fallback");
+            const offlinePayload = await tryOfflineApiReadFallback(
+                getUrl(config, options),
+                options.method,
+            );
+            if (offlinePayload) {
+                resolve(offlinePayload as T);
+                return;
+            }
             resolve({
                 success: false,
                 message: "Erreur lors de l'exécution de la requête",
