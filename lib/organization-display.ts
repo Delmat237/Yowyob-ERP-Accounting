@@ -67,7 +67,66 @@ export function pickKernelOrgDisplayName(org?: KernelOrganizationFields | null):
   );
 }
 
-/** Fallback silencieux vers le proxy Kernel — n'émet pas d'erreur console si le Kernel répond 5xx. */
+/** Fallback silencieux via fetch direct (n'utilise pas le client généré → pas de logout sur 401 Kernel). */
+export async function fetchKernelOrgNameRaw(orgId: string): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+
+  const base =
+    process.env.NEXT_PUBLIC_API_URL ?? "https://accounting.yowyob.com/accounting-api";
+  const token = localStorage.getItem("auth_token");
+  const tenantId =
+    localStorage.getItem("tenant_id") ||
+    process.env.NEXT_PUBLIC_TENANT_ID ||
+    "11111111-1111-1111-1111-111111111111";
+  const organizationId =
+    localStorage.getItem("organization_id") ||
+    process.env.NEXT_PUBLIC_ORGANIZATION_ID ||
+    "";
+
+  const headers: Record<string, string> = {
+    "X-Tenant-Id": tenantId,
+    "X-Tenant-ID": tenantId,
+    "X-Organization-Id": organizationId,
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const parseOrgList = (json: unknown): KernelOrganizationFields[] => {
+    if (!json || typeof json !== "object") return [];
+    const wrapper = json as { data?: unknown };
+    const payload = wrapper.data ?? json;
+    return Array.isArray(payload) ? (payload as KernelOrganizationFields[]) : [];
+  };
+
+  const parseOrg = (json: unknown): KernelOrganizationFields | null => {
+    if (!json || typeof json !== "object") return null;
+    const wrapper = json as { data?: KernelOrganizationFields };
+    return wrapper.data ?? (json as KernelOrganizationFields);
+  };
+
+  try {
+    const myRes = await fetch(`${base}/api/kernel/organizations/my`, { headers });
+    if (myRes.ok) {
+      const myJson = await myRes.json();
+      const match = parseOrgList(myJson).find((o) => o.id === orgId);
+      const name = pickKernelOrgDisplayName(match);
+      if (name) return name;
+    }
+
+    const byIdRes = await fetch(`${base}/api/kernel/organizations/${orgId}`, { headers });
+    if (byIdRes.ok) {
+      const byIdJson = await byIdRes.json();
+      return pickKernelOrgDisplayName(parseOrg(byIdJson));
+    }
+  } catch {
+    // silencieux
+  }
+
+  return null;
+}
+
+/** @deprecated Préférer fetchKernelOrgNameRaw pour éviter le logout automatique sur 401 Kernel. */
 export async function fetchKernelOrgDisplayNameSilently(
   orgId: string,
   fetchOrg: (id: string) => Promise<KernelOrganizationFields | null | undefined>,

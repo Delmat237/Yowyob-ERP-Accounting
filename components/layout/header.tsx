@@ -18,12 +18,11 @@ import { NotificationBell } from "../notifications/notification-bell";
 import { useAuth } from "@/hooks/use-auth";
 import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
 import { AccountingOrganizationsService } from "@/src/lib2/services/AccountingOrganizationsService";
-import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
 import {
   DEFAULT_ORG_DISPLAY_NAME,
   clearPlaceholderOrgNameFromStorage,
   extractAccountingOrgName,
-  fetchKernelOrgDisplayNameSilently,
+  fetchKernelOrgNameRaw,
   isPlaceholderOrgName,
   pickOrgDisplayName,
 } from "@/lib/organization-display";
@@ -130,23 +129,8 @@ export function Header() {
     };
 
     const tryKernelFallback = async () => {
-      const fromMyOrgs = await fetchKernelOrgDisplayNameSilently(orgId, async (id) => {
-        try {
-          const orgs = await OrganizationsService.getMyOrganizations();
-          return orgs?.find((o) => o.id === id) ?? null;
-        } catch {
-          return null;
-        }
-      });
-      if (fromMyOrgs) {
-        applyOrgName(fromMyOrgs);
-        return;
-      }
-
-      const fromKernel = await fetchKernelOrgDisplayNameSilently(orgId, (id) =>
-        OrganizationsService.getOrganizationById(id),
-      );
-      applyOrgName(fromKernel);
+      const name = await fetchKernelOrgNameRaw(orgId);
+      applyOrgName(name);
     };
 
     AccountingOrganizationsService.getOrganization(orgId)

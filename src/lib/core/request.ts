@@ -267,9 +267,17 @@ const SESSION_KEYS = ['auth_token', 'user', 'organization_id', 'tenant_id'];
  * Token expiré / session invalide côté serveur (401) : purge la session locale
  * et renvoie immédiatement vers la page de login (la landing `/`), au lieu de
  * laisser la page tourner indéfiniment sur un spinner.
+ *
+ * Exception : le proxy Kernel peut répondre 401 (droits/contexte manquant) sans
+ * invalider le JWT accounting — ne pas déconnecter l'utilisateur dans ce cas.
  */
-const handleUnauthorized = (): void => {
+const shouldPurgeSessionOnUnauthorized = (url: string): boolean => {
+    return !url.includes('/api/kernel/');
+};
+
+const handleUnauthorized = (url: string): void => {
     if (typeof window === 'undefined') return;
+    if (!shouldPurgeSessionOnUnauthorized(url)) return;
     SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
     // Fermer les modales Compose encore ouvertes en mémoire (store Zustand).
     void import('@/lib/clear-ui-state').then(({ clearUiState }) => clearUiState());
@@ -292,7 +300,7 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
     }
 
     if (result.status === 401) {
-        handleUnauthorized();
+        handleUnauthorized(result.url);
     }
 
     const error = errors[result.status];
