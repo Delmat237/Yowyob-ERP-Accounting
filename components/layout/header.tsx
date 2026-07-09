@@ -19,6 +19,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
 import { AccountingOrganizationsService } from "@/src/lib2/services/AccountingOrganizationsService";
 import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
+import {
+  DEFAULT_ORG_DISPLAY_NAME,
+  clearPlaceholderOrgNameFromStorage,
+  extractAccountingOrgName,
+  fetchKernelOrgDisplayNameSilently,
+  isPlaceholderOrgName,
+  pickOrgDisplayName,
+} from "@/lib/organization-display";
 
 // ─── Contenu du centre d'aide par rôle ───────────────────────────────────────
 
@@ -97,44 +105,60 @@ export function Header() {
   const { toggle, toggleMobile } = useSidebar();
   const isMobile = useMediaQuery("(max-width: 767px)");
   const { accountingRole } = useAuth();
-  const [orgName, setOrgName] = useState<string>("KSM");
+  const [orgName, setOrgName] = useState<string>(DEFAULT_ORG_DISPLAY_NAME);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const name = localStorage.getItem("organization_name");
-      if (name) {
-        // Si c'est un UUID, on ne l'affiche pas directement pour éviter l'identifiant technique à l'écran
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(name);
-        if (!isUuid) {
-          setOrgName(name);
-        }
-      }
+    if (typeof window === "undefined") return;
 
-      const orgId = localStorage.getItem("organization_id");
-      if (orgId) {
-        const applyOrgName = (resolvedName?: string | null) => {
-          if (resolvedName) {
-            setOrgName(resolvedName);
-            localStorage.setItem("organization_name", resolvedName);
-          }
-        };
+    clearPlaceholderOrgNameFromStorage();
 
-        // Priorité : API accounting locale (évite le proxy Kernel souvent source de 500 en prod).
-        AccountingOrganizationsService.getOrganization(orgId)
-          .then((res) => {
-            if (res?.success && res.data?.name) {
-              applyOrgName(res.data.name);
-              return;
-            }
-            return OrganizationsService.getOrganizationById(orgId).then((org) => {
-              applyOrgName(org?.name || org?.displayName);
-            });
-          })
-          .catch((err) => {
-            console.warn("Erreur lors de la récupération du nom de l'organisation:", err);
-          });
-      }
+    const storedName = localStorage.getItem("organization_name");
+    const resolvedStoredName = pickOrgDisplayName(storedName);
+    if (resolvedStoredName) {
+      setOrgName(resolvedStoredName);
     }
+
+    const orgId = localStorage.getItem("organization_id");
+    if (!orgId) return;
+
+    const applyOrgName = (resolvedName?: string | null) => {
+      const displayName = pickOrgDisplayName(resolvedName) ?? DEFAULT_ORG_DISPLAY_NAME;
+      setOrgName(displayName);
+      if (!isPlaceholderOrgName(resolvedName)) {
+        localStorage.setItem("organization_name", displayName);
+      }
+    };
+
+    const tryKernelFallback = async () => {
+      const fromMyOrgs = await fetchKernelOrgDisplayNameSilently(orgId, async (id) => {
+        try {
+          const orgs = await OrganizationsService.getMyOrganizations();
+          return orgs?.find((o) => o.id === id) ?? null;
+        } catch {
+          return null;
+        }
+      });
+      if (fromMyOrgs) {
+        applyOrgName(fromMyOrgs);
+        return;
+      }
+
+      const fromKernel = await fetchKernelOrgDisplayNameSilently(orgId, (id) =>
+        OrganizationsService.getOrganizationById(id),
+      );
+      applyOrgName(fromKernel);
+    };
+
+    AccountingOrganizationsService.getOrganization(orgId)
+      .then((res) => {
+        const resolvedAccountingName = pickOrgDisplayName(extractAccountingOrgName(res));
+        if (resolvedAccountingName) {
+          applyOrgName(resolvedAccountingName);
+          return;
+        }
+        return tryKernelFallback();
+      })
+      .catch(() => tryKernelFallback());
   }, []);
 
   const helpContent = accountingRole

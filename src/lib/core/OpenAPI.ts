@@ -38,20 +38,26 @@ export const OpenAPI: OpenAPIConfig = {
     PASSWORD: undefined,
     HEADERS: () => Promise.resolve(
         typeof window !== 'undefined'
-            ? {
+            ? (() => {
+                const tenantId = localStorage.getItem('tenant_id')
+                    || process.env.NEXT_PUBLIC_TENANT_ID
+                    || '11111111-1111-1111-1111-111111111111';
+                const organizationId = localStorage.getItem('organization_id')
+                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID
+                    || '4e177ff2-89b8-4d24-926a-5763dfa1b19a';
+                return {
                 // X-Tenant-ID = le TENANT (≠ organisation). Au login, le
                 // localStorage est vide → on retombe sur NEXT_PUBLIC_TENANT_ID
                 // (configurable dans .env.local), sinon ''.
-                'X-Tenant-ID': localStorage.getItem('tenant_id')
-                    || process.env.NEXT_PUBLIC_TENANT_ID
-                    || '11111111-1111-1111-1111-111111111111',
+                'X-Tenant-ID': tenantId,
+                // Le Kernel lit explicitement X-Tenant-Id : on duplique par sécurité.
+                'X-Tenant-Id': tenantId,
                 // X-Organization-Id : organisation courante (relayée par le proxy au Kernel).
-                'X-Organization-Id': localStorage.getItem('organization_id')
-                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID
-                    || '4e177ff2-89b8-4d24-926a-5763dfa1b19a',
+                'X-Organization-Id': organizationId,
                 // NB : X-Client-Id / X-Api-Key NE sont plus envoyés par le navigateur.
                 // Le proxy backend (/api/kernel) les injecte côté serveur.
-              }
+              };
+            })()
             : {}
     ),
     ENCODE_PATH: undefined,

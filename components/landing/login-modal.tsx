@@ -23,6 +23,7 @@ import { LoginData } from '@/types/personnel';
 import { useAuth } from '@/hooks/use-auth';
 import { clearAccountingChoice } from '@/lib/accounting-choice';
 import { clearUiState } from '@/lib/clear-ui-state';
+import { DEFAULT_ORG_DISPLAY_NAME, pickOrgDisplayName } from '@/lib/organization-display';
 import { useAccountingChoiceStore } from '@/hooks/use-accounting-choice-store';
 
 interface LoginModalProps {
@@ -87,8 +88,13 @@ type SelectOption = {
 };
 
 function orgLabel(org: LoginOrg): string {
-    return org.displayName || org.shortName || org.longName || org.legalName
-        || org.organizationCode || org.organizationId;
+    return pickOrgDisplayName(
+        org.displayName,
+        org.shortName,
+        org.longName,
+        org.legalName,
+        org.organizationCode,
+    ) ?? DEFAULT_ORG_DISPLAY_NAME;
 }
 
 // Aplatit les contextes en options sélectionnables (un par organisation, ou un par
@@ -225,7 +231,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
             localStorage.setItem('organization_id',
                 option.organizationId || response.user?.organizationId
                 || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
-            localStorage.setItem('organization_name', option.label || 'KSM');
+            localStorage.setItem('organization_name', pickOrgDisplayName(option.label) ?? DEFAULT_ORG_DISPLAY_NAME);
             OpenAPI.TOKEN = response.token;
             setUser(response.user);
 
