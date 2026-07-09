@@ -15,7 +15,8 @@ import {
     type EcritureAnalytique,
 } from "@/lib/analytique/ecriture-analytique";
 import { formatMontantSigne } from "@/lib/analytique/ecriture-lignes";
-import { mockCentres, mockExercicesCG } from "@/lib/analytique/mock-data";
+import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +38,8 @@ export default function ValidationEcrituresAnalytiquesPage() {
         rejectEcriture,
         reload,
     } = useEcrituresAnalytiquesApi();
+    const { centres } = useCentresAnalyseApi();
+    const { periodes } = usePeriodesAnalytiquesAlignees();
     const [search, setSearch] = useState("");
     const [preview, setPreview] = useState<EcritureAnalytique | null>(null);
     const [validatingId, setValidatingId] = useState<string | null>(null);
@@ -209,9 +212,9 @@ export default function ValidationEcrituresAnalytiquesPage() {
                     {preview && (
                         <div className="space-y-2 text-sm">
                             <p><span className="text-muted-foreground">Journal :</span> {getJournalAnalytiqueById(preview.journalId)?.libelle}</p>
-                            <p><span className="text-muted-foreground">Centre dest. :</span> {mockCentres.find((c) => c.id === preview.centreDestinationId)?.libelle}</p>
+                            <p><span className="text-muted-foreground">Centre dest. :</span> {centres.find((c) => c.id === preview.centreDestinationId)?.libelle}</p>
                             <p><span className="text-muted-foreground">Nature :</span> {NATURES_CHARGE.find((n) => n.id === preview.natureChargeId)?.libelle}</p>
-                            <p><span className="text-muted-foreground">Exercice :</span> {mockExercicesCG.find((x) => x.id === preview.exerciceAnalytiqueId)?.libelle}</p>
+                            <p><span className="text-muted-foreground">Période :</span> {periodes.find((p) => p.id === preview.exerciceAnalytiqueId)?.libelle}</p>
                             <p><span className="text-muted-foreground">Montant :</span> {formatCurrency(preview.montant)}</p>
                             {preview.ligneCGRef && (
                                 <p><span className="text-muted-foreground">Réf. comptabilité générale :</span> {preview.ligneCGRef}</p>
@@ -221,7 +224,7 @@ export default function ValidationEcrituresAnalytiquesPage() {
                                     <p className="text-xs font-semibold mb-1">Lignes d&apos;imputation</p>
                                     {preview.lignes.map((l, i) => (
                                         <p key={i} className="text-xs font-mono">
-                                            {mockCentres.find((c) => c.id === l.centreId)?.libelle} : {formatMontantSigne(l.montant)}
+                                            {centres.find((c) => c.id === l.centreId)?.libelle} : {formatMontantSigne(l.montant)}
                                         </p>
                                     ))}
                                 </div>

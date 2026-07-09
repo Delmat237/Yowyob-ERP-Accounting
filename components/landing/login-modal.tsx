@@ -384,7 +384,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                         </DialogTitle>
                     </div>
                     <DialogDescription className="text-sm text-gray-500 text-center">
-                        Accédez à votre espace de gestion commerciale
+                        Accédez à votre espace de gestion comptable
                     </DialogDescription>
                 </DialogHeader>
 
@@ -503,7 +503,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <Label htmlFor="firstName">Prénom</Label>
                                     <Input
                                         id="firstName"
-                                        placeholder="Jean"
+                                        placeholder="DELMAT"
                                         {...registerForm.register('firstName', { required: 'Prénom requis' })}
                                     />
                                     {registerForm.formState.errors.firstName && (
@@ -514,7 +514,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                     <Label htmlFor="lastName">Nom</Label>
                                     <Input
                                         id="lastName"
-                                        placeholder="Dupont"
+                                        placeholder="LEONEL"
                                         {...registerForm.register('lastName', { required: 'Nom requis' })}
                                     />
                                     {registerForm.formState.errors.lastName && (
@@ -529,7 +529,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                                 <Input
                                     id="registerEmail"
                                     type="email"
-                                    placeholder="votre@email.com"
+                                    placeholder="delmat@enspy.cm"
                                     {...registerForm.register('email', {
                                         required: 'Email requis',
                                         pattern: { value: /^\S+@\S+$/i, message: 'Email invalide' }

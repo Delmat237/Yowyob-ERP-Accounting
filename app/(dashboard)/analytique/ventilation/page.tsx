@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import {
-    mockAxes,
     ChargeVentilee, VentilationAxe,
+    type AxeAnalytique,
     type CentreAnalyse,
     type PeriodeCG,
 } from "@/lib/analytique/mock-data";
 import { formatCurrency } from "@/lib/utils";
 import { useChargesVentilees } from "@/hooks/use-charges-ventilees";
 import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { useAxesAnalytiques } from "@/hooks/use-axes-analytiques";
 import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import {
     Plus, Pencil, Trash2, AlertCircle, CheckCircle2,
@@ -22,7 +23,8 @@ import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const getCentreLabel = (id: string, centres: CentreAnalyse[]) =>
     centres.find((c) => c.id === id)?.libelle ?? "—";
-const getAxeLabel = (id: string) => mockAxes.find((a) => a.id === id)?.libelle ?? "—";
+const getAxeLabel = (id: string, axes: AxeAnalytique[]) =>
+    axes.find((a) => a.id === id)?.libelle ?? "—";
 
 const COMPTES_CG = [
     { code: "601", libelle: "Achats de matières premières" },
@@ -41,12 +43,14 @@ const COMPTES_CG = [
 function VentilationModal({
     initial,
     centres,
+    axes,
     periodes,
     onClose,
     onSave,
 }: {
     initial?: Partial<ChargeVentilee>;
     centres: CentreAnalyse[];
+    axes: AxeAnalytique[];
     periodes: PeriodeCG[];
     onClose: () => void;
     onSave: (d: ChargeVentilee) => void;
@@ -74,7 +78,7 @@ function VentilationModal({
             ...f,
             ventilations: [
                 ...(f.ventilations ?? []),
-                { axeId: mockAxes[0]?.id ?? "", centreId: centres[0]?.id ?? "", pourcentage: 0 },
+                { axeId: axes[0]?.id ?? "", centreId: centres[0]?.id ?? "", pourcentage: 0 },
             ],
         }));
     };
@@ -244,7 +248,7 @@ function VentilationModal({
                                                 value={v.axeId}
                                                 onChange={(e) => updateVentilation(idx, "axeId", e.target.value)}
                                             >
-                                                {mockAxes.filter((a) => a.actif).map((a) => <option key={a.id} value={a.id}>{a.libelle}</option>)}
+                                                {axes.filter((a) => a.actif).map((a) => <option key={a.id} value={a.id}>{a.libelle}</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -292,13 +296,15 @@ function VentilationModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VentilationPage() {
     const { charges, loading, saveCharge, removeCharge } = useChargesVentilees();
-    const { centres, error: centresError } = useCentresAnalyseApi();
+    const { centres, error: centresError, usingMockFallback: centresMock } = useCentresAnalyseApi();
+    const { axes, error: axesError, usingMockFallback: axesMock } = useAxesAnalytiques();
     const { periodesCG, error: periodesError } = usePeriodesAnalytiquesAlignees();
     const [modal, setModal] = useState<{ open: boolean; initial?: Partial<ChargeVentilee> }>({ open: false });
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [filterInc, setFilterInc] = useState<"all" | "incorporable" | "non">("all");
 
-    const apiNotice = centresError ?? periodesError;
+    const apiNotice = centresError ?? axesError ?? periodesError;
+    const usingMockFallback = centresMock || axesMock;
 
     const filtered = charges.filter((c) => {
         if (filterInc === "incorporable") return c.incorporable;
@@ -321,10 +327,10 @@ export default function VentilationPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
-            {apiNotice && (
+            {(apiNotice || usingMockFallback) && (
                 <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                    <span>{apiNotice} — référentiel en mode démonstration.</span>
+                    <span>{apiNotice ?? "Certaines données proviennent du mode démonstration."}</span>
                 </div>
             )}
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 flex items-center gap-2">
@@ -335,6 +341,7 @@ export default function VentilationPage() {
                 <VentilationModal
                     initial={modal.initial}
                     centres={centres}
+                    axes={axes}
                     periodes={periodesCG}
                     onClose={() => setModal({ open: false })}
                     onSave={handleSave}
@@ -484,7 +491,7 @@ export default function VentilationPage() {
                                                         <div key={idx} className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between gap-2">
                                                             <div>
                                                                 <p className="text-xs font-semibold text-indigo-800">{getCentreLabel(v.centreId, centres)}</p>
-                                                                <p className="text-[10px] text-indigo-600">{getAxeLabel(v.axeId)}</p>
+                                                                <p className="text-[10px] text-indigo-600">{getAxeLabel(v.axeId, axes)}</p>
                                                             </div>
                                                             <div className="text-right">
                                                                 <p className="text-sm font-bold text-indigo-700">{v.pourcentage}%</p>

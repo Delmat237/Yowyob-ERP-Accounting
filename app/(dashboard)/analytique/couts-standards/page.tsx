@@ -6,16 +6,22 @@ import {
     saveFichesCoutStandard,
 } from "@/lib/analytique/methodes-couts-store";
 import {
-    mockPeriodes, mockCentres, mockPlansAnalytiques,
+    mockPlansAnalytiques,
     FicheCoutStandard, LigneCoutStandard, ComposanteCout,
+    type CentreAnalyse,
+    type PeriodeAnalytique,
+    type PlanAnalytique,
 } from "@/lib/analytique/mock-data";
+import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import { formatCurrency } from "@/lib/utils";
 import {
     Plus, Pencil, Trash2, X, AlertTriangle, Upload,
-    Copy, Lock, CheckCircle2, ChevronDown, ChevronRight,
+    Copy, Lock, CheckCircle2, ChevronDown, ChevronRight, AlertCircle,
 } from "lucide-react";
 import { FloatingModal } from "@/components/ui/floating-modal";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 const COMPOSANTE_CONFIG: Record<ComposanteCout, { label: string; color: string }> = {
     MATIERES: { label: "Matières", color: "bg-cyan-50 text-cyan-700 border-cyan-200" },
@@ -25,8 +31,13 @@ const COMPOSANTE_CONFIG: Record<ComposanteCout, { label: string; color: string }
 
 // ─── Modal ligne de coût standard ────────────────────────────────────────────
 function LigneModal({
-    initial, onClose, onSave,
-}: { initial?: Partial<LigneCoutStandard>; onClose: () => void; onSave: (d: LigneCoutStandard) => void }) {
+    initial, centres, onClose, onSave,
+}: {
+    initial?: Partial<LigneCoutStandard>;
+    centres: CentreAnalyse[];
+    onClose: () => void;
+    onSave: (d: LigneCoutStandard) => void;
+}) {
     const [form, setForm] = useState<Partial<LigneCoutStandard>>({
         composante: "MATIERES", libelle: "", quantiteStandard: 0, coutUnitaireStandard: 0, ...initial,
     });
@@ -80,11 +91,11 @@ function LigneModal({
                             <select className="mt-1 w-full text-sm border border-border rounded-xl px-3 py-2 bg-input"
                                 value={form.centreId ?? ""}
                                 onChange={(e) => {
-                                    const c = mockCentres.find((x) => x.id === e.target.value);
+                                    const c = centres.find((x) => x.id === e.target.value);
                                     setForm({ ...form, centreId: e.target.value, centreLibelle: c?.libelle });
                                 }}>
                                 <option value="">— Sélectionner —</option>
-                                {mockCentres.filter((c) => c.actif).map((c) => (
+                                {centres.filter((c) => c.actif).map((c) => (
                                     <option key={c.id} value={c.id}>{c.libelle}</option>
                                 ))}
                             </select>
@@ -133,11 +144,23 @@ function LigneModal({
 
 // ─── Modal fiche principale ───────────────────────────────────────────────────
 function FicheModal({
-    initial, onClose, onSave,
-}: { initial?: Partial<FicheCoutStandard>; onClose: () => void; onSave: (d: FicheCoutStandard) => void }) {
+    initial, periodes, plans, onClose, onSave,
+}: {
+    initial?: Partial<FicheCoutStandard>;
+    periodes: PeriodeAnalytique[];
+    plans: PlanAnalytique[];
+    onClose: () => void;
+    onSave: (d: FicheCoutStandard) => void;
+}) {
+    const defaultPeriode =
+        periodes.find((p) => p.statut === "OUVERT") ??
+        periodes.find((p) => p.statut === "EN_COURS") ??
+        periodes[0];
+    const defaultPlan = plans.find((p) => p.statut === "ACTIF") ?? plans[0];
+
     const [form, setForm] = useState<Partial<FicheCoutStandard>>({
-        produitCode: "", produitLibelle: "", periodeRefId: mockPeriodes[3].id,
-        planAnalytiqueId: "plan-2026", lignes: [], periodeCommencee: false, ...initial,
+        produitCode: "", produitLibelle: "", periodeRefId: defaultPeriode?.id ?? "",
+        planAnalytiqueId: defaultPlan?.id ?? "plan-2026", lignes: [], periodeCommencee: false, ...initial,
     });
 
     const valid = !!form.produitCode?.trim() && !!form.produitLibelle?.trim() && !!form.periodeRefId;
@@ -198,7 +221,7 @@ function FicheModal({
                                 value={form.periodeRefId ?? ""}
                                 onChange={(e) => setForm({ ...form, periodeRefId: e.target.value })}
                                 disabled={periodeBloquee}>
-                                {mockPeriodes.filter((p) => p.statut !== "CLOTURE").map((p) => (
+                                {periodes.filter((p) => p.statut !== "CLOTURE").map((p) => (
                                     <option key={p.id} value={p.id}>{p.libelle}</option>
                                 ))}
                             </select>
@@ -209,7 +232,7 @@ function FicheModal({
                                 value={form.planAnalytiqueId ?? ""}
                                 onChange={(e) => setForm({ ...form, planAnalytiqueId: e.target.value })}
                                 disabled={periodeBloquee}>
-                                {mockPlansAnalytiques.filter((p) => p.statut === "ACTIF").map((p) => (
+                                {plans.filter((p) => p.statut === "ACTIF").map((p) => (
                                     <option key={p.id} value={p.id}>{p.libelle}</option>
                                 ))}
                             </select>
@@ -223,6 +246,23 @@ function FicheModal({
 // ─── Page principale ──────────────────────────────────────────────────────────
 export default function CoutsStandardsPage() {
     const [fiches, setFichesState] = useState<FicheCoutStandard[]>(() => listFichesCoutStandard());
+    const {
+        centres,
+        loading: centresLoading,
+        error: centresError,
+        usingMockFallback: centresMock,
+    } = useCentresAnalyseApi();
+    const {
+        periodes,
+        loading: periodesLoading,
+        error: periodesError,
+        usingMockFallback: periodesMock,
+    } = usePeriodesAnalytiquesAlignees();
+    const plans = mockPlansAnalytiques;
+    const loading = centresLoading || periodesLoading;
+    const error = centresError ?? periodesError;
+    const usingMockFallback = centresMock || periodesMock;
+
     const setFiches = (updater: FicheCoutStandard[] | ((p: FicheCoutStandard[]) => FicheCoutStandard[])) => {
         setFichesState((prev) => {
             const next = typeof updater === "function" ? updater(prev) : updater;
@@ -260,7 +300,7 @@ export default function CoutsStandardsPage() {
             ...fiche,
             id: `fcs-${Date.now()}`,
             produitCode: `${fiche.produitCode}-COPY`,
-            periodeRefId: mockPeriodes.find((p) => p.statut === "OUVERT")?.id ?? fiche.periodeRefId,
+            periodeRefId: periodes.find((p) => p.statut === "OUVERT")?.id ?? fiche.periodeRefId,
             periodeCommencee: false,
             lignes: fiche.lignes.map((l) => ({ ...l, id: `${l.id}-c` })),
         };
@@ -268,14 +308,34 @@ export default function CoutsStandardsPage() {
         setExpanded(clone.id);
     }
 
+    if (loading && periodes.length === 0 && centres.length === 0) {
+        return <CustomPageLoader message="Chargement des coûts standards..." />;
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {(error || usingMockFallback) && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                        {error ?? "Certaines données proviennent du mode démonstration."}
+                        {" Les plans analytiques restent en mock en attendant l'API."}
+                    </span>
+                </div>
+            )}
             {ficheModal.open && (
-                <FicheModal initial={ficheModal.initial} onClose={() => setFicheModal({ open: false })} onSave={saveFiche} />
+                <FicheModal
+                    initial={ficheModal.initial}
+                    periodes={periodes}
+                    plans={plans}
+                    onClose={() => setFicheModal({ open: false })}
+                    onSave={saveFiche}
+                />
             )}
             {ligneModal && (
                 <LigneModal
                     initial={ligneModal.initial}
+                    centres={centres}
                     onClose={() => setLigneModal(null)}
                     onSave={(l) => saveLigne(ligneModal.ficheId, l)}
                 />
@@ -337,7 +397,7 @@ export default function CoutsStandardsPage() {
                         Toutes
                     </button>
                     {periodesDisponibles.map((pid) => {
-                        const p = mockPeriodes.find((x) => x.id === pid);
+                        const p = periodes.find((x) => x.id === pid);
                         return (
                             <button key={pid} onClick={() => setFilterPeriode(pid)}
                                 className={`px-3 py-2 text-sm transition-colors ${filterPeriode === pid ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}>
@@ -352,7 +412,7 @@ export default function CoutsStandardsPage() {
             <div className="space-y-4">
                 {filtered.map((fiche) => {
                     const isOpen = expanded === fiche.id;
-                    const periode = mockPeriodes.find((p) => p.id === fiche.periodeRefId);
+                    const periode = periodes.find((p) => p.id === fiche.periodeRefId);
                     const totalCoutStandard = fiche.lignes.reduce((s, l) => s + l.coutStandardTotal, 0);
 
                     return (

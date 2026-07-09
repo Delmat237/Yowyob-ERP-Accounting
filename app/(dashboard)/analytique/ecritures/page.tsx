@@ -20,7 +20,8 @@ import {
     type EcritureAnalytique,
 } from "@/lib/analytique/ecriture-analytique";
 import { formatMontantSigne } from "@/lib/analytique/ecriture-lignes";
-import { mockCentres, mockExercicesCG } from "@/lib/analytique/mock-data";
+import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import {
     EcritureAnalytiqueForm,
     type EcritureAnalytiqueFormData,
@@ -49,6 +50,8 @@ export default function EcrituresAnalytiquesPage() {
         reload,
         createEcriture,
     } = useEcrituresAnalytiquesApi();
+    const { centres } = useCentresAnalyseApi();
+    const { periodes } = usePeriodesAnalytiquesAlignees();
     useControleBudgetaireData();
     const [search, setSearch] = useState("");
     const [importActive, setImportActive] = useState(false);
@@ -215,8 +218,8 @@ export default function EcrituresAnalytiquesPage() {
                             filtered.map((e) => {
                                 const journal = getJournalAnalytiqueById(e.journalId);
                                 const nature = NATURES_CHARGE.find((n) => n.id === e.natureChargeId);
-                                const centre = mockCentres.find((c) => c.id === e.centreDestinationId);
-                                const exercice = mockExercicesCG.find((x) => x.id === e.exerciceAnalytiqueId);
+                                const centre = centres.find((c) => c.id === e.centreDestinationId);
+                                const periode = periodes.find((p) => p.id === e.exerciceAnalytiqueId);
                                 return (
                                     <tr key={e.id} className="border-b border-border/60 last:border-0 hover:bg-muted/20">
                                         <td className="px-4 py-3 font-mono text-xs font-semibold">{e.numeroPiece}</td>
@@ -225,7 +228,7 @@ export default function EcrituresAnalytiquesPage() {
                                             <p className="font-medium">{e.libelleOperation}</p>
                                             <p className="text-[10px] text-muted-foreground">
                                                 {nature?.code} → {centre?.libelle}
-                                                {exercice ? ` · ${exercice.libelle}` : ""}
+                                                {periode ? ` · ${periode.libelle}` : ""}
                                             </p>
                                         </td>
                                         <td className="px-4 py-3 text-xs">{journal?.code ?? e.journalId}</td>
