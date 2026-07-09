@@ -2,42 +2,35 @@
 
 import { useState } from "react";
 import { formatCurrency } from "@/lib/utils";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, Cell, ReferenceLine } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell, ReferenceLine } from "recharts";
 import { ChartContainer } from "@/components/ui/chart-container";
-import { ClipboardCheck, TrendingDown, TrendingUp } from "lucide-react";
-
-const standardProducts = [
-    { id: "P1", name: "Produit Alpha" },
-    { id: "P2", name: "Produit Beta" }
-];
-
-const ecartsData = {
-    "P1": {
-        qtePreetablie: 1000,
-        qteReelle: 1100,
-        coutPreetabli: { matieres: 4500, mod: 2000, fap: 1500 },
-        coutReel: { matieres: 4800, mod: 1900, fap: 1600 }
-    },
-    "P2": {
-        qtePreetablie: 800,
-        qteReelle: 750,
-        coutPreetabli: { matieres: 6000, mod: 3000, fap: 2000 },
-        coutReel: { matieres: 5800, mod: 3200, fap: 2100 }
-    }
-};
+import { ClipboardCheck, TrendingDown, TrendingUp, AlertTriangle } from "lucide-react";
+import { useCoutsPreetablisApi } from "@/hooks/use-couts-pretablis-api";
+import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 export default function CoutsPreetablisPage() {
-    const [selectedProd, setSelectedProd] = useState(standardProducts[0].id);
+    const { periodes } = usePeriodesAnalytiquesAlignees();
+    const periodeCourante = periodes.find((p) => p.statut === "EN_COURS") ?? periodes[0];
+    const { ecarts, loading, error, usingMockFallback } = useCoutsPreetablisApi(periodeCourante?.id);
+    const [selectedProd, setSelectedProd] = useState<string>("");
 
-    const data = ecartsData[selectedProd as keyof typeof ecartsData];
+    const selectedId = selectedProd || ecarts[0]?.id || "";
+    const data = ecarts.find((e) => e.id === selectedId);
+
+    if (loading) return <CustomPageLoader />;
+    if (!data) {
+        return (
+            <div className="p-6 text-sm text-muted-foreground">
+                Aucune fiche de coût standard disponible pour analyser les écarts.
+            </div>
+        );
+    }
 
     const totalCPreetabli = data.qtePreetablie * (data.coutPreetabli.matieres + data.coutPreetabli.mod + data.coutPreetabli.fap);
     const totalCReel = data.qteReelle * (data.coutReel.matieres + data.coutReel.mod + data.coutReel.fap);
     const ecartGlobal = totalCReel - totalCPreetabli;
 
-    // Calcul des écarts par composante (simplifié pour visualisation)
-    // Positif = défavorable (coût réel > préétabli)
-    // Négatif = favorable (coût réel < préétabli)
     const ecartMatieres = data.qteReelle * data.coutReel.matieres - data.qtePreetablie * data.coutPreetabli.matieres;
     const ecartMod = data.qteReelle * data.coutReel.mod - data.qtePreetablie * data.coutPreetabli.mod;
     const ecartFap = data.qteReelle * data.coutReel.fap - data.qtePreetablie * data.coutPreetabli.fap;
@@ -50,20 +43,27 @@ export default function CoutsPreetablisPage() {
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {usingMockFallback && error && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>{error}</p>
+                </div>
+            )}
+
             <div>
                 <h1 className="text-2xl font-bold">Coûts Préétablis et Écarts</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">Fiches de coûts standards et analyse des écarts budgétaires (Axe 4)</p>
             </div>
 
-            <div className="flex gap-2">
-                {standardProducts.map((p) => (
+            <div className="flex gap-2 flex-wrap">
+                {ecarts.map((p) => (
                     <button
                         key={p.id}
                         onClick={() => setSelectedProd(p.id)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${selectedProd === p.id ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-secondary"
+                        className={`px-4 py-2 rounded-xl text-sm font-medium border transition-colors ${selectedId === p.id ? "bg-primary text-primary-foreground border-primary" : "bg-card border-border text-muted-foreground hover:bg-secondary"
                             }`}
                     >
-                        {p.name}
+                        {p.produitLibelle}
                     </button>
                 ))}
             </div>

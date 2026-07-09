@@ -11,6 +11,9 @@ import type { LigneConcordanceDto } from '@/src/lib2/models/LigneConcordanceDto'
 import type { PrixCessionInterneDto } from '@/src/lib2/models/PrixCessionInterneDto';
 import type { CoutProduitDto } from '@/src/lib2/models/CoutProduitDto';
 import type { FicheCoutStandardDto, LigneCoutStandardDto } from '@/src/lib2/models/FicheCoutStandardDto';
+import type { ChargeAnalytiqueDto } from '@/src/lib2/models/ChargeAnalytiqueDto';
+import type { RegleValorisationStockDto } from '@/src/lib2/models/RegleValorisationStockDto';
+import type { MethodeCalculCoutDto } from '@/src/lib2/models/MethodeCalculCoutDto';
 import type {
   EcritureAnalytique,
   LigneEcritureAnalytique,
@@ -35,6 +38,13 @@ import type {
   LigneCoutStandard,
   MethodeStock,
   ComposanteCout,
+  ChargeAnalytique,
+  RegleValorisationStock,
+  MethodeCalculCoût,
+  MethodeValorisation,
+  MethodeCalculCout,
+  StatutMethode,
+  ActiviteNormale,
 } from '@/lib/analytique/mock-data';
 import type {
   CleRepartitionUi,
@@ -552,5 +562,99 @@ export function mapFicheCoutStandardUiToDto(data: FicheCoutStandard): FicheCoutS
     planAnalytiqueId: data.planAnalytiqueId,
     periodeCommencee: data.periodeCommencee,
     lignes: data.lignes.map(mapLigneCoutStandardUiToDto),
+  };
+}
+
+export function mapChargeAnalytiqueDtoToUi(dto: ChargeAnalytiqueDto): ChargeAnalytique {
+  return {
+    id: dto.id ?? '',
+    nature: dto.nature ?? '',
+    montant: dto.montant ?? 0,
+    type: (dto.type as ChargeAnalytique['type']) ?? 'DIRECTE',
+    incorporable: dto.incorporable ?? true,
+    centreId: dto.centreId ?? '',
+    periodeId: dto.periodeId ?? '',
+    description: dto.description,
+  };
+}
+
+export function mapChargeAnalytiqueUiToDto(data: Partial<ChargeAnalytique>): ChargeAnalytiqueDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    nature: data.nature ?? '',
+    montant: data.montant ?? 0,
+    type: data.type ?? 'DIRECTE',
+    incorporable: data.incorporable ?? true,
+    centreId: isUuid(data.centreId) ? data.centreId : undefined,
+    periodeId: isUuid(data.periodeId) ? data.periodeId : undefined,
+    description: data.description,
+  };
+}
+
+export function mapRegleValorisationStockDtoToUi(dto: RegleValorisationStockDto): RegleValorisationStock {
+  return {
+    id: dto.id ?? '',
+    familleId: dto.familleId ?? '',
+    familleLibelle: dto.familleLibelle ?? '',
+    methode: (dto.methode as MethodeValorisation) ?? 'CUMP_PERIODE',
+    dateApplication: dto.dateApplication ?? '',
+    actif: dto.actif ?? true,
+    historique: (dto.historique ?? []).map((h) => ({
+      methode: (h.methode as MethodeValorisation) ?? 'CUMP_PERIODE',
+      du: h.du ?? '',
+      au: h.au ?? '',
+    })),
+  };
+}
+
+export function mapRegleValorisationStockUiToDto(data: RegleValorisationStock): RegleValorisationStockDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    familleId: data.familleId,
+    familleLibelle: data.familleLibelle,
+    methode: data.methode,
+    dateApplication: data.dateApplication,
+    actif: data.actif,
+    historique: data.historique.map((h) => ({
+      methode: h.methode,
+      du: h.du,
+      au: h.au,
+    })),
+  };
+}
+
+export function mapMethodeCalculCoutDtoToUi(dto: MethodeCalculCoutDto): MethodeCalculCoût {
+  return {
+    id: dto.id ?? '',
+    methode: (dto.methode as MethodeCalculCout) ?? 'COUTS_COMPLETS',
+    planAnalytiqueId: dto.planAnalytiqueId ?? '',
+    dateApplication: dto.dateApplication ?? '',
+    statut: (dto.statut as StatutMethode) ?? 'ACTIF',
+    activitesNormales: (dto.activitesNormales ?? []).map(
+      (a): ActiviteNormale => ({
+        centreId: a.centreId ?? '',
+        centreLibelle: a.centreLibelle ?? '',
+        activiteNormale: a.activiteNormale ?? 0,
+        unite: a.unite ?? '',
+      }),
+    ),
+    description: dto.description ?? '',
+  };
+}
+
+export function mapMethodeCalculCoutUiToDto(data: MethodeCalculCoût): MethodeCalculCoutDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    methode: data.methode,
+    planAnalytiqueId: data.planAnalytiqueId,
+    dateApplication: data.dateApplication,
+    statut: data.statut,
+    description: data.description,
+    activitesNormales: data.activitesNormales.map((a) => ({
+      centreId: isUuid(a.centreId) ? a.centreId : undefined,
+      centreLibelle: a.centreLibelle,
+      activiteNormale: a.activiteNormale,
+      unite: a.unite,
+    })),
   };
 }

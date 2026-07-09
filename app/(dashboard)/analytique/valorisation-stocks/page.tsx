@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import {
-  mockReglesValorisationStock,
   RegleValorisationStock,
   MethodeValorisation,
 } from "@/lib/analytique/mock-data";
@@ -11,8 +9,10 @@ import {
   METHODE_VALORISATION_CONFIG,
 } from "@/components/analytique/valorisation-stock-form";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
+import { useReglesValorisationStockApi } from "@/hooks/use-regles-valorisation-stock-api";
 import { formatDateDisplay } from "@/lib/utils";
 import { Plus, Pencil, AlertTriangle, Clock, CheckCircle2 } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 const METHODES: MethodeValorisation[] = ["CUMP_PERIODE", "CUMP_ENTREE", "FIFO", "LIFO"];
 
@@ -24,16 +24,8 @@ const METHODE_COLORS: Record<MethodeValorisation, string> = {
 };
 
 export default function ValorisationStocksPage() {
-  const [regles, setRegles] = useState<RegleValorisationStock[]>(mockReglesValorisationStock);
+  const { regles, loading, saveRegle, error, usingMockFallback } = useReglesValorisationStockApi();
   const { openForm, closeForm } = useAnalytiqueCompose();
-
-  function handleSave(data: RegleValorisationStock) {
-    setRegles((p) =>
-      p.find((r) => r.id === data.id)
-        ? p.map((r) => (r.id === data.id ? data : r))
-        : [...p, data],
-    );
-  }
 
   function openValorisationForm(initial?: Partial<RegleValorisationStock>) {
     openForm(
@@ -42,15 +34,23 @@ export default function ValorisationStocksPage() {
         initial={initial}
         onCancel={closeForm}
         onSubmit={(data) => {
-          handleSave(data);
-          closeForm();
+          void saveRegle(data).then(closeForm);
         }}
       />,
     );
   }
 
+  if (loading) return <CustomPageLoader />;
+
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {usingMockFallback && error && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Valorisation des Stocks</h1>

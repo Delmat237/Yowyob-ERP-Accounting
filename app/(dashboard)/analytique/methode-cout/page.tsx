@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
 import {
-  mockMethodesCalcul,
   mockPlansAnalytiques,
   MethodeCalculCoût,
   MethodeCalculCout,
@@ -12,29 +10,14 @@ import {
   METHODE_COUT_CONFIG,
 } from "@/components/analytique/methode-cout-form";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
+import { useMethodesCalculCoutApi } from "@/hooks/use-methodes-calcul-cout-api";
 import { formatDateDisplay } from "@/lib/utils";
 import { Plus, Pencil, AlertTriangle, CheckCircle2, Lock } from "lucide-react";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 export default function MethodeCoutPage() {
-  const [methodes, setMethodes] = useState<MethodeCalculCoût[]>(mockMethodesCalcul);
+  const { methodes, loading, saveMethode, error, usingMockFallback } = useMethodesCalculCoutApi();
   const { openForm, closeForm } = useAnalytiqueCompose();
-
-  function handleSave(data: MethodeCalculCoût) {
-    setMethodes((p) => {
-      const updated =
-        data.statut === "ACTIF"
-          ? p.map((m) =>
-              m.planAnalytiqueId === data.planAnalytiqueId
-                ? { ...m, statut: "ARCHIVE" as const }
-                : m,
-            )
-          : p;
-
-      return updated.find((m) => m.id === data.id)
-        ? updated.map((m) => (m.id === data.id ? data : m))
-        : [...updated, data];
-    });
-  }
 
   function openMethodeCoutForm(initial?: Partial<MethodeCalculCoût>) {
     openForm(
@@ -43,8 +26,7 @@ export default function MethodeCoutPage() {
         initial={initial}
         onCancel={closeForm}
         onSubmit={(data) => {
-          handleSave(data);
-          closeForm();
+          void saveMethode(data).then(closeForm);
         }}
       />,
     );
@@ -53,8 +35,17 @@ export default function MethodeCoutPage() {
   const active = methodes.filter((m) => m.statut === "ACTIF");
   const archived = methodes.filter((m) => m.statut === "ARCHIVE");
 
+  if (loading) return <CustomPageLoader />;
+
   return (
     <div className="space-y-6 animate-fade-in-up">
+      {usingMockFallback && error && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Méthode de Calcul des Coûts</h1>

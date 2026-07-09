@@ -1,15 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { mockCharges, ChargeAnalytique, mockCentres } from "@/lib/analytique/mock-data";
+import { ChargeAnalytique } from "@/lib/analytique/mock-data";
 import { formatCurrency } from "@/lib/utils";
-import { Plus, Pencil, Trash2, RefreshCw, FileText, Search, TrendingUp, TrendingDown } from "lucide-react";
+import { Plus, Pencil, Trash2, RefreshCw, FileText, Search, TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { ChargeAnalytiqueForm } from "@/components/analytique/charge-form-modal";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
+import { useChargesAnalytiquesApi } from "@/hooks/use-charges-analytiques-api";
+import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 export default function ChargesPage() {
-    const [charges, setCharges] = useState<ChargeAnalytique[]>(mockCharges);
+    const { periodes } = usePeriodesAnalytiquesAlignees();
+    const periodeCourante = periodes.find((p) => p.statut === "EN_COURS") ?? periodes[0];
+    const { charges, loading, saveCharge, removeCharge, error, usingMockFallback } = useChargesAnalytiquesApi(periodeCourante?.id);
+    const { centres, usingMockFallback: centresMock } = useCentresAnalyseApi();
     const [search, setSearch] = useState("");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [typeFilter, setTypeFilter] = useState<"all" | "DIRECTE" | "INDIRECTE">("all");
@@ -21,24 +28,22 @@ export default function ChargesPage() {
         return matchSearch && matchType;
     });
 
-    const handleSave = (data: Partial<ChargeAnalytique>) => {
-        if (data.id) {
-            setCharges((p) => p.map((c) => (c.id === data.id ? { ...c, ...data } as ChargeAnalytique : c)));
-        } else {
-            setCharges((p) => [...p, { ...data, id: `ch-${Date.now()}` } as ChargeAnalytique]);
-        }
+    const handleSave = async (data: Partial<ChargeAnalytique>) => {
+        await saveCharge({
+            ...data,
+            periodeId: data.periodeId ?? periodeCourante?.id,
+        });
     };
 
     const openChargeForm = (initial?: Partial<ChargeAnalytique>) => {
         openForm(
             initial?.id ? "Modifier la charge analytique" : "Nouvelle charge analytique",
             <ChargeAnalytiqueForm
-                initial={initial}
-                centres={mockCentres}
+                initial={{ ...initial, periodeId: initial?.periodeId ?? periodeCourante?.id }}
+                centres={centres}
                 onCancel={closeForm}
                 onSubmit={(data) => {
-                    handleSave(data);
-                    closeForm();
+                    void handleSave(data).then(closeForm);
                 }}
             />,
         );
@@ -47,13 +52,25 @@ export default function ChargesPage() {
     const totalDirect = charges.filter((c) => c.type === "DIRECTE").reduce((s, c) => s + c.montant, 0);
     const totalIndirect = charges.filter((c) => c.type === "INDIRECTE").reduce((s, c) => s + c.montant, 0);
 
+    if (loading) return <CustomPageLoader />;
+
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {(error || usingMockFallback || centresMock) && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <p>{error ?? "Certaines données proviennent du mode démonstration."}</p>
+                </div>
+            )}
+
             {deleteId && (
                 <ConfirmDialog
                     title="Supprimer cette charge ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => setCharges((p) => p.filter((c) => c.id !== deleteId))}
+                    onConfirm={() => {
+                        void removeCharge(deleteId);
+                        setDeleteId(null);
+                    }}
                 >
                     <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
                 </ConfirmDialog>
@@ -111,7 +128,7 @@ export default function ChargesPage() {
                     </thead>
                     <tbody className="divide-y divide-border/50">
                         {filtered.map((c) => {
-                            const centre = mockCentres.find((x) => x.id === c.centreId);
+                            const centre = centres.find((x) => x.id === c.centreId);
                             return (
                                 <tr key={c.id} className="hover:bg-secondary/30">
                                     <td className="px-4 py-3 font-medium">{c.nature}</td>
