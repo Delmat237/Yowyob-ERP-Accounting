@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
 import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
 import { useEcrituresAnalytiquesApi } from "@/hooks/use-ecritures-analytiques-api";
+import { useControleBudgetaireData } from "@/hooks/use-controle-budgetaire-data";
 import {
     getAnalytiqueConfig,
 } from "@/lib/analytique/analytique-config-store";
@@ -48,6 +49,7 @@ export default function EcrituresAnalytiquesPage() {
         reload,
         createEcriture,
     } = useEcrituresAnalytiquesApi();
+    useControleBudgetaireData();
     const [search, setSearch] = useState("");
     const [importActive, setImportActive] = useState(false);
     const [importing, setImporting] = useState(false);

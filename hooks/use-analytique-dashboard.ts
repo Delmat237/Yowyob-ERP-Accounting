@@ -10,6 +10,7 @@ import type { BudgetDto } from "@/src/lib2/models/BudgetDto";
 import type { PeriodeComptableDto } from "@/src/lib2/models/PeriodeComptableDto";
 import type { AxeAnalytiqueDto } from "@/src/lib2/models/AxeAnalytiqueDto";
 import type { BudgetVsRealiseDto } from "@/src/lib2/models/BudgetVsRealiseDto";
+import { AccountingEcrituresAnalytiquesService } from "@/src/lib2/services/AccountingEcrituresAnalytiquesService";
 
 export type PeriodeStatut = "CLOTURE" | "EN_COURS" | "OUVERT";
 
@@ -61,8 +62,10 @@ export interface AnalytiqueDashboardState {
     periodes: PeriodeResume[];
     periodeEnCours: string | null;
     periodesOuvertes: number;
-    exerciceLibelle: string | null;
-    vsRealise: BudgetVsRealiseDto | null;
+  exerciceLibelle: string | null;
+  vsRealise: BudgetVsRealiseDto | null;
+  ecrituresValidees: number;
+  montantEcrituresValidees: number;
 }
 
 const EMPTY: AnalytiqueDashboardState = {
@@ -83,8 +86,10 @@ const EMPTY: AnalytiqueDashboardState = {
     periodes: [],
     periodeEnCours: null,
     periodesOuvertes: 0,
-    exerciceLibelle: null,
-    vsRealise: null,
+  exerciceLibelle: null,
+  vsRealise: null,
+  ecrituresValidees: 0,
+  montantEcrituresValidees: 0,
 };
 
 function budgetTauxConsommation(b: BudgetDto): number {
@@ -196,12 +201,15 @@ export function useAnalytiqueDashboard() {
         let periodes: PeriodeComptableDto[] = [];
         let vsRealise: BudgetVsRealiseDto | null = null;
         let exerciceLibelle: string | null = null;
+        let ecrituresValidees = 0;
+        let montantEcrituresValidees = 0;
 
-        const [axesRes, budgetsRes, periodesRes, exercicesRes] = await Promise.allSettled([
+        const [axesRes, budgetsRes, periodesRes, exercicesRes, ecrituresRes] = await Promise.allSettled([
             AccountingAnalyticsService.getAllAxes(),
             AccountingBudgetsService.getAllBudgets(),
             AccountingPeriodsService.getAllPeriodeComptables(),
             AccountingFiscalYearsService.getAllExercices(),
+            AccountingEcrituresAnalytiquesService.getAllEcritures(),
         ]);
 
         if (axesRes.status === "fulfilled") {
@@ -233,6 +241,16 @@ export function useAnalytiqueDashboard() {
                     partialError = true;
                 }
             }
+        } else {
+            partialError = true;
+        }
+
+        if (ecrituresRes.status === "fulfilled") {
+            const dtos = ecrituresRes.value.data ?? [];
+            ecrituresValidees = dtos.filter((e) => e.statut === "VALIDEE").length;
+            montantEcrituresValidees = dtos
+                .filter((e) => e.statut === "VALIDEE")
+                .reduce((s, e) => s + (e.montantTotal ?? 0), 0);
         } else {
             partialError = true;
         }
@@ -269,6 +287,8 @@ export function useAnalytiqueDashboard() {
             periodesOuvertes: periodesResume.filter((p) => p.statut === "OUVERT").length,
             exerciceLibelle,
             vsRealise,
+            ecrituresValidees,
+            montantEcrituresValidees,
         });
     }, []);
 

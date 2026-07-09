@@ -1,3 +1,10 @@
+import type { EcritureAnalytique } from '@/lib/analytique/ecriture-analytique';
+import {
+  computeConsommeCentreNature,
+  findBudgetAnalytique,
+} from '@/lib/analytique/analytique-aggregations';
+import type { BudgetDto } from '@/src/lib2/models/BudgetDto';
+
 /** Seuil d'alerte budgétaire par défaut (%). */
 export const SEUIL_ALERTE_BUDGET_DEFAUT = 80;
 
@@ -47,6 +54,81 @@ const MOCK_BUDGETS: Array<{
     },
 ];
 
+export interface ControleBudgetContext {
+    budgets: BudgetDto[];
+    ecritures: EcritureAnalytique[];
+}
+
+let cachedContext: ControleBudgetContext | null = null;
+
+export function setControleBudgetContext(ctx: ControleBudgetContext | null): void {
+    cachedContext = ctx;
+}
+
+function controlerBudgetFromApiData(
+    params: {
+        centreDestinationId: string;
+        natureChargeId: string;
+        exerciceAnalytiqueId: string;
+        montantAjoute: number;
+        centreDestinationLibelle?: string;
+        exerciceLibelle?: string;
+        natureChargeLibelle?: string;
+    },
+    ctx: ControleBudgetContext,
+): ControleBudgetResult | null {
+    if (params.montantAjoute <= 0) return null;
+
+    const budget = findBudgetAnalytique(ctx.budgets, {
+        centreId: params.centreDestinationId,
+        natureChargeId: params.natureChargeId,
+        exerciceId: params.exerciceAnalytiqueId,
+    });
+
+    const consommeEcritures = computeConsommeCentreNature(
+        ctx.ecritures,
+        params.centreDestinationId,
+        params.natureChargeId,
+        params.exerciceAnalytiqueId,
+    );
+
+    const montantBudget = budget?.montantAlloue ?? 0;
+    const consommeActuel = Math.max(budget?.montantConsomme ?? 0, consommeEcritures);
+    const seuil = budget?.seuilAlerte ?? SEUIL_ALERTE_BUDGET_DEFAUT;
+
+    if (montantBudget <= 0) return null;
+
+    const consommeApres = consommeActuel + params.montantAjoute;
+    const tauxApres = (consommeApres / montantBudget) * 100;
+    const depassement = consommeApres > montantBudget;
+    const alerte = tauxApres >= seuil;
+
+    const centreLabel = params.centreDestinationLibelle ?? 'centre destination';
+    const exerciceLabel = params.exerciceLibelle ?? 'exercice';
+    const compteLabel = params.natureChargeLibelle
+        ? `${params.natureChargeId} (${params.natureChargeLibelle})`
+        : params.natureChargeId;
+
+    let message = `${centreLabel} — compte ${compteLabel}, ${exerciceLabel} : consommation après saisie ${tauxApres.toFixed(1)} % du budget (${consommeApres.toLocaleString('fr-FR')} / ${montantBudget.toLocaleString('fr-FR')} XAF).`;
+
+    if (depassement) {
+        message = `Dépassement budgétaire — ${message}`;
+    } else if (alerte) {
+        message = `Seuil d'alerte (${seuil} %) franchi — ${message}`;
+    }
+
+    return {
+        alerte: alerte || depassement,
+        depassement,
+        tauxApres,
+        budgetAlloue: montantBudget,
+        consommeActuel,
+        consommeApres,
+        seuil,
+        message,
+    };
+}
+
 export function controlerBudgetEcriture(params: {
     centreDestinationId: string;
     natureChargeId: string;
@@ -55,7 +137,13 @@ export function controlerBudgetEcriture(params: {
     centreDestinationLibelle?: string;
     exerciceLibelle?: string;
     natureChargeLibelle?: string;
-}): ControleBudgetResult | null {
+}, context?: ControleBudgetContext): ControleBudgetResult | null {
+    const ctx = context ?? cachedContext;
+    if (ctx && (ctx.budgets.length > 0 || ctx.ecritures.length > 0)) {
+        const fromApi = controlerBudgetFromApiData(params, ctx);
+        if (fromApi) return fromApi;
+    }
+
     const budget = MOCK_BUDGETS.find(
         (b) =>
             b.centreId === params.centreDestinationId &&

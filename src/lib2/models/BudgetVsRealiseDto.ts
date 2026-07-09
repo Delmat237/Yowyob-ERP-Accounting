@@ -4,7 +4,15 @@
 /* eslint-disable */
 export type BudgetVsRealiseDto = {
     exerciceId?: string;
-    lignes?: Array<Record<string, unknown>>;
+    exerciceCode?: string;
+    lignes?: Array<{
+        noCompte?: string;
+        libelleCompte?: string;
+        montantBudget?: number;
+        montantRealise?: number;
+        ecart?: number;
+        tauxRealisation?: number;
+    }>;
     totalBudget?: number;
     totalRealise?: number;
     totalEcart?: number;

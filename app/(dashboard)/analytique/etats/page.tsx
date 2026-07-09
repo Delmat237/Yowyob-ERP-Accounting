@@ -2,94 +2,33 @@
 
 import { useState, useMemo } from "react";
 import { formatCurrency } from "@/lib/utils";
-import { FileText, Download, Printer, Filter, ChevronDown, CheckCircle2 } from "lucide-react";
+import { FileText, Download, Printer, Filter, ChevronDown, CheckCircle2, AlertCircle } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { ChartContainer } from "@/components/ui/chart-container";
-import {
-    mockPeriodes,
-    mockCoutsProduits,
-    mockCentres,
-    mockChargesVentilees,
-    mockPeriodesCG,
-    mockLignesConcordance,
-    PeriodeAnalytique,
-} from "@/lib/analytique/mock-data";
-import { resolvePeriodeCG } from "@/lib/analytique/periodes-alignees";
+import { useEtatsAnalytiquesApi } from "@/hooks/use-etats-analytiques-api";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 const COLORS = ["#4f46e5", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"];
 
-// ─── Helpers de calcul ────────────────────────────────────────────────────────
-function calcProduits(periodeId: string) {
-    return mockCoutsProduits
-        .filter((p) => p.periodeId === periodeId)
-        .map((p) => ({
-            id: p.id,
-            libelle: p.produitLibelle,
-            CA: Math.round(p.coutRevient * 1.35),
-            CV: Math.round(p.coutProduction * 0.85),
-            CFspec: Math.round(p.coutProduction * 0.12),
-            coutAchat: p.coutAchat,
-        }));
-}
-
-function calcRepartitionCentres(periodeId: string) {
-    const charges = mockChargesVentilees.filter(
-        (cv) => cv.periodeId === periodeId && cv.incorporable
-    );
-    const parCentre: Record<string, number> = {};
-    for (const charge of charges) {
-        for (const v of charge.ventilations) {
-            parCentre[v.centreId] = (parCentre[v.centreId] ?? 0) + (charge.montantTotal * v.pourcentage) / 100;
-        }
-    }
-    return mockCentres
-        .filter((c) => c.actif)
-        .map((c) => ({
-            id: c.id,
-            libelle: c.libelle,
-            nature: c.nature,
-            uniteOeuvre: c.uniteOeuvre,
-            montant: Math.round(parCentre[c.id] ?? 0),
-        }))
-        .filter((c) => c.montant > 0);
-}
-
-function calcConcordance(periodeId: string) {
-    const periode = mockPeriodes.find((p) => p.id === periodeId);
-    const periodeCG = periode ? resolvePeriodeCG(periode, mockPeriodesCG) : null;
-    const chargesNonInc = mockChargesVentilees
-        .filter((cv) => cv.periodeId === periodeId && !cv.incorporable)
-        .reduce((s, cv) => s + cv.montantTotal, 0);
-    const ajustements = mockLignesConcordance.reduce(
-        (s, l) => s + (l.signe === "+" ? l.montant : -l.montant),
-        0
-    );
-    return {
-        periodeCG,
-        resultatCG: periodeCG?.resultatNet ?? 0,
-        totalChargesCG: periodeCG?.totalChargesCG ?? 0,
-        totalProduitsCG: periodeCG?.totalProduitsCG ?? 0,
-        chargesNonInc,
-        ajustements,
-        lignes: mockLignesConcordance,
-        resultatCA: (periodeCG?.resultatNet ?? 0) + ajustements,
-    };
-}
-
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function EtatsReportingPage() {
+    const {
+        periodes,
+        periodeId,
+        setPeriodeId,
+        selectedPeriode,
+        produits,
+        repartition,
+        concordance,
+        loading,
+        error,
+        usingApiEcritures,
+        usingMockFallback,
+        ecrituresValideesCount,
+    } = useEtatsAnalytiquesApi();
+
     const [reportType, setReportType] = useState<"resultats" | "repartition" | "concordance">("resultats");
-    const [periodeId, setPeriodeId] = useState<string>(
-        mockPeriodes.find((p) => p.statut === "EN_COURS")?.id ?? mockPeriodes[0].id
-    );
     const [showDropdown, setShowDropdown] = useState(false);
-
-    const selectedPeriode: PeriodeAnalytique =
-        mockPeriodes.find((p) => p.id === periodeId) ?? mockPeriodes[0];
-
-    const produits = useMemo(() => calcProduits(periodeId), [periodeId]);
-    const repartition = useMemo(() => calcRepartitionCentres(periodeId), [periodeId]);
-    const concordance = useMemo(() => calcConcordance(periodeId), [periodeId]);
 
     const caTotal = useMemo(() => produits.reduce((s, p) => s + p.CA, 0), [produits]);
     const cvTotal = useMemo(() => produits.reduce((s, p) => s + p.CV, 0), [produits]);
@@ -115,8 +54,21 @@ export default function EtatsReportingPage() {
     const totalChargesVentilees = useMemo(() => repartition.reduce((s, c) => s + c.montant, 0), [repartition]);
     const noData = produits.length === 0;
 
+    if (loading && periodes.length === 0) {
+        return <CustomPageLoader message="Chargement des états analytiques..." />;
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {(error || usingMockFallback) && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 print:hidden">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                        {error ?? "Certaines données proviennent du mode démonstration."}
+                        {usingApiEcritures && ` ${ecrituresValideesCount} écriture(s) validée(s) agrégée(s) pour la répartition.`}
+                    </span>
+                </div>
+            )}
 
             {/* En-tête */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
@@ -155,12 +107,12 @@ export default function EtatsReportingPage() {
                 <div className="relative">
                     <button onClick={() => setShowDropdown((v) => !v)}
                         className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-border rounded-xl hover:bg-secondary min-w-[200px]">
-                        <span>Période : {selectedPeriode.libelle}</span>
+                        <span>Période : {selectedPeriode?.libelle ?? "—"}</span>
                         <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto" />
                     </button>
                     {showDropdown && (
                         <div className="absolute top-full mt-1 left-0 z-20 bg-card border border-border rounded-xl shadow-lg min-w-[220px] overflow-hidden">
-                            {mockPeriodes.map((p) => (
+                            {periodes.map((p) => (
                                 <button key={p.id}
                                     onClick={() => { setPeriodeId(p.id); setShowDropdown(false); }}
                                     className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between gap-2 hover:bg-secondary transition-colors ${p.id === periodeId ? "bg-primary/10 text-primary font-semibold" : ""}`}>
@@ -178,7 +130,7 @@ export default function EtatsReportingPage() {
             {/* Pas de données */}
             {noData && (
                 <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center">
-                    <p className="text-sm font-semibold text-amber-800">Aucun produit pour la période &ldquo;{selectedPeriode.libelle}&rdquo;.</p>
+                    <p className="text-sm font-semibold text-amber-800">Aucun produit pour la période &ldquo;{selectedPeriode?.libelle}&rdquo;.</p>
                     <p className="text-xs text-amber-600 mt-1">Sélectionnez une autre période ou enregistrez des coûts produits.</p>
                 </div>
             )}
@@ -191,7 +143,7 @@ export default function EtatsReportingPage() {
                     <div className="bg-card border border-border rounded-2xl shadow-sm p-6 text-center">
                         <h2 className="text-xl font-bold">ÉTAT 1 : Compte de Résultat Analytique</h2>
                         <p className="text-sm text-muted-foreground mt-1">
-                            Période : {selectedPeriode.libelle} — Édité le {new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
+                            Période : {selectedPeriode?.libelle} — Édité le {new Date().toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
                         </p>
                     </div>
 
@@ -263,7 +215,7 @@ export default function EtatsReportingPage() {
                 <div className="space-y-4" id="print-repartition">
                     <div className="bg-card border border-border rounded-2xl shadow-sm p-4 text-center">
                         <h2 className="text-lg font-bold">ÉTAT 2 : Synthèse des Charges par Centres d&apos;Analyse</h2>
-                        <p className="text-sm text-muted-foreground mt-1">Période : {selectedPeriode.libelle}</p>
+                        <p className="text-sm text-muted-foreground mt-1">Période : {selectedPeriode?.libelle}</p>
                     </div>
 
                     {repartition.length === 0 ? (
@@ -321,7 +273,7 @@ export default function EtatsReportingPage() {
 
                             <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
                                 <div className="px-5 py-3 border-b border-border bg-muted/20">
-                                    <h3 className="text-sm font-bold">Tableau détaillé — {selectedPeriode.libelle}</h3>
+                                    <h3 className="text-sm font-bold">Tableau détaillé — {selectedPeriode?.libelle}</h3>
                                 </div>
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted/50 border-b border-border">
@@ -367,7 +319,7 @@ export default function EtatsReportingPage() {
             {reportType === "concordance" && (
                 <div className="space-y-4" id="print-concordance">
                     <div className="bg-card border border-border rounded-2xl shadow-sm p-4 text-center">
-                        <h2 className="text-lg font-bold">ÉTAT 3 : Concordance comptabilité générale / analytique — {selectedPeriode.libelle}</h2>
+                        <h2 className="text-lg font-bold">ÉTAT 3 : Concordance comptabilité générale / analytique — {selectedPeriode?.libelle}</h2>
                         <p className="text-sm text-muted-foreground mt-1">Rapprochement entre le résultat de la comptabilité générale et le résultat analytique reconstitué</p>
                     </div>
 

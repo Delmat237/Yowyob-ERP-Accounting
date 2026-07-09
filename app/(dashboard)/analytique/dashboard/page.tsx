@@ -13,7 +13,7 @@ import { ChartContainer } from "@/components/ui/chart-container";
 import {
     Layers, Wallet, TrendingUp,
     AlertCircle, CheckCircle2, Clock, ArrowRight,
-    Building2, Calendar, AlertTriangle, XCircle,
+    Building2, Calendar, AlertTriangle, XCircle, FileClock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -91,6 +91,7 @@ export default function AnalytiqueDashboardPage() {
         budgetParAxe, budgetBarData, alertesBudgets,
         periodes, periodeEnCours, periodesOuvertes,
         exerciceLibelle, vsRealise,
+        ecrituresValidees, montantEcrituresValidees,
     } = useAnalytiqueDashboard();
 
     if (loading) {
@@ -235,11 +236,11 @@ export default function AnalytiqueDashboardPage() {
                     color={ecartPositif ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"}
                 />
                 <StatCard
-                    title="Axes analytiques"
-                    value={String(axesActifs)}
-                    sub={`${axesTotal} axe(s) configuré(s)`}
-                    icon={Layers}
-                    color="bg-violet-100 text-violet-600"
+                    title="Écritures validées"
+                    value={String(ecrituresValidees)}
+                    sub={`${formatCurrency(montantEcrituresValidees)} cumulé`}
+                    icon={FileClock}
+                    color="bg-emerald-100 text-emerald-600"
                 />
             </div>
 
