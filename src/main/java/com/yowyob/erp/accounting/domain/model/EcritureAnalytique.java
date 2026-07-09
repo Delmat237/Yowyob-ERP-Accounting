@@ -63,6 +63,9 @@ public class EcritureAnalytique implements SettablePersistable<UUID> {
     @Column("reject_reason")
     private String rejectReason;
 
+    @Column("client_id")
+    private String clientId;
+
     @Column("created_at")
     private LocalDateTime createdAt;
 

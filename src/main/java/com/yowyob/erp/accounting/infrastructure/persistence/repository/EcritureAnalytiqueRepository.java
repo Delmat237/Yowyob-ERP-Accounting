@@ -35,4 +35,13 @@ public interface EcritureAnalytiqueRepository extends R2dbcRepository<EcritureAn
         @Param("ecritureCgRef") UUID ecritureCgRef,
         @Param("montant") java.math.BigDecimal montant,
         @Param("libelle") String libelle);
+
+    @Query("""
+        SELECT * FROM ecritures_analytiques
+        WHERE organization_id = :orgId AND client_id = :clientId
+        LIMIT 1
+        """)
+    Mono<EcritureAnalytique> findByOrganizationIdAndClientId(
+        @Param("orgId") UUID orgId,
+        @Param("clientId") String clientId);
 }

@@ -12,6 +12,12 @@ import jakarta.validation.constraints.NotNull;
 public class EcritureAnalytiqueDto {
     private UUID id;
 
+    /** Identifiant stable généré côté client (sync offline). */
+    private String clientId;
+
+    /** Clé d'idempotence optionnelle (corps ou en-tête Idempotency-Key). */
+    private String clientMutationId;
+
     @NotNull
     private UUID journalId;
     private String journalLibelle;

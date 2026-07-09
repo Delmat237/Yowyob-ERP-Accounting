@@ -43,5 +43,7 @@
     <include file="changeset-029-lignes-concordance.xml" relativeToChangelogFile="true"/>
     <include file="changeset-030-prix-cessions-internes.xml" relativeToChangelogFile="true"/>
     <include file="changeset-031-couts-produits-fiches.xml" relativeToChangelogFile="true"/>
+    <include file="changeset-032-ecritures-analytiques-idempotence.xml" relativeToChangelogFile="true"/>
+    <include file="changeset-033-analytique-parametrage.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>

@@ -32,9 +32,18 @@ public class EcritureAnalytiqueController {
 
     @PostMapping
     @Operation(summary = "Créer une écriture analytique")
-    public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> create(@Valid @RequestBody EcritureAnalytiqueDto dto) {
-        return service.create(dto)
-            .map(r -> ResponseEntity.status(HttpStatus.CREATED).body(ApiResponseWrapper.success(r, "Écriture analytique créée")));
+    public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> create(
+            @Valid @RequestBody EcritureAnalytiqueDto dto,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        return service.create(dto, idempotencyKey)
+            .map(result -> {
+                if (result.isAlreadyProcessed()) {
+                    return ResponseEntity.ok(ApiResponseWrapper.success(
+                        result.getDto(), "ALREADY_PROCESSED"));
+                }
+                return ResponseEntity.status(HttpStatus.CREATED).body(
+                    ApiResponseWrapper.success(result.getDto(), "Écriture analytique créée"));
+            });
     }
 
     @GetMapping

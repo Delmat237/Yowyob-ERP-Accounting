@@ -6,6 +6,7 @@ import com.yowyob.erp.accounting.infrastructure.persistence.repository.*;
 import com.yowyob.erp.accounting.infrastructure.web.dto.EcritureAnalytiqueDto;
 import com.yowyob.erp.accounting.infrastructure.web.dto.LigneImputationDto;
 import com.yowyob.erp.config.organization.ReactiveOrganizationContext;
+import com.yowyob.erp.shared.application.service.IdempotencyService;
 import com.yowyob.erp.shared.domain.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,34 +24,87 @@ import java.util.UUID;
 @Slf4j
 public class EcritureAnalytiqueService {
 
+    private static final String ENTITY_TYPE = "ecriture_analytique";
+
     private final EcritureAnalytiqueRepository ecritureRepo;
     private final LigneImputationRepository ligneRepo;
     private final JournalAnalytiqueRepository journalRepo;
     private final PeriodeAnalytiqueRepository periodeRepo;
     private final AxeAnalytiqueRepository axeRepo;
     private final CompteAnalytiqueRepository compteAnalytiqueRepo;
+    private final IdempotencyService idempotencyService;
 
     @Transactional
-    public Mono<EcritureAnalytiqueDto> create(EcritureAnalytiqueDto dto) {
+    public Mono<CreateEcritureResult> create(EcritureAnalytiqueDto dto, String idempotencyKeyHeader) {
         return ReactiveOrganizationContext.getOrganizationId()
             .zipWith(ReactiveOrganizationContext.getCurrentUser().defaultIfEmpty("system"))
             .flatMap(t -> {
-                UUID orgId = t.getT1(); String user = t.getT2();
-                EcritureAnalytique entity = EcritureAnalytique.builder()
-                    .id(UUID.randomUUID()).organizationId(orgId)
-                    .journalId(dto.getJournalId()).periodeId(dto.getPeriodeId())
-                    .numeroPiece(dto.getNumeroPiece()).libelle(dto.getLibelle())
-                    .dateEffet(dto.getDateEffet())
-                    .origine(dto.getOrigine() != null ? dto.getOrigine() : "MANUELLE")
-                    .montantTotal(dto.getMontantTotal()).natureChargeId(dto.getNatureChargeId())
-                    .ecriturecgRef(dto.getEcriturecgRef())
-                    .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
-                    .createdBy(user).updatedBy(user).build();
+                UUID orgId = t.getT1();
+                String user = t.getT2();
+                String idempotencyKey = resolveIdempotencyKey(idempotencyKeyHeader, dto);
 
-                return ecritureRepo.save(entity)
-                    .flatMap(saved -> saveLignes(saved.getId(), dto.getLignes())
-                        .then(enrichDto(saved)));
+                return resolveExistingByIdempotency(orgId, idempotencyKey)
+                    .switchIfEmpty(resolveExistingByClientId(orgId, dto.getClientId()))
+                    .map(existing -> new CreateEcritureResult(existing, true))
+                    .switchIfEmpty(Mono.defer(() -> persistNewEcriture(orgId, user, dto, idempotencyKey)));
             });
+    }
+
+    private String resolveIdempotencyKey(String header, EcritureAnalytiqueDto dto) {
+        if (header != null && !header.isBlank()) {
+            return header.trim();
+        }
+        if (dto.getClientMutationId() != null && !dto.getClientMutationId().isBlank()) {
+            return dto.getClientMutationId().trim();
+        }
+        return null;
+    }
+
+    private Mono<EcritureAnalytiqueDto> resolveExistingByIdempotency(UUID orgId, String key) {
+        if (key == null) {
+            return Mono.empty();
+        }
+        return idempotencyService.findActive(orgId, key)
+            .flatMap(record -> findById(record.getEntityId()));
+    }
+
+    private Mono<EcritureAnalytiqueDto> resolveExistingByClientId(UUID orgId, String clientId) {
+        if (clientId == null || clientId.isBlank()) {
+            return Mono.empty();
+        }
+        return ecritureRepo.findByOrganizationIdAndClientId(orgId, clientId)
+            .flatMap(this::enrichDto);
+    }
+
+    private Mono<CreateEcritureResult> persistNewEcriture(
+            UUID orgId,
+            String user,
+            EcritureAnalytiqueDto dto,
+            String idempotencyKey) {
+        EcritureAnalytique entity = EcritureAnalytique.builder()
+            .id(UUID.randomUUID()).organizationId(orgId)
+            .journalId(dto.getJournalId()).periodeId(dto.getPeriodeId())
+            .numeroPiece(dto.getNumeroPiece()).libelle(dto.getLibelle())
+            .dateEffet(dto.getDateEffet())
+            .origine(dto.getOrigine() != null ? dto.getOrigine() : "MANUELLE")
+            .montantTotal(dto.getMontantTotal()).natureChargeId(dto.getNatureChargeId())
+            .ecriturecgRef(dto.getEcriturecgRef())
+            .clientId(dto.getClientId())
+            .createdAt(LocalDateTime.now()).updatedAt(LocalDateTime.now())
+            .createdBy(user).updatedBy(user).build();
+
+        return ecritureRepo.save(entity)
+            .flatMap(saved -> saveLignes(saved.getId(), dto.getLignes())
+                .then(enrichDto(saved))
+                .flatMap(enriched -> storeIdempotencyIfNeeded(orgId, idempotencyKey, saved.getId())
+                    .thenReturn(new CreateEcritureResult(enriched, false))));
+    }
+
+    private Mono<Void> storeIdempotencyIfNeeded(UUID orgId, String key, UUID entityId) {
+        if (key == null) {
+            return Mono.empty();
+        }
+        return idempotencyService.store(orgId, key, ENTITY_TYPE, entityId, 201).then();
     }
 
     public Flux<EcritureAnalytiqueDto> getAll(String statut, UUID periodeId) {
@@ -141,7 +195,8 @@ public class EcritureAnalytiqueService {
                     }).collectList();
 
                 return lignesDtoMono.map(ldtos -> EcritureAnalytiqueDto.builder()
-                    .id(e.getId()).journalId(e.getJournalId()).periodeId(e.getPeriodeId())
+                    .id(e.getId()).clientId(e.getClientId())
+                    .journalId(e.getJournalId()).periodeId(e.getPeriodeId())
                     .numeroPiece(e.getNumeroPiece()).libelle(e.getLibelle())
                     .dateEffet(e.getDateEffet()).origine(e.getOrigine()).statut(e.getStatut())
                     .ecriturecgRef(e.getEcriturecgRef()).montantTotal(e.getMontantTotal())
