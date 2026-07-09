@@ -6,6 +6,8 @@ import {
   MethodeCession,
   mockCentres,
   mockUnitesOeuvre,
+  type CentreAnalyse,
+  type UniteOeuvre,
 } from "@/lib/analytique/mock-data";
 import { ComposeFormShell } from "@/components/analytique/compose-form-shell";
 import { History } from "lucide-react";
@@ -37,9 +39,19 @@ interface PrixCessionFormProps {
   initial?: Partial<PrixCessionInterne>;
   onCancel: () => void;
   onSubmit: (data: PrixCessionInterne) => void;
+  centres?: CentreAnalyse[];
+  unites?: UniteOeuvre[];
 }
 
-export function PrixCessionForm({ initial, onCancel, onSubmit }: PrixCessionFormProps) {
+export function PrixCessionForm({
+  initial,
+  onCancel,
+  onSubmit,
+  centres: centresProp,
+  unites: unitesProp,
+}: PrixCessionFormProps) {
+  const centres = centresProp?.length ? centresProp : mockCentres;
+  const unites = unitesProp?.length ? unitesProp : mockUnitesOeuvre;
   const [form, setForm] = useState<Partial<PrixCessionInterne>>(() => ({
     prixUnitaire: 0,
     dateDebut: new Date().toISOString().slice(0, 10),
@@ -121,7 +133,7 @@ export function PrixCessionForm({ initial, onCancel, onSubmit }: PrixCessionForm
             className="mt-1 w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
             value={form.centreCedantId ?? ""}
             onChange={(e) => {
-              const c = mockCentres.find((x) => x.id === e.target.value);
+              const c = centres.find((x) => x.id === e.target.value);
               setForm({
                 ...form,
                 centreCedantId: e.target.value,
@@ -138,7 +150,7 @@ export function PrixCessionForm({ initial, onCancel, onSubmit }: PrixCessionForm
             }}
           >
             <option value="">— Sélectionner —</option>
-            {mockCentres
+            {centres
               .filter((c) => c.actif)
               .map((c) => (
                 <option key={c.id} value={c.id}>
@@ -153,7 +165,7 @@ export function PrixCessionForm({ initial, onCancel, onSubmit }: PrixCessionForm
             className="mt-1 w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
             value={form.centreBeneficiaireId ?? ""}
             onChange={(e) => {
-              const c = mockCentres.find((x) => x.id === e.target.value);
+              const c = centres.find((x) => x.id === e.target.value);
               setForm({
                 ...form,
                 centreBeneficiaireId: e.target.value,
@@ -162,7 +174,7 @@ export function PrixCessionForm({ initial, onCancel, onSubmit }: PrixCessionForm
             }}
           >
             <option value="">— Sélectionner —</option>
-            {mockCentres
+            {centres
               .filter((c) => c.actif && c.id !== form.centreCedantId)
               .map((c) => (
                 <option key={c.id} value={c.id}>
@@ -190,7 +202,7 @@ export function PrixCessionForm({ initial, onCancel, onSubmit }: PrixCessionForm
             className="mt-1 w-full text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
             value={form.uniteId ?? ""}
             onChange={(e) => {
-              const u = mockUnitesOeuvre.find((x) => x.id === e.target.value);
+              const u = unites.find((x) => x.id === e.target.value);
               setForm({
                 ...form,
                 uniteId: e.target.value,
@@ -199,7 +211,7 @@ export function PrixCessionForm({ initial, onCancel, onSubmit }: PrixCessionForm
             }}
           >
             <option value="">— Sélectionner —</option>
-            {mockUnitesOeuvre.map((u) => (
+            {unites.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.libelle} ({u.uniteMesure})
               </option>

@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import {
-    mockPeriodes, mockPeriodesCG, mockChargesVentilees,
-    mockLignesConcordance, mockCoutsProduits,
     LigneConcordance, TypeDifference,
 } from "@/lib/analytique/mock-data";
 import { formatCurrency } from "@/lib/utils";
-import { resolvePeriodeCG } from "@/lib/analytique/periodes-alignees";
 import {
     Scale, CheckCircle2, AlertTriangle, ArrowRightLeft,
-    Plus, Pencil, Trash2, X, Info, ChevronDown,
+    Plus, Pencil, Trash2, Info, ChevronDown, AlertCircle,
 } from "lucide-react";
 import { FloatingModal } from "@/components/ui/floating-modal";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { useConcordanceApi } from "@/hooks/use-concordance-api";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const TYPE_LABELS: Record<TypeDifference, string> = {
@@ -127,51 +126,47 @@ function LigneConcModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function ConcordancePage() {
-    // Sélecteur de période analytique
-    const periodesAvecCG = mockPeriodes;
-    const [selectedPeriodeId, setSelectedPeriodeId] = useState(periodesAvecCG[2]?.id ?? periodesAvecCG[0]?.id);
-    const [lignes, setLignes] = useState<LigneConcordance[]>(mockLignesConcordance);
+    const {
+        periodes,
+        periodeId: selectedPeriodeId,
+        setPeriodeId: setSelectedPeriodeId,
+        selectedPeriode: periodeCA,
+        lignes,
+        lignesManuelles,
+        saveLignes,
+        concordance,
+        loading,
+        error,
+        usingApiEcritures,
+        usingMockFallback,
+        hasLignesAuto,
+    } = useConcordanceApi();
+
     const [modal, setModal] = useState<{ open: boolean; initial?: Partial<LigneConcordance> }>({ open: false });
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
-    const periodeCA = mockPeriodes.find((p) => p.id === selectedPeriodeId);
-    const periodeCG = periodeCA ? resolvePeriodeCG(periodeCA, mockPeriodesCG) : undefined;
-
-    // ── Calculs dynamiques ────────────────────────────────────────────────────
-
-    // Résultat net CG pour la période sélectionnée (vient du module CG)
-    const resultCG = periodeCG?.resultatNet ?? 0;
-
-    // Charges non incorporables calculées depuis mockChargesVentilees
-    const chargesNonIncCette = mockChargesVentilees.filter(
-        (c) => !c.incorporable && c.periodeId === selectedPeriodeId
-    );
-    const totalNonInc = chargesNonIncCette.reduce((s, c) => s + c.montantTotal, 0);
-
-    // Total incorporable ventilé
-    const totalIncorporable = mockChargesVentilees
-        .filter((c) => c.incorporable && c.periodeId === selectedPeriodeId)
-        .reduce((s, c) => s + c.montantTotal, 0);
-
-    // Résultat analytique produits (sum coûts de revient vs CA — simplifié)
-    const resultatAnalytiqueProduits = mockCoutsProduits
-        .filter((cp) => cp.periodeId === selectedPeriodeId)
-        .reduce((s, cp) => s + (cp.coutRevient * 0.1), 0); // simulé : marge 10%
-
-    // Calcul du résultat CA reconstitué depuis les lignes de concordance
-    const sommeDiff = lignes.reduce(
-        (s, l) => l.signe === "+" ? s + l.montant : s - l.montant,
-        0
-    );
-    const resultCA = resultCG + sommeDiff;
-
-    // Écart de vérification entre résultat CA reconstitué et résultat produits
-    const ecartVerif = resultCA - resultatAnalytiqueProduits;
-    const concordanceOk = Math.abs(ecartVerif) < 1000; // tolérance d'arrondi
+    const {
+        periodeCG,
+        resultCG,
+        totalNonInc,
+        totalIncorporable,
+        totalAnalytiqueEcritures,
+        resultCA,
+        resultatAnalytiqueProduits,
+        ecartVerif,
+        concordanceOk,
+    } = concordance;
 
     const handleSaveLigne = (data: LigneConcordance) => {
-        setLignes((p) => p.find((l) => l.id === data.id) ? p.map((l) => l.id === data.id ? data : l) : [...p, data]);
+        const next = lignesManuelles.find((l) => l.id === data.id)
+            ? lignesManuelles.map((l) => (l.id === data.id ? data : l))
+            : [...lignesManuelles, data];
+        saveLignes(next);
     };
+
+    if (loading && periodes.length === 0) {
+        return <CustomPageLoader message="Chargement de la concordance..." />;
+    }
 
     return (
         <div className="space-y-6 animate-fade-in-up">
@@ -186,10 +181,23 @@ export default function ConcordancePage() {
                 <ConfirmDialog
                     title="Supprimer cette ligne ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => setLignes((p) => p.filter((l) => l.id !== deleteId))}
+                    onConfirm={() => {
+                        saveLignes(lignesManuelles.filter((l) => l.id !== deleteId));
+                    }}
                 >
                     <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
                 </ConfirmDialog>
+            )}
+
+            {(error || usingMockFallback) && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                        {error ?? "Certaines données proviennent du mode démonstration."}
+                        {hasLignesAuto && " Lignes non incorporables générées depuis les charges ventilées."}
+                        {usingApiEcritures && ` Écritures validées : ${formatCurrency(totalAnalytiqueEcritures)}.`}
+                    </span>
+                </div>
             )}
 
             {/* Header */}
@@ -207,7 +215,7 @@ export default function ConcordancePage() {
                         value={selectedPeriodeId}
                         onChange={(e) => setSelectedPeriodeId(e.target.value)}
                     >
-                        {periodesAvecCG.map((p) => (
+                        {periodes.map((p) => (
                             <option key={p.id} value={p.id}>{p.libelle}</option>
                         ))}
                     </select>

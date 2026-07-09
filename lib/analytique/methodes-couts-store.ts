@@ -1,6 +1,8 @@
-import type { CoutProduit, FicheCoutStandard, RegleIncorporation } from '@/lib/analytique/mock-data';
+import type { CoutProduit, FicheCoutStandard, RegleIncorporation, LigneConcordance, PrixCessionInterne } from '@/lib/analytique/mock-data';
 import {
   mockFichesCoutStandard,
+  mockLignesConcordance,
+  mockPrixCessions,
   mockReglesIncorporation,
 } from '@/lib/analytique/mock-data';
 import type { LigneImputationRationnelle } from '@/lib/analytique/couts-calculs';
@@ -19,6 +21,8 @@ const KEYS = {
   mouvements: 'ksm.analytique.mouvements-stock',
   regles: 'ksm.analytique.regles-incorporation',
   fiches: 'ksm.analytique.fiches-cout-standard',
+  concordance: 'ksm.analytique.lignes-concordance',
+  prixCessions: 'ksm.analytique.prix-cessions',
 } as const;
 
 function readJson<T>(key: string, fallback: T): T {
@@ -117,4 +121,26 @@ export function getMouvementsForProduit(
 ): MouvementStock[] {
   const stored = map ?? listMouvementsStockMap();
   return stored[produit.id] ?? mouvementsInitiaux(produit);
+}
+
+export function listLignesConcordance(): LigneConcordance[] {
+  const existing = readJson<LigneConcordance[]>(KEYS.concordance, []);
+  if (existing.length > 0) return existing;
+  writeJson(KEYS.concordance, mockLignesConcordance);
+  return mockLignesConcordance;
+}
+
+export function saveLignesConcordance(lignes: LigneConcordance[]): void {
+  writeJson(KEYS.concordance, lignes);
+}
+
+export function listPrixCessions(): PrixCessionInterne[] {
+  const existing = readJson<PrixCessionInterne[]>(KEYS.prixCessions, []);
+  if (existing.length > 0) return existing;
+  writeJson(KEYS.prixCessions, mockPrixCessions);
+  return mockPrixCessions;
+}
+
+export function savePrixCessions(cessions: PrixCessionInterne[]): void {
+  writeJson(KEYS.prixCessions, cessions);
 }
