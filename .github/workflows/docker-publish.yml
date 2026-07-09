@@ -2,7 +2,7 @@ name: Docker Hub One-Shot Deployment
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches: [HEXAGONAL]
   workflow_dispatch:
 
 jobs:
