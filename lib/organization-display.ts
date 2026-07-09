@@ -4,7 +4,7 @@ const UUID_PATTERN =
 /** Stub accounting ou libellé tronqué « Organization 492c… » */
 const PLACEHOLDER_ORG_NAME_PATTERN = /^Organization\b/i;
 
-export const DEFAULT_ORG_DISPLAY_NAME = "Mon organisation";
+export const DEFAULT_ORG_DISPLAY_NAME = "KSM-ACCOUNTING";
 
 /** Nom technique (UUID ou stub « Organization … ») — à ne pas afficher tel quel. */
 export function isPlaceholderOrgName(name?: string | null): boolean {
