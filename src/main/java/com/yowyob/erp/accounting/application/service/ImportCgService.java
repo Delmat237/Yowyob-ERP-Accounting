@@ -33,6 +33,7 @@ public class ImportCgService {
     private final CompteAnalytiqueRepository compteAnalytiqueRepo;
     private final PeriodeAnalytiqueRepository periodeRepo;
     private final EcritureAnalytiqueService ecritureAnalytiqueService;
+    private final RegleIncorporationService regleIncorporationService;
 
     @Transactional
     public Mono<ImportCgResultDto> importFromCg(ImportCgRequestDto request) {
@@ -124,14 +125,16 @@ public class ImportCgService {
             boolean force,
             int seq) {
 
+        return regleIncorporationService.isIncorporable(orgId, line.noCompte())
+            .flatMap(incorporable -> {
+                if (!Boolean.TRUE.equals(incorporable)) {
+                    return Mono.just(LineResult.ignored());
+                }
+
         BigDecimal montant = ImportCgHelper.debitAmount(line.montantDebit());
         String libelle = line.detailLibelle() != null && !line.detailLibelle().isBlank()
             ? line.detailLibelle()
             : line.ecritureLibelle();
-
-        if (!ImportCgHelper.isIncorporable(line.noCompte())) {
-            return Mono.just(LineResult.ignored());
-        }
 
         if (montant.compareTo(BigDecimal.ZERO) <= 0) {
             return Mono.just(LineResult.ignored());
@@ -196,6 +199,7 @@ public class ImportCgService {
                         "Échec import compte " + line.noCompte() + " : " + ex.getMessage()));
                 });
         });
+            });
     }
 
     private Flux<ChargeLineRow> fetchChargeLines(UUID orgId, DateRange range) {

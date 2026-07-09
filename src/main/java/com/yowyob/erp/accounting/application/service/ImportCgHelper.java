@@ -7,6 +7,10 @@ final class ImportCgHelper {
     private ImportCgHelper() {}
 
     static boolean isIncorporable(String noCompte) {
+        return isIncorporableByDefault(noCompte);
+    }
+
+    static boolean isIncorporableByDefault(String noCompte) {
         if (noCompte == null || noCompte.isBlank()) {
             return false;
         }
