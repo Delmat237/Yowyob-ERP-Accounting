@@ -295,7 +295,7 @@ function VentilationModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VentilationPage() {
-    const { charges, loading, saveCharge, removeCharge } = useChargesVentilees();
+    const { charges, loading, saveCharge, removeCharge, error: chargesError, usingMockFallback: chargesMock } = useChargesVentilees();
     const { centres, error: centresError, usingMockFallback: centresMock } = useCentresAnalyseApi();
     const { axes, error: axesError, usingMockFallback: axesMock } = useAxesAnalytiques();
     const { periodesCG, error: periodesError } = usePeriodesAnalytiquesAlignees();
@@ -303,8 +303,8 @@ export default function VentilationPage() {
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [filterInc, setFilterInc] = useState<"all" | "incorporable" | "non">("all");
 
-    const apiNotice = centresError ?? axesError ?? periodesError;
-    const usingMockFallback = centresMock || axesMock;
+    const apiNotice = chargesError ?? centresError ?? axesError ?? periodesError;
+    const usingMockFallback = chargesMock || centresMock || axesMock;
 
     const filtered = charges.filter((c) => {
         if (filterInc === "incorporable") return c.incorporable;
@@ -317,8 +317,8 @@ export default function VentilationPage() {
     const totalVentile = charges.filter((c) => c.incorporable && c.ventilations.length > 0).reduce((s, c) => s + c.montantTotal, 0);
     const totalNonVentile = charges.filter((c) => c.incorporable && c.ventilations.length === 0).reduce((s, c) => s + c.montantTotal, 0);
 
-    const handleSave = (data: ChargeVentilee) => {
-        saveCharge(data);
+    const handleSave = async (data: ChargeVentilee) => {
+        await saveCharge(data);
     };
 
     if (loading && charges.length === 0) {
@@ -335,7 +335,9 @@ export default function VentilationPage() {
             )}
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 flex items-center gap-2">
                 <Info className="h-4 w-4 shrink-0" />
-                Les charges ventilées sont persistées localement en attendant l&apos;endpoint backend de ventilation.
+                {usingMockFallback
+                    ? "Les charges ventilées sont persistées localement en attendant l'endpoint backend."
+                    : "Les charges ventilées sont synchronisées avec le serveur."}
             </div>
             {modal.open && (
                 <VentilationModal
@@ -351,8 +353,8 @@ export default function VentilationPage() {
                 <ConfirmDialog
                     title="Supprimer cette ventilation ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => {
-                        removeCharge(deleteId);
+                    onConfirm={async () => {
+                        await removeCharge(deleteId);
                         setDeleteId(null);
                     }}
                 >

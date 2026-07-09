@@ -6,6 +6,7 @@ import type { JournalAnalytiqueDto } from '@/src/lib2/models/JournalAnalytiqueDt
 import type { LigneImputationDto } from '@/src/lib2/models/LigneImputationDto';
 import type { PeriodeAnalytiqueDto } from '@/src/lib2/models/PeriodeAnalytiqueDto';
 import type { UniteOeuvreDto } from '@/src/lib2/models/UniteOeuvreDto';
+import type { ChargeVentileeDto } from '@/src/lib2/models/ChargeVentileeDto';
 import type {
   EcritureAnalytique,
   LigneEcritureAnalytique,
@@ -16,6 +17,7 @@ import { buildLignesImputation } from '@/lib/analytique/ecriture-lignes';
 import type {
   CentreAnalyse,
   CompteAnalytique,
+  ChargeVentilee,
   NatureUO,
   PeriodeCG,
   StatutPeriode,
@@ -349,5 +351,45 @@ export function mapCleRepartitionUiToDto(data: Partial<CleRepartitionUi>): CleRe
       pourcentage: l.pourcentage,
       uniteOeuvreId: l.uniteOeuvreId && isUuid(l.uniteOeuvreId) ? l.uniteOeuvreId : undefined,
     })),
+  };
+}
+
+export function mapChargeVentileeDtoToUi(dto: ChargeVentileeDto): ChargeVentilee {
+  return {
+    id: dto.id ?? '',
+    chargeSourceId: dto.chargeSourceId ?? '',
+    compteCG: dto.compteCG ?? '',
+    libelle: dto.libelle ?? '',
+    montantTotal: Number(dto.montantTotal ?? 0),
+    incorporable: dto.incorporable ?? true,
+    periodeId: dto.periodeId ?? '',
+    periodeCGId: dto.periodeCgId ?? dto.periodeId ?? '',
+    ventilations: (dto.ventilations ?? []).map((v) => ({
+      axeId: v.axeId ?? '',
+      centreId: v.centreId ?? '',
+      pourcentage: Number(v.pourcentage ?? 0),
+    })),
+  };
+}
+
+export function mapChargeVentileeUiToDto(data: ChargeVentilee): ChargeVentileeDto {
+  const ventilations = data.ventilations
+    .map((v) => ({
+      axeId: isUuid(v.axeId) ? v.axeId : undefined,
+      centreId: isUuid(v.centreId) ? v.centreId : undefined,
+      pourcentage: v.pourcentage,
+    }))
+    .filter((v) => v.axeId && v.centreId);
+
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    chargeSourceId: data.chargeSourceId,
+    compteCG: data.compteCG,
+    libelle: data.libelle,
+    montantTotal: data.montantTotal,
+    incorporable: data.incorporable,
+    periodeId: isUuid(data.periodeId) ? data.periodeId : undefined,
+    periodeCgId: isUuid(data.periodeCGId) ? data.periodeCGId : undefined,
+    ventilations,
   };
 }
