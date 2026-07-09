@@ -1,8 +1,17 @@
 import type { CompteAnalytiqueDto } from '@/src/lib2/models/CompteAnalytiqueDto';
 import type { AxeAnalytiqueDto } from '@/src/lib2/models/AxeAnalytiqueDto';
+import type { EcritureAnalytiqueDto } from '@/src/lib2/models/EcritureAnalytiqueDto';
 import type { JournalAnalytiqueDto } from '@/src/lib2/models/JournalAnalytiqueDto';
+import type { LigneImputationDto } from '@/src/lib2/models/LigneImputationDto';
 import type { PeriodeAnalytiqueDto } from '@/src/lib2/models/PeriodeAnalytiqueDto';
 import type { UniteOeuvreDto } from '@/src/lib2/models/UniteOeuvreDto';
+import type {
+  EcritureAnalytique,
+  LigneEcritureAnalytique,
+  MethodeSaisieEcritures,
+  StatutEcritureAnalytique,
+} from '@/lib/analytique/ecriture-analytique';
+import { buildLignesImputation } from '@/lib/analytique/ecriture-lignes';
 import type {
   CentreAnalyse,
   CompteAnalytique,
@@ -203,4 +212,100 @@ export function mapPeriodeDtoToStatutOverrides(
 
 export function inferNatureUOFromUnite(unite?: string): NatureUO {
   return unite === 'HEURE_MOD' ? 'MONETAIRE' : 'PHYSIQUE';
+}
+
+function isUuid(value?: string): boolean {
+  return Boolean(value && UUID_PATTERN.test(value));
+}
+
+function mapLigneDtoToUi(
+  ligne: LigneImputationDto,
+  natureChargeId: string,
+): LigneEcritureAnalytique {
+  const montantBrut = ligne.montant ?? 0;
+  const montant =
+    ligne.sens === 'CREDIT' ? -Math.abs(montantBrut) : Math.abs(montantBrut);
+
+  return {
+    centreId: ligne.centreId ?? '',
+    natureChargeId,
+    montant,
+    libelle: ligne.libelle,
+  };
+}
+
+function mapLigneUiToDto(ligne: LigneEcritureAnalytique): LigneImputationDto {
+  return {
+    centreId: isUuid(ligne.centreId) ? ligne.centreId : undefined,
+    montant: Math.abs(ligne.montant),
+    sens: ligne.montant >= 0 ? 'DEBIT' : 'CREDIT',
+    libelle: ligne.libelle,
+  };
+}
+
+export function mapEcritureDtoToUi(dto: EcritureAnalytiqueDto): EcritureAnalytique {
+  const natureChargeId = dto.natureChargeId ?? '';
+  const lignes = (dto.lignes ?? []).map((l) => mapLigneDtoToUi(l, natureChargeId));
+
+  const positiveLine = lignes.find((l) => l.montant > 0);
+  const negativeLine = lignes.find((l) => l.montant < 0);
+  const centreDestinationId =
+    positiveLine?.centreId ?? lignes[0]?.centreId ?? '';
+  const centreSourceId = negativeLine?.centreId;
+
+  const statut = (dto.statut ?? 'BROUILLON') as StatutEcritureAnalytique;
+  const origine = (
+    dto.origine === 'IMPORT_CG' ? 'IMPORT_CG' : 'MANUELLE'
+  ) as MethodeSaisieEcritures;
+
+  return {
+    id: dto.id ?? '',
+    statut,
+    origine,
+    createdAt: dto.validatedAt ?? `${dto.dateEffet}T00:00:00.000Z`,
+    validatedAt: dto.validatedAt,
+    rejectReason: dto.rejectReason,
+    journalId: dto.journalId,
+    dateEffet: dto.dateEffet,
+    numeroPiece: dto.numeroPiece ?? '',
+    libelleOperation: dto.libelle,
+    centreSourceId,
+    centreDestinationId,
+    axeId: centreDestinationId,
+    exerciceAnalytiqueId: dto.periodeId ?? '',
+    natureChargeId,
+    montant: dto.montantTotal ?? 0,
+    lignes,
+    ligneCGRef: dto.ecriturecgRef,
+  };
+}
+
+export function mapEcritureUiToDto(
+  data: Omit<EcritureAnalytique, 'id' | 'statut' | 'createdAt' | 'validatedAt' | 'rejectReason'> & {
+    origine?: MethodeSaisieEcritures;
+  },
+): EcritureAnalytiqueDto {
+  const lignesUi =
+    data.lignes?.length > 0
+      ? data.lignes
+      : buildLignesImputation({
+          centreSourceId: data.centreSourceId,
+          centreDestinationId: data.centreDestinationId,
+          natureChargeId: data.natureChargeId,
+          montant: data.montant,
+          libelleOperation: data.libelleOperation,
+        });
+
+  return {
+    journalId: data.journalId,
+    periodeId: isUuid(data.exerciceAnalytiqueId) ? data.exerciceAnalytiqueId : undefined,
+    numeroPiece: data.numeroPiece,
+    libelle: data.libelleOperation,
+    dateEffet: data.dateEffet,
+    origine: data.origine ?? 'MANUELLE',
+    montantTotal: data.montant,
+    natureChargeId: isUuid(data.natureChargeId) ? data.natureChargeId : undefined,
+    ecriturecgRef: data.ligneCGRef && isUuid(data.ligneCGRef) ? data.ligneCGRef : undefined,
+    lignes: lignesUi.map(mapLigneUiToDto),
+  };
 }
