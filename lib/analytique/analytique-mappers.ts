@@ -1,3 +1,4 @@
+import type { CleRepartitionDto } from '@/src/lib2/models/CleRepartitionDto';
 import type { CompteAnalytiqueDto } from '@/src/lib2/models/CompteAnalytiqueDto';
 import type { AxeAnalytiqueDto } from '@/src/lib2/models/AxeAnalytiqueDto';
 import type { EcritureAnalytiqueDto } from '@/src/lib2/models/EcritureAnalytiqueDto';
@@ -21,6 +22,11 @@ import type {
   TypeCentre,
   UniteOeuvre,
 } from '@/lib/analytique/mock-data';
+import type {
+  CleRepartitionUi,
+  LigneCleRepartition,
+  TypeCleRepartition,
+} from '@/lib/analytique/cle-repartition';
 import type { ClasseAnalytique } from '@/lib/analytique/classes-analytiques';
 import type {
   JournalAnalytiqueConfig,
@@ -307,5 +313,41 @@ export function mapEcritureUiToDto(
     natureChargeId: isUuid(data.natureChargeId) ? data.natureChargeId : undefined,
     ecriturecgRef: data.ligneCGRef && isUuid(data.ligneCGRef) ? data.ligneCGRef : undefined,
     lignes: lignesUi.map(mapLigneUiToDto),
+  };
+}
+
+const TYPE_CLE_FROM_API: Record<string, TypeCleRepartition> = {
+  FIXE: 'FIXE',
+  COUT_UNITAIRE: 'COUT_UNITAIRE',
+  UNITE_OEUVRE: 'UNITE_OEUVRE',
+};
+
+export function mapCleRepartitionDtoToUi(dto: CleRepartitionDto): CleRepartitionUi {
+  return {
+    id: dto.id ?? '',
+    code: dto.code ?? '',
+    libelle: dto.libelle ?? '',
+    type: TYPE_CLE_FROM_API[dto.type ?? ''] ?? 'FIXE',
+    actif: dto.actif ?? true,
+    lignes: (dto.lignes ?? []).map((l) => ({
+      centreId: l.centreDestinataireId ?? '',
+      pourcentage: l.pourcentage ?? 0,
+      uniteOeuvreId: l.uniteOeuvreId,
+    })),
+  };
+}
+
+export function mapCleRepartitionUiToDto(data: Partial<CleRepartitionUi>): CleRepartitionDto {
+  return {
+    id: data.id && UUID_PATTERN.test(data.id) ? data.id : undefined,
+    code: data.code?.trim() || buildCodeFromLibelle(data.libelle ?? 'CLE', 'CLE'),
+    libelle: data.libelle?.trim() ?? '',
+    type: data.type ?? 'FIXE',
+    actif: data.actif ?? true,
+    lignes: (data.lignes ?? []).map((l: LigneCleRepartition) => ({
+      centreDestinataireId: isUuid(l.centreId) ? l.centreId : undefined,
+      pourcentage: l.pourcentage,
+      uniteOeuvreId: l.uniteOeuvreId && isUuid(l.uniteOeuvreId) ? l.uniteOeuvreId : undefined,
+    })),
   };
 }

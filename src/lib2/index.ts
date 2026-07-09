@@ -58,6 +58,10 @@ export type { JournalAnalytiqueDto } from './models/JournalAnalytiqueDto';
 export type { PeriodeAnalytiqueDto } from './models/PeriodeAnalytiqueDto';
 export type { EcritureAnalytiqueDto } from './models/EcritureAnalytiqueDto';
 export type { LigneImputationDto } from './models/LigneImputationDto';
+export type { CleRepartitionDto } from './models/CleRepartitionDto';
+export type { CleRepartitionLigneDto } from './models/CleRepartitionLigneDto';
+export type { ApiResponseWrapperCleRepartitionDto } from './models/ApiResponseWrapperCleRepartitionDto';
+export type { ApiResponseWrapperListCleRepartitionDto } from './models/ApiResponseWrapperListCleRepartitionDto';
 export type { ApiResponseWrapperEcritureAnalytiqueDto } from './models/ApiResponseWrapperEcritureAnalytiqueDto';
 export type { ApiResponseWrapperListEcritureAnalytiqueDto } from './models/ApiResponseWrapperListEcritureAnalytiqueDto';
 export type { ApiResponseWrapperCompteAnalytiqueDto } from './models/ApiResponseWrapperCompteAnalytiqueDto';
@@ -116,6 +120,7 @@ export { AccountingJournauxAnalytiquesService } from './services/AccountingJourn
 export { AccountingPeriodesAnalytiquesService } from './services/AccountingPeriodesAnalytiquesService';
 export { AccountingUnitesOeuvreService } from './services/AccountingUnitesOeuvreService';
 export { AccountingEcrituresAnalytiquesService } from './services/AccountingEcrituresAnalytiquesService';
+export { AccountingClesRepartitionService } from './services/AccountingClesRepartitionService';
 export { AccountingEntriesService } from './services/AccountingEntriesService';
 export { AccountingFinancialReportsService } from './services/AccountingFinancialReportsService';
 export { AccountingFiscalYearsService } from './services/AccountingFiscalYearsService';

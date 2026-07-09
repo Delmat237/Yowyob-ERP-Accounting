@@ -2,19 +2,26 @@
 
 import { useState } from "react";
 import {
-    mockChargesVentilees, mockAxes, mockCentres, mockPeriodes,
+    mockAxes,
     ChargeVentilee, VentilationAxe,
+    type CentreAnalyse,
+    type PeriodeCG,
 } from "@/lib/analytique/mock-data";
 import { formatCurrency } from "@/lib/utils";
+import { useChargesVentilees } from "@/hooks/use-charges-ventilees";
+import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import {
     Plus, Pencil, Trash2, AlertCircle, CheckCircle2,
     ArrowRightLeft, X, Info, Lock,
 } from "lucide-react";
 import { FloatingModal } from "@/components/ui/floating-modal";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-const getCentreLabel = (id: string) => mockCentres.find((c) => c.id === id)?.libelle ?? "—";
+const getCentreLabel = (id: string, centres: CentreAnalyse[]) =>
+    centres.find((c) => c.id === id)?.libelle ?? "—";
 const getAxeLabel = (id: string) => mockAxes.find((a) => a.id === id)?.libelle ?? "—";
 
 const COMPTES_CG = [
@@ -33,19 +40,25 @@ const COMPTES_CG = [
 // ─── VentilationModal ─────────────────────────────────────────────────────────
 function VentilationModal({
     initial,
+    centres,
+    periodes,
     onClose,
     onSave,
 }: {
     initial?: Partial<ChargeVentilee>;
+    centres: CentreAnalyse[];
+    periodes: PeriodeCG[];
     onClose: () => void;
     onSave: (d: ChargeVentilee) => void;
 }) {
+    const defaultPeriode = periodes.find((p) => !p.cloturee) ?? periodes[0];
     const [form, setForm] = useState<Partial<ChargeVentilee>>({
         compteCG: "601",
         libelle: "",
         montantTotal: 0,
         incorporable: true,
-        periodeId: mockPeriodes[2].id,
+        periodeId: defaultPeriode?.id ?? "",
+        periodeCGId: defaultPeriode?.id ?? "",
         ventilations: [],
         ...initial,
     });
@@ -61,7 +74,7 @@ function VentilationModal({
             ...f,
             ventilations: [
                 ...(f.ventilations ?? []),
-                { axeId: mockAxes[0].id, centreId: mockCentres[0].id, pourcentage: 0 },
+                { axeId: mockAxes[0]?.id ?? "", centreId: centres[0]?.id ?? "", pourcentage: 0 },
             ],
         }));
     };
@@ -102,6 +115,7 @@ function VentilationModal({
                                 montantTotal: form.montantTotal!,
                                 incorporable: form.incorporable!,
                                 periodeId: form.periodeId!,
+                                periodeCGId: form.periodeCGId ?? form.periodeId!,
                                 ventilations: form.ventilations ?? [],
                             });
                             onClose();
@@ -141,9 +155,9 @@ function VentilationModal({
                                 <select
                                     className="mt-1 w-full text-sm border border-border rounded-xl px-3 py-2 bg-input"
                                     value={form.periodeId ?? ""}
-                                    onChange={(e) => setForm({ ...form, periodeId: e.target.value })}
+                                    onChange={(e) => setForm({ ...form, periodeId: e.target.value, periodeCGId: e.target.value })}
                                 >
-                                    {mockPeriodes.map((p) => <option key={p.id} value={p.id}>{p.libelle}</option>)}
+                                    {periodes.map((p) => <option key={p.id} value={p.id}>{p.libelle}</option>)}
                                 </select>
                             </div>
                         </div>
@@ -240,7 +254,7 @@ function VentilationModal({
                                                 value={v.centreId}
                                                 onChange={(e) => updateVentilation(idx, "centreId", e.target.value)}
                                             >
-                                                {mockCentres.filter((c) => c.actif).map((c) => <option key={c.id} value={c.id}>{c.libelle}</option>)}
+                                                {centres.filter((c) => c.actif).map((c) => <option key={c.id} value={c.id}>{c.libelle}</option>)}
                                             </select>
                                         </div>
                                         <div>
@@ -277,10 +291,14 @@ function VentilationModal({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function VentilationPage() {
-    const [charges, setCharges] = useState<ChargeVentilee[]>(mockChargesVentilees);
+    const { charges, loading, saveCharge, removeCharge } = useChargesVentilees();
+    const { centres, error: centresError } = useCentresAnalyseApi();
+    const { periodesCG, error: periodesError } = usePeriodesAnalytiquesAlignees();
     const [modal, setModal] = useState<{ open: boolean; initial?: Partial<ChargeVentilee> }>({ open: false });
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [filterInc, setFilterInc] = useState<"all" | "incorporable" | "non">("all");
+
+    const apiNotice = centresError ?? periodesError;
 
     const filtered = charges.filter((c) => {
         if (filterInc === "incorporable") return c.incorporable;
@@ -294,18 +312,30 @@ export default function VentilationPage() {
     const totalNonVentile = charges.filter((c) => c.incorporable && c.ventilations.length === 0).reduce((s, c) => s + c.montantTotal, 0);
 
     const handleSave = (data: ChargeVentilee) => {
-        if (charges.find((c) => c.id === data.id)) {
-            setCharges((p) => p.map((c) => (c.id === data.id ? data : c)));
-        } else {
-            setCharges((p) => [...p, data]);
-        }
+        saveCharge(data);
     };
+
+    if (loading && charges.length === 0) {
+        return <CustomPageLoader message="Chargement des ventilations..." />;
+    }
 
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {apiNotice && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{apiNotice} — référentiel en mode démonstration.</span>
+                </div>
+            )}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 flex items-center gap-2">
+                <Info className="h-4 w-4 shrink-0" />
+                Les charges ventilées sont persistées localement en attendant l&apos;endpoint backend de ventilation.
+            </div>
             {modal.open && (
                 <VentilationModal
                     initial={modal.initial}
+                    centres={centres}
+                    periodes={periodesCG}
                     onClose={() => setModal({ open: false })}
                     onSave={handleSave}
                 />
@@ -314,7 +344,10 @@ export default function VentilationPage() {
                 <ConfirmDialog
                     title="Supprimer cette ventilation ?"
                     onClose={() => setDeleteId(null)}
-                    onConfirm={() => setCharges((p) => p.filter((c) => c.id !== deleteId))}
+                    onConfirm={() => {
+                        removeCharge(deleteId);
+                        setDeleteId(null);
+                    }}
                 >
                     <p className="text-sm text-muted-foreground">Cette action est irréversible.</p>
                 </ConfirmDialog>
@@ -399,7 +432,7 @@ export default function VentilationPage() {
                                             <span className="text-xs font-bold bg-muted px-2 py-0.5 rounded-md text-muted-foreground font-mono">{charge.compteCG}</span>
                                             <p className="text-sm font-semibold text-foreground">{charge.libelle}</p>
                                         </div>
-                                        <p className="text-xs text-muted-foreground mt-0.5">{mockPeriodes.find((p) => p.id === charge.periodeId)?.libelle ?? "—"}</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">{periodesCG.find((p) => p.id === charge.periodeId)?.libelle ?? "—"}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
@@ -450,7 +483,7 @@ export default function VentilationPage() {
                                                     return (
                                                         <div key={idx} className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-3 flex items-center justify-between gap-2">
                                                             <div>
-                                                                <p className="text-xs font-semibold text-indigo-800">{getCentreLabel(v.centreId)}</p>
+                                                                <p className="text-xs font-semibold text-indigo-800">{getCentreLabel(v.centreId, centres)}</p>
                                                                 <p className="text-[10px] text-indigo-600">{getAxeLabel(v.axeId)}</p>
                                                             </div>
                                                             <div className="text-right">
