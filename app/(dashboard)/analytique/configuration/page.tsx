@@ -8,7 +8,7 @@ import {
     saveAnalytiqueConfig,
     type AnalytiqueConfig,
 } from '@/lib/analytique/analytique-config-store';
-import { importFluxDepuisCG } from '@/lib/analytique/import-flux-cg';
+import { importDepuisCG } from '@/lib/analytique/import-cg-api';
 import { cn } from '@/lib/utils';
 import {
     Settings,
@@ -35,7 +35,7 @@ export default function ConfigurationPage() {
         setConfig(getAnalytiqueConfig());
     }, []);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsSaving(true);
         const previous = getAnalytiqueConfig();
         saveAnalytiqueConfig(config);
@@ -43,7 +43,7 @@ export default function ConfigurationPage() {
             config.importComptabiliteGeneraleActive && !previous.importComptabiliteGeneraleActive;
 
         if (justEnabled) {
-            const { created, ignored } = importFluxDepuisCG();
+            const { created, ignored } = await importDepuisCG();
             if (created.length > 0) {
                 toast.success(`${created.length} écriture(s) importée(s)`, {
                     description: "Redirection vers la validation…",

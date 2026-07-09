@@ -1,6 +1,8 @@
 import type { ApiResponseWrapperEcritureAnalytiqueDto } from '../models/ApiResponseWrapperEcritureAnalytiqueDto';
 import type { ApiResponseWrapperListEcritureAnalytiqueDto } from '../models/ApiResponseWrapperListEcritureAnalytiqueDto';
+import type { ApiResponseWrapperImportCgResultDto } from '../models/ImportCgApiTypes';
 import type { EcritureAnalytiqueDto } from '../models/EcritureAnalytiqueDto';
+import type { ImportCgRequestDto } from '../models/ImportCgRequestDto';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -56,6 +58,17 @@ export class AccountingEcrituresAnalytiquesService {
       url: '/api/accounting/analytique/ecritures/{id}/rejeter',
       path: { id },
       body: requestBody,
+      mediaType: 'application/json',
+    });
+  }
+
+  public static importCg(
+    requestBody?: ImportCgRequestDto,
+  ): CancelablePromise<ApiResponseWrapperImportCgResultDto> {
+    return __request(OpenAPI, {
+      method: 'POST',
+      url: '/api/accounting/analytique/ecritures/import-cg',
+      body: requestBody ?? {},
       mediaType: 'application/json',
     });
   }

@@ -13,7 +13,6 @@ import { useControleBudgetaireData } from "@/hooks/use-controle-budgetaire-data"
 import {
     getAnalytiqueConfig,
 } from "@/lib/analytique/analytique-config-store";
-import { importFluxDepuisCG } from "@/lib/analytique/import-flux-cg";
 import {
     getJournalAnalytiqueById,
     NATURES_CHARGE,
@@ -49,6 +48,7 @@ export default function EcrituresAnalytiquesPage() {
         usingMockFallback,
         reload,
         createEcriture,
+        importCg,
     } = useEcrituresAnalytiquesApi();
     const { centres } = useCentresAnalyseApi();
     const { periodes } = usePeriodesAnalytiquesAlignees();
@@ -103,16 +103,15 @@ export default function EcrituresAnalytiquesPage() {
     };
 
     const handleImportCG = async () => {
-        if (!usingMockFallback) {
-            toast.info("Import comptabilité générale indisponible", {
-                description: "L'endpoint backend d'import n'est pas encore branché.",
-            });
-            return;
-        }
         setImporting(true);
         try {
-            const { created, ignored } = importFluxDepuisCG();
+            const { created, ignored, errors } = await importCg();
             refresh();
+            if (errors.length > 0) {
+                toast.warning("Import partiel", {
+                    description: errors.slice(0, 2).join(" — "),
+                });
+            }
             if (created.length === 0) {
                 toast.info("Aucune nouvelle ligne incorporable à importer.", {
                     description:
@@ -126,6 +125,8 @@ export default function EcrituresAnalytiquesPage() {
                 });
                 router.push("/analytique/ecritures/validation");
             }
+        } catch {
+            toast.error("Impossible d'importer depuis la comptabilité générale");
         } finally {
             setImporting(false);
         }

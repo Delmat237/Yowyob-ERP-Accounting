@@ -13,6 +13,8 @@ import {
   validateEcritureAnalytique as validateEcritureLocal,
 } from '@/lib/analytique/ecritures-analytiques-store';
 import type { EcritureAnalytiqueFormData } from '@/components/analytique/ecriture-analytique-form';
+import { importDepuisCG } from '@/lib/analytique/import-cg-api';
+import type { ImportCgRequestDto } from '@/src/lib2/models/ImportCgRequestDto';
 import { AccountingEcrituresAnalytiquesService } from '@/src/lib2/services/AccountingEcrituresAnalytiquesService';
 
 function sortEcritures(items: EcritureAnalytique[]): EcritureAnalytique[] {
@@ -129,6 +131,21 @@ export function useEcrituresAnalytiquesApi() {
     [ecritures],
   );
 
+  const importCg = useCallback(
+    async (options?: ImportCgRequestDto) => {
+      const result = await importDepuisCG(options, usingMockFallback);
+      if (!usingMockFallback && result.created.length > 0) {
+        setEcritures((prev) => sortEcritures([...result.created, ...prev]));
+      } else if (usingMockFallback) {
+        setEcritures(sortEcritures(listEcrituresLocal()));
+      } else {
+        await load();
+      }
+      return result;
+    },
+    [usingMockFallback, load],
+  );
+
   return {
     ecritures,
     loading,
@@ -140,5 +157,6 @@ export function useEcrituresAnalytiquesApi() {
     validateEcriture,
     rejectEcriture,
     countPiecesForYear,
+    importCg,
   };
 }
