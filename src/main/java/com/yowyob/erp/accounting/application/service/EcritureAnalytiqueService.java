@@ -120,6 +120,10 @@ public class EcritureAnalytiqueService {
             .then();
     }
 
+    public Mono<EcritureAnalytiqueDto> enrichForImport(EcritureAnalytique e) {
+        return enrichDto(e);
+    }
+
     private Mono<EcritureAnalytiqueDto> enrichDto(EcritureAnalytique e) {
         return ligneRepo.findByEcritureId(e.getId()).collectList()
             .flatMap(lignes -> {

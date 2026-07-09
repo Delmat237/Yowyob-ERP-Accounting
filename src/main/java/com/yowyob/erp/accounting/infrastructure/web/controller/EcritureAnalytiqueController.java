@@ -1,7 +1,10 @@
 package com.yowyob.erp.accounting.infrastructure.web.controller;
 
 import com.yowyob.erp.accounting.application.service.EcritureAnalytiqueService;
+import com.yowyob.erp.accounting.application.service.ImportCgService;
 import com.yowyob.erp.accounting.infrastructure.web.dto.EcritureAnalytiqueDto;
+import com.yowyob.erp.accounting.infrastructure.web.dto.ImportCgRequestDto;
+import com.yowyob.erp.accounting.infrastructure.web.dto.ImportCgResultDto;
 import com.yowyob.erp.shared.infrastructure.dto.ApiResponseWrapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -25,6 +28,7 @@ import java.util.UUID;
 public class EcritureAnalytiqueController {
 
     private final EcritureAnalytiqueService service;
+    private final ImportCgService importCgService;
 
     @PostMapping
     @Operation(summary = "Créer une écriture analytique")
@@ -54,6 +58,15 @@ public class EcritureAnalytiqueController {
     public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> valider(@PathVariable UUID id) {
         return service.valider(id)
             .map(r -> ResponseEntity.ok(ApiResponseWrapper.success(r, "Écriture validée")));
+    }
+
+    @PostMapping("/import-cg")
+    @Operation(summary = "Importer les charges CG incorporables en écritures analytiques brouillon")
+    public Mono<ResponseEntity<ApiResponseWrapper<ImportCgResultDto>>> importCg(
+            @RequestBody(required = false) ImportCgRequestDto request) {
+        return importCgService.importFromCg(request)
+            .map(r -> ResponseEntity.status(HttpStatus.CREATED).body(
+                ApiResponseWrapper.success(r, r.getCreated().size() + " écriture(s) importée(s)")));
     }
 
     @PostMapping("/{id}/rejeter")

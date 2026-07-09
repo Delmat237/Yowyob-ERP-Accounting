@@ -6,6 +6,7 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 @Repository
@@ -20,4 +21,18 @@ public interface EcritureAnalytiqueRepository extends R2dbcRepository<EcritureAn
 
     @Query("SELECT * FROM ecritures_analytiques WHERE organization_id = :orgId AND statut = :statut AND periode_id = :periodeId ORDER BY date_effet DESC")
     Flux<EcritureAnalytique> findByOrganizationIdAndStatutAndPeriodeId(@Param("orgId") UUID orgId, @Param("statut") String statut, @Param("periodeId") UUID periodeId);
+
+    @Query("""
+        SELECT COUNT(*) > 0 FROM ecritures_analytiques
+        WHERE organization_id = :orgId
+          AND origine = 'IMPORT_CG'
+          AND ecriture_cg_ref = :ecritureCgRef
+          AND montant_total = :montant
+          AND libelle = :libelle
+        """)
+    Mono<Boolean> existsImportDuplicate(
+        @Param("orgId") UUID orgId,
+        @Param("ecritureCgRef") UUID ecritureCgRef,
+        @Param("montant") java.math.BigDecimal montant,
+        @Param("libelle") String libelle);
 }
