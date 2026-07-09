@@ -40,5 +40,6 @@
     <include file="changeset-026-journaux-periodes-analytiques.xml" relativeToChangelogFile="true"/>
     <include file="changeset-027-ecritures-analytiques.xml" relativeToChangelogFile="true"/>
     <include file="changeset-028-charges-ventilees.xml" relativeToChangelogFile="true"/>
+    <include file="changeset-029-lignes-concordance.xml" relativeToChangelogFile="true"/>
 
 </databaseChangeLog>
