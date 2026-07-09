@@ -238,15 +238,22 @@ export const getResponseBody = async (response: Response): Promise<any> => {
     if (response.status !== 204) {
         try {
             const contentType = response.headers.get('Content-Type');
+            const text = await response.text();
+            if (!text) {
+                return undefined;
+            }
             if (contentType) {
-                const jsonTypes = ['application/json', 'application/problem+json']
+                const jsonTypes = ['application/json', 'application/problem+json'];
                 const isJSON = jsonTypes.some(type => contentType.toLowerCase().startsWith(type));
                 if (isJSON) {
-                    return await response.json();
-                } else {
-                    return await response.text();
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        return text;
+                    }
                 }
             }
+            return text;
         } catch (error) {
             console.error(error);
         }

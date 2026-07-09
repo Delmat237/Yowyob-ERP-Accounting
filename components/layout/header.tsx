@@ -17,6 +17,7 @@ import Link from "next/link";
 import { NotificationBell } from "../notifications/notification-bell";
 import { useAuth } from "@/hooks/use-auth";
 import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
+import { AccountingOrganizationsService } from "@/src/lib2/services/AccountingOrganizationsService";
 import { OrganizationsService } from "@/src/lib/services/OrganizationsService";
 
 // ─── Contenu du centre d'aide par rôle ───────────────────────────────────────
@@ -111,13 +112,23 @@ export function Header() {
 
       const orgId = localStorage.getItem("organization_id");
       if (orgId) {
-        OrganizationsService.getOrganizationById(orgId)
-          .then((org) => {
-            const resolvedName = org?.name || org?.displayName;
-            if (resolvedName) {
-              setOrgName(resolvedName);
-              localStorage.setItem("organization_name", resolvedName);
+        const applyOrgName = (resolvedName?: string | null) => {
+          if (resolvedName) {
+            setOrgName(resolvedName);
+            localStorage.setItem("organization_name", resolvedName);
+          }
+        };
+
+        // Priorité : API accounting locale (évite le proxy Kernel souvent source de 500 en prod).
+        AccountingOrganizationsService.getOrganization(orgId)
+          .then((res) => {
+            if (res?.success && res.data?.name) {
+              applyOrgName(res.data.name);
+              return;
             }
+            return OrganizationsService.getOrganizationById(orgId).then((org) => {
+              applyOrgName(org?.name || org?.displayName);
+            });
           })
           .catch((err) => {
             console.warn("Erreur lors de la récupération du nom de l'organisation:", err);
