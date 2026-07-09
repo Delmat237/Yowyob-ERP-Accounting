@@ -8,6 +8,7 @@ import type { PeriodeAnalytiqueDto } from '@/src/lib2/models/PeriodeAnalytiqueDt
 import type { UniteOeuvreDto } from '@/src/lib2/models/UniteOeuvreDto';
 import type { ChargeVentileeDto } from '@/src/lib2/models/ChargeVentileeDto';
 import type { LigneConcordanceDto } from '@/src/lib2/models/LigneConcordanceDto';
+import type { PrixCessionInterneDto } from '@/src/lib2/models/PrixCessionInterneDto';
 import type {
   EcritureAnalytique,
   LigneEcritureAnalytique,
@@ -20,11 +21,13 @@ import type {
   CompteAnalytique,
   ChargeVentilee,
   LigneConcordance,
+  MethodeCession,
   NatureUO,
   PeriodeCG,
   StatutPeriode,
   TypeCentre,
   UniteOeuvre,
+  PrixCessionInterne,
 } from '@/lib/analytique/mock-data';
 import type {
   CleRepartitionUi,
@@ -426,4 +429,43 @@ export function mapLigneConcordanceUiToDto(data: LigneConcordance): LigneConcord
 
 export function mapLignesConcordanceUiToDto(lignes: LigneConcordance[]): LigneConcordanceDto[] {
   return lignes.map(mapLigneConcordanceUiToDto);
+}
+
+export function mapPrixCessionDtoToUi(dto: PrixCessionInterneDto): PrixCessionInterne {
+  return {
+    id: dto.id ?? '',
+    centreCedantId: dto.centreCedantId ?? '',
+    centreCedantLibelle: dto.centreCedantLibelle ?? '',
+    centreBeneficiaireId: dto.centreBeneficiaireId ?? '',
+    centreBeneficiaireLibelle: dto.centreBeneficiaireLibelle ?? '',
+    prestationLibelle: dto.prestationLibelle ?? '',
+    methode: (dto.methode ?? 'COUT_COMPLET') as MethodeCession,
+    prixUnitaire: Number(dto.prixUnitaire ?? 0),
+    uniteId: dto.uniteId ?? '',
+    uniteLibelle: dto.uniteLibelle ?? '',
+    dateDebut: dto.dateDebut ?? '',
+    dateFin: dto.dateFin,
+    hasImputations: dto.hasImputations ?? false,
+    versions: (dto.versions ?? []).map((v) => ({
+      prixUnitaire: Number(v.prixUnitaire ?? 0),
+      du: v.du ?? '',
+      au: v.au ?? '',
+      methode: (v.methode ?? 'COUT_COMPLET') as MethodeCession,
+    })),
+  };
+}
+
+export function mapPrixCessionUiToDto(data: PrixCessionInterne): PrixCessionInterneDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    centreCedantId: isUuid(data.centreCedantId) ? data.centreCedantId : undefined,
+    centreBeneficiaireId: isUuid(data.centreBeneficiaireId) ? data.centreBeneficiaireId : undefined,
+    prestationLibelle: data.prestationLibelle,
+    methode: data.methode,
+    prixUnitaire: data.prixUnitaire,
+    uniteId: isUuid(data.uniteId) ? data.uniteId : undefined,
+    dateDebut: data.dateDebut,
+    dateFin: data.dateFin,
+    hasImputations: data.hasImputations,
+  };
 }

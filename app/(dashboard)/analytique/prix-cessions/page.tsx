@@ -9,14 +9,21 @@ import {
 import { useAnalytiqueCompose } from "@/hooks/use-analytique-compose";
 import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
 import { useUnitesOeuvreApi } from "@/hooks/use-unites-oeuvre-api";
-import { listPrixCessions, savePrixCessions } from "@/lib/analytique/methodes-couts-store";
+import { usePrixCessionsApi } from "@/hooks/use-prix-cessions-api";
 import { formatCurrency, formatDateDisplay } from "@/lib/utils";
 import { Plus, Pencil, Trash2, Clock, AlertCircle } from "lucide-react";
 import { ConfirmDialog } from "@/components/analytique/confirm-dialog";
 import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 export default function PrixCessionsPage() {
-  const [cessions, setCessions] = useState<PrixCessionInterne[]>(() => listPrixCessions());
+  const {
+    cessions,
+    loading: cessionsLoading,
+    error: cessionsError,
+    usingMockFallback: cessionsMock,
+    saveCession,
+    removeCession,
+  } = usePrixCessionsApi();
   const { openForm, closeForm } = useAnalytiqueCompose();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState<string | null>(null);
@@ -34,21 +41,13 @@ export default function PrixCessionsPage() {
     usingMockFallback: unitesMock,
   } = useUnitesOeuvreApi();
 
-  const loading = centresLoading || unitesLoading;
-  const error = centresError ?? unitesError;
-  const usingMockFallback = centresMock || unitesMock;
+  const loading = centresLoading || unitesLoading || cessionsLoading;
+  const error = centresError ?? unitesError ?? cessionsError;
+  const usingMockFallback = centresMock || unitesMock || cessionsMock;
 
-  function persist(next: PrixCessionInterne[]) {
-    setCessions(next);
-    savePrixCessions(next);
-  }
-
-  function handleSave(data: PrixCessionInterne) {
-    persist(
-      cessions.find((c) => c.id === data.id)
-        ? cessions.map((c) => (c.id === data.id ? data : c))
-        : [...cessions, data],
-    );
+  async function handleSave(data: PrixCessionInterne) {
+    await saveCession(data);
+    closeForm();
   }
 
   function openPrixCessionForm(initial?: Partial<PrixCessionInterne>) {
@@ -60,14 +59,13 @@ export default function PrixCessionsPage() {
         unites={unites}
         onCancel={closeForm}
         onSubmit={(data) => {
-          handleSave(data);
-          closeForm();
+          void handleSave(data);
         }}
       />,
     );
   }
 
-  if (loading && centres.length === 0 && unites.length === 0) {
+  if (loading && centres.length === 0 && unites.length === 0 && cessions.length === 0) {
     return <CustomPageLoader message="Chargement des prix de cession..." />;
   }
 
@@ -80,8 +78,7 @@ export default function PrixCessionsPage() {
           cancelLabel="Fermer"
           showConfirm={!cessions.find((c) => c.id === deleteId)?.hasImputations}
           onConfirm={() => {
-            persist(cessions.filter((c) => c.id !== deleteId));
-            setDeleteId(null);
+            void removeCession(deleteId).then(() => setDeleteId(null));
           }}
         >
           {cessions.find((c) => c.id === deleteId)?.hasImputations ? (
@@ -98,8 +95,10 @@ export default function PrixCessionsPage() {
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            {error ?? "Certaines données proviennent du mode démonstration."}
-            {" Les tarifs sont persistés localement en attendant l'API backend."}
+            {error ??
+              (cessionsMock
+                ? "Les tarifs sont persistés localement en attendant l'API backend."
+                : "Certaines données proviennent du mode démonstration.")}
           </span>
         </div>
       )}
