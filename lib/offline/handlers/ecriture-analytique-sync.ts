@@ -3,23 +3,32 @@ import { mapEcritureDtoToUi, mapEcritureUiToDto } from "@/lib/analytique/analyti
 import type { EcritureAnalytique } from "@/lib/analytique/ecriture-analytique";
 import { buildLignesImputation } from "@/lib/analytique/ecriture-lignes";
 import { cacheEntity } from "@/lib/offline/entity-cache";
+import { isOfflineClientId, resolveServerId, setIdMapping } from "@/lib/offline/id-map";
 import { isNetworkError, networkStatus } from "@/lib/offline/network-status";
-import { ENTITY_ECRITURE_ANALYTIQUE } from "@/lib/offline/types";
-import { AccountingEcrituresAnalytiquesService } from "@/src/lib2/services/AccountingEcrituresAnalytiquesService";
+import { syncRequest } from "@/lib/offline/sync-request";
+import { ENTITY_ECRITURE_ANALYTIQUE, type OutboxOperation } from "@/lib/offline/types";
+import type { ApiResponseWrapperEcritureAnalytiqueDto } from "@/src/lib2/models/ApiResponseWrapperEcritureAnalytiqueDto";
 
-function isLocalEcritureId(id: string): boolean {
-    return id.startsWith("ea-");
-}
-
-async function syncCreate(payload: EcritureAnalytique): Promise<void> {
+async function syncCreate(op: OutboxOperation, payload: EcritureAnalytique): Promise<void> {
     const lignes = payload.lignes?.length ? payload.lignes : buildLignesImputation(payload);
-    const dto = mapEcritureUiToDto({ ...payload, lignes });
-    const response = await AccountingEcrituresAnalytiquesService.createEcriture({
-        ...dto,
-        clientId: payload.id,
-    });
+    const dto = mapEcritureUiToDto(
+        { ...payload, lignes },
+        { clientId: op.entityId, clientMutationId: op.clientMutationId },
+    );
+    const response = await syncRequest<ApiResponseWrapperEcritureAnalytiqueDto>(
+        {
+            method: "POST",
+            url: "/api/accounting/analytique/ecritures",
+            body: dto,
+            mediaType: "application/json",
+        },
+        op.clientMutationId,
+    );
     const saved = mapEcritureDtoToUi(unwrapApiData(response, "Synchronisation échouée."));
     await cacheEntity(ENTITY_ECRITURE_ANALYTIQUE, saved.id, saved, "synced");
+    if (isOfflineClientId(op.entityId) && saved.id) {
+        await setIdMapping(op.entityId, saved.id);
+    }
     if (saved.id !== payload.id) {
         await cacheEntity(ENTITY_ECRITURE_ANALYTIQUE, payload.id, saved, "synced");
     }
@@ -28,23 +37,32 @@ async function syncCreate(payload: EcritureAnalytique): Promise<void> {
 /**
  * Handler de synchronisation des écritures analytiques vers l'API backend.
  */
-export async function pushEcritureAnalytique(
-    action: "CREATE" | "UPDATE" | "DELETE",
-    payload: EcritureAnalytique,
-): Promise<void> {
+export async function pushEcritureAnalytique(op: OutboxOperation): Promise<void> {
+    const payload = op.payload as EcritureAnalytique;
+    const action = op.action;
+
     try {
         if (action === "DELETE") {
             throw new Error("Suppression d'écriture analytique non disponible via l'API");
         }
 
-        if (action === "CREATE" || (action === "UPDATE" && isLocalEcritureId(payload.id))) {
-            await syncCreate(payload);
+        if (action === "CREATE" || (action === "UPDATE" && isOfflineClientId(payload.id))) {
+            await syncCreate(op, payload);
             networkStatus.reportApiSuccess();
             return;
         }
 
+        const serverId = await resolveServerId(op.entityId);
+
         if (action === "UPDATE" && payload.statut === "VALIDEE") {
-            const response = await AccountingEcrituresAnalytiquesService.validerEcriture(payload.id);
+            const response = await syncRequest<ApiResponseWrapperEcritureAnalytiqueDto>(
+                {
+                    method: "POST",
+                    url: "/api/accounting/analytique/ecritures/{id}/valider",
+                    path: { id: serverId },
+                },
+                op.clientMutationId,
+            );
             const saved = mapEcritureDtoToUi(unwrapApiData(response, "Validation échouée."));
             await cacheEntity(ENTITY_ECRITURE_ANALYTIQUE, saved.id, saved, "synced");
             networkStatus.reportApiSuccess();
@@ -52,9 +70,16 @@ export async function pushEcritureAnalytique(
         }
 
         if (action === "UPDATE" && payload.statut === "REJETEE") {
-            const response = await AccountingEcrituresAnalytiquesService.rejeterEcriture(payload.id, {
-                raison: payload.rejectReason ?? "Rejet hors ligne",
-            });
+            const response = await syncRequest<ApiResponseWrapperEcritureAnalytiqueDto>(
+                {
+                    method: "POST",
+                    url: "/api/accounting/analytique/ecritures/{id}/rejeter",
+                    path: { id: serverId },
+                    body: { raison: payload.rejectReason ?? "Rejet hors ligne" },
+                    mediaType: "application/json",
+                },
+                op.clientMutationId,
+            );
             const saved = mapEcritureDtoToUi(unwrapApiData(response, "Rejet échoué."));
             await cacheEntity(ENTITY_ECRITURE_ANALYTIQUE, saved.id, saved, "synced");
             networkStatus.reportApiSuccess();

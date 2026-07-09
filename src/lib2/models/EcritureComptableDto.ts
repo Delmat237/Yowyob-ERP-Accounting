@@ -6,6 +6,8 @@ import type { DetailEcritureDto } from './DetailEcritureDto';
 import type { JsonNode } from './JsonNode';
 export type EcritureComptableDto = {
     id?: string;
+    /** Identifiant stable généré côté client (sync offline). */
+    clientId?: string;
     libelle: string;
     validee?: boolean;
     statut?: string;

@@ -1,4 +1,7 @@
-import { getPeriodeComptableCourante } from "@/lib/accounting/periode-utilisateur";
+import {
+    getPeriodeComptableCourante,
+    parsePeriodeDateValue,
+} from "@/lib/accounting/periode-utilisateur";
 import { ANALYSE_CACHE_KEYS, CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
 import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
 import { getCachedList } from "@/lib/offline/list-cache";
@@ -20,11 +23,19 @@ export async function prefetchAnalyseReportsForCurrentPeriode(): Promise<void> {
     if (typeof window === "undefined" || !navigator.onLine) return;
 
     const periode = await getCurrentPeriode();
-    if (!periode?.id || !periode.dateDebut || !periode.dateFin) return;
+    if (!periode?.id) return;
+
+    const dateDebut =
+        parsePeriodeDateValue(periode.dateDebut) ??
+        parsePeriodeDateValue((periode as Record<string, unknown>).date_debut);
+    const dateFin =
+        parsePeriodeDateValue(periode.dateFin) ??
+        parsePeriodeDateValue((periode as Record<string, unknown>).date_fin);
+    if (!dateDebut || !dateFin) return;
 
     const periodeId = periode.id;
-    const start = formatDateForApi(periode.dateDebut);
-    const end = formatDateForApi(periode.dateFin);
+    const start = formatDateForApi(dateDebut);
+    const end = formatDateForApi(dateFin);
     const tenantId = localStorage.getItem("organization_id") || "";
 
     await Promise.allSettled([
@@ -61,8 +72,8 @@ export async function prefetchAnalyseReportsForCurrentPeriode(): Promise<void> {
         fetchWithOfflineCache({
             cacheKey: ANALYSE_CACHE_KEYS.audits(periodeId),
             fetcher: async () => {
-                const response = periode.dateDebut && periode.dateFin
-                    ? await AccountingAuditService.getByPeriode(tenantId, periode.dateDebut, periode.dateFin)
+                const response = dateDebut && dateFin
+                    ? await AccountingAuditService.getByPeriode(tenantId, dateDebut, dateFin)
                     : await AccountingAuditService.getAllByOrganization(tenantId, 100);
                 const audits = response.data || [];
                 return {

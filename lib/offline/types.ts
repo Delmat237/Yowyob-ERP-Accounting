@@ -4,6 +4,7 @@ export type EntitySyncStatus = "synced" | "pending" | "local_only";
 
 export const ENTITY_ECRITURE_ANALYTIQUE = "ecriture_analytique";
 export const ENTITY_ECRITURE_COMPTABLE = "ecriture_comptable";
+export const ENTITY_NOTIFICATIONS = "notifications";
 
 /** Marqueur sur les écritures CG créées/modifiées hors ligne. */
 export type OfflinePendingMeta = {

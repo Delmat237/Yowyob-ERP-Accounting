@@ -25,7 +25,9 @@ async function bootstrapOfflineNavigation(): Promise<void> {
         precacheAnalyseRoutes(),
         prefetchAllOfflineData(),
     ]);
-    await prefetchAnalyseReportsForCurrentPeriode();
+    await prefetchAnalyseReportsForCurrentPeriode().catch((err) => {
+        console.warn("[offline] prefetch analyse reports skipped:", err);
+    });
     await precacheAllShellRoutes();
 }
 

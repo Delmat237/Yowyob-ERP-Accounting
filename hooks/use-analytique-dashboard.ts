@@ -359,7 +359,6 @@ export function useAnalytiqueDashboard() {
 
         await setCachedList(CA_CACHE_KEYS.DASHBOARD, {
             ...nextState,
-            loading: false,
         } satisfies DashboardSnapshot);
 
         setState(nextState);

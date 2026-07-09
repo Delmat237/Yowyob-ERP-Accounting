@@ -20,7 +20,11 @@ export async function resolveServerId(id: string): Promise<string> {
 }
 
 export function isOfflineClientId(id?: string | null): boolean {
-    return Boolean(id?.startsWith("ec-offline-") || id?.startsWith("local-"));
+    return Boolean(
+        id?.startsWith("ea-") ||
+            id?.startsWith("ec-offline-") ||
+            id?.startsWith("local-"),
+    );
 }
 
 export function newOfflineEcritureId(): string {

@@ -13,22 +13,50 @@ import {
 } from "@/lib/offline/handlers/cg-list-sync";
 import { networkStatus } from "@/lib/offline/network-status";
 import { listPendingOutbox, updateOutboxStatus } from "@/lib/offline/outbox";
+import { idempotencyHeaders } from "@/lib/offline/sync-request";
 import type { OutboxOperation } from "@/lib/offline/types";
-import { ENTITY_ECRITURE_ANALYTIQUE, ENTITY_ECRITURE_COMPTABLE } from "@/lib/offline/types";
+import {
+    ENTITY_ECRITURE_ANALYTIQUE,
+    ENTITY_ECRITURE_COMPTABLE,
+    ENTITY_NOTIFICATIONS,
+} from "@/lib/offline/types";
 import { pushEcritureAnalytique } from "@/lib/offline/handlers/ecriture-analytique-sync";
 import { pushCaMockList } from "@/lib/offline/handlers/ca-mock-sync";
-import type { EcritureAnalytique } from "@/lib/analytique/ecriture-analytique";
 
 type SyncHandler = (op: OutboxOperation) => Promise<void>;
 
+async function pushNotificationRead(op: OutboxOperation): Promise<void> {
+    const payload = op.payload as { id: string };
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8081";
+    const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+    const organizationId =
+        typeof window !== "undefined" ? localStorage.getItem("organization_id") : null;
+    const tenantId = typeof window !== "undefined" ? localStorage.getItem("tenant_id") : null;
+
+    const response = await fetch(`${apiBase}/api/accounting/notifications/${payload.id}/read`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token ?? ""}`,
+            "X-Organization-Id": organizationId ?? "",
+            "X-Tenant-Id": tenantId ?? "",
+            ...idempotencyHeaders(op.clientMutationId),
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Échec marquage notification lue (${response.status})`);
+    }
+}
+
 const handlers: Record<string, SyncHandler> = {
     [ENTITY_ECRITURE_ANALYTIQUE]: async (op) => {
-        await pushEcritureAnalytique(op.action as "CREATE" | "UPDATE" | "DELETE", op.payload as EcritureAnalytique);
+        await pushEcritureAnalytique(op);
         await markEntitySynced(ENTITY_ECRITURE_ANALYTIQUE, op.entityId);
     },
     [ENTITY_ECRITURE_COMPTABLE]: async (op) => {
         await pushEcritureComptable(op);
     },
+    [ENTITY_NOTIFICATIONS]: pushNotificationRead,
     "cg.operations": pushCgOperation,
     "cg.taxes": pushCgTaxe,
     "cg.devises": pushCgDevise,

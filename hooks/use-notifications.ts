@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { getCachedList, setCachedList } from "@/lib/offline/list-cache";
 import { networkStatus } from "@/lib/offline/network-status";
 import { mutateWithOfflineOutbox } from "@/lib/offline/mutate-with-outbox";
+import { ENTITY_NOTIFICATIONS } from "@/lib/offline/types";
 import { SETTINGS_CACHE_KEYS } from "@/lib/offline/cache-keys";
 
 export interface AppNotification {
@@ -123,7 +124,7 @@ export function useNotifications(): UseNotificationsReturn {
       };
 
       await mutateWithOfflineOutbox({
-        entity: "notifications",
+        entity: ENTITY_NOTIFICATIONS,
         action: "UPDATE",
         entityId: id,
         payload: { id, isRead: true },

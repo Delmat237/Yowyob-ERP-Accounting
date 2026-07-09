@@ -319,6 +319,7 @@ export function mapEcritureUiToDto(
   data: Omit<EcritureAnalytique, 'id' | 'statut' | 'createdAt' | 'validatedAt' | 'rejectReason'> & {
     origine?: MethodeSaisieEcritures;
   },
+  options?: { clientId?: string; clientMutationId?: string },
 ): EcritureAnalytiqueDto {
   const lignesUi =
     data.lignes?.length > 0
@@ -332,6 +333,8 @@ export function mapEcritureUiToDto(
         });
 
   return {
+    clientId: options?.clientId,
+    clientMutationId: options?.clientMutationId,
     journalId: data.journalId,
     periodeId: isUuid(data.exerciceAnalytiqueId) ? data.exerciceAnalytiqueId : undefined,
     numeroPiece: data.numeroPiece,

@@ -2,6 +2,10 @@ import type { LigneImputationDto } from './LigneImputationDto';
 
 export type EcritureAnalytiqueDto = {
   id?: string;
+  /** Identifiant stable généré côté client (sync offline). */
+  clientId?: string;
+  /** Clé d'idempotence optionnelle (corps ou en-tête Idempotency-Key). */
+  clientMutationId?: string;
   journalId: string;
   journalLibelle?: string;
   periodeId?: string;
