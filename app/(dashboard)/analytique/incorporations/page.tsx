@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import {
-    mockReglesIncorporation,
+    listReglesIncorporation,
+    saveReglesIncorporation,
+} from "@/lib/analytique/methodes-couts-store";
+import {
     RegleIncorporation, ModeIncorporation,
 } from "@/lib/analytique/mock-data";
 import { useComptesComptablesCG } from "@/hooks/use-comptes-comptables-cg";
@@ -18,7 +21,7 @@ const MODE_CONFIG: Record<ModeIncorporation, { label: string; color: string }> =
 
 
 export default function IncorporationsPage() {
-    const [regles, setRegles] = useState<RegleIncorporation[]>(mockReglesIncorporation);
+    const [regles, setRegles] = useState<RegleIncorporation[]>(() => listReglesIncorporation());
     const [modal, setModal] = useState<{ open: boolean; initial?: Partial<RegleIncorporation> }>({ open: false });
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
@@ -31,7 +34,11 @@ export default function IncorporationsPage() {
     });
 
     function handleSave(data: RegleIncorporation) {
-        setRegles((p) => p.find((r) => r.id === data.id) ? p.map((r) => r.id === data.id ? data : r) : [...p, data]);
+        const next = regles.find((r) => r.id === data.id)
+            ? regles.map((r) => (r.id === data.id ? data : r))
+            : [...regles, data];
+        setRegles(next);
+        saveReglesIncorporation(next);
     }
 
     return (
@@ -43,7 +50,11 @@ export default function IncorporationsPage() {
                     onClose={() => setDeleteId(null)}
                     cancelLabel="Fermer"
                     showConfirm={!regles.find((r) => r.id === deleteId)?.hasEcritures}
-                    onConfirm={() => setRegles((p) => p.filter((r) => r.id !== deleteId))}
+                    onConfirm={() => {
+                        const next = regles.filter((r) => r.id !== deleteId);
+                        setRegles(next);
+                        saveReglesIncorporation(next);
+                    }}
                 >
                     {regles.find((r) => r.id === deleteId)?.hasEcritures ? (
                         <p className="text-sm text-rose-600">Impossible — des écritures ont déjà utilisé cette règle dans la période en cours.</p>

@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import {
-    mockFichesCoutStandard, mockPeriodes, mockCentres, mockPlansAnalytiques,
+    listFichesCoutStandard,
+    saveFichesCoutStandard,
+} from "@/lib/analytique/methodes-couts-store";
+import {
+    mockPeriodes, mockCentres, mockPlansAnalytiques,
     FicheCoutStandard, LigneCoutStandard, ComposanteCout,
 } from "@/lib/analytique/mock-data";
 import { formatCurrency } from "@/lib/utils";
@@ -218,7 +222,14 @@ function FicheModal({
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 export default function CoutsStandardsPage() {
-    const [fiches, setFiches] = useState<FicheCoutStandard[]>(mockFichesCoutStandard);
+    const [fiches, setFichesState] = useState<FicheCoutStandard[]>(() => listFichesCoutStandard());
+    const setFiches = (updater: FicheCoutStandard[] | ((p: FicheCoutStandard[]) => FicheCoutStandard[])) => {
+        setFichesState((prev) => {
+            const next = typeof updater === "function" ? updater(prev) : updater;
+            saveFichesCoutStandard(next);
+            return next;
+        });
+    };
     const [ficheModal, setFicheModal] = useState<{ open: boolean; initial?: Partial<FicheCoutStandard> }>({ open: false });
     const [ligneModal, setLigneModal] = useState<{ open: boolean; ficheId: string; initial?: Partial<LigneCoutStandard> } | null>(null);
     const [expanded, setExpanded] = useState<string | null>(fiches[0]?.id ?? null);

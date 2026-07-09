@@ -1,19 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { mockCoutsProduits, MethodeStock, CoutProduit } from "@/lib/analytique/mock-data";
 import { formatCurrency } from "@/lib/utils";
-import { Target, Package, Factory, ShoppingCart, Plus } from "lucide-react";
+import { Target, Package, Factory, ShoppingCart, Plus, AlertCircle } from "lucide-react";
 import { FloatingModal } from "@/components/ui/floating-modal";
-
-interface MouvementStock {
-  id: string;
-  date: string;
-  libelle: string;
-  type: "ENTREE" | "SORTIE";
-  quantite: number;
-  prixUnitaire: number;
-}
+import { useCoutsAnalytiquesApi } from "@/hooks/use-couts-analytiques-api";
+import {
+    getMouvementsForProduit,
+    listMouvementsStockMap,
+    saveMouvementsStockMap,
+    type MouvementStock,
+} from "@/lib/analytique/methodes-couts-store";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
 interface LigneStock {
   id: string;
@@ -115,12 +114,7 @@ function calculerTableauLIFO(mouvements: MouvementStock[]): LigneStock[] {
 }
 
 function mouvementsInitiaux(p: CoutProduit): MouvementStock[] {
-  return [
-    { id: `${p.id}-si`, date: "2026-03-01", libelle: "Stock initial", type: "ENTREE", quantite: 100, prixUnitaire: Math.round(p.coutAchat * 0.0075) },
-    { id: `${p.id}-a1`, date: "2026-03-08", libelle: "Achat matières premières", type: "ENTREE", quantite: 200, prixUnitaire: Math.round(p.coutAchat * 0.008) },
-    { id: `${p.id}-s1`, date: "2026-03-15", libelle: "Consommation production", type: "SORTIE", quantite: 150, prixUnitaire: 0 },
-    { id: `${p.id}-a2`, date: "2026-03-22", libelle: "Achat MP complémentaire", type: "ENTREE", quantite: 100, prixUnitaire: Math.round(p.coutAchat * 0.0085) },
-  ];
+  return getMouvementsForProduit(p);
 }
 
 const TABS = ["Coût d'achat", "Coût de production", "Coût de revient"] as const;
@@ -128,17 +122,43 @@ type TabType = typeof TABS[number];
 const FORM_EMPTY = { date: "", libelle: "", type: "ENTREE" as "ENTREE" | "SORTIE", quantite: 0, prixUnitaire: 0 };
 
 export default function CoutsCompletsPage() {
+  const {
+    produits,
+    periodes,
+    periodeId,
+    setPeriodeId,
+    loading,
+    error,
+    usingApiEcritures,
+    usingMockFallback,
+  } = useCoutsAnalytiquesApi();
+
   const [tab, setTab] = useState<TabType>("Coût d'achat");
-  const [selectedProduit, setSelectedProduit] = useState<CoutProduit>(mockCoutsProduits[0]);
-  const [methode, setMethode] = useState<MethodeStock>(mockCoutsProduits[0].methodeStock);
+  const [selectedProduit, setSelectedProduit] = useState<CoutProduit>(produits[0] ?? mockCoutsProduits[0]);
+  const [methode, setMethode] = useState<MethodeStock>(selectedProduit.methodeStock);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(FORM_EMPTY);
 
+  useEffect(() => {
+    if (produits.length > 0) {
+      setSelectedProduit(produits[0]);
+      setMethode(produits[0].methodeStock);
+    }
+  }, [produits]);
+
   const [mouvementsMap, setMouvementsMap] = useState<Record<string, MouvementStock[]>>(() => {
-    const map: Record<string, MouvementStock[]> = {};
-    for (const p of mockCoutsProduits) map[p.id] = mouvementsInitiaux(p);
+    const stored = listMouvementsStockMap();
+    const map: Record<string, MouvementStock[]> = { ...stored };
+    for (const p of produits.length > 0 ? produits : mockCoutsProduits) {
+      if (!map[p.id]) map[p.id] = getMouvementsForProduit(p, map);
+    }
     return map;
   });
+
+  const persistMouvements = (map: Record<string, MouvementStock[]>) => {
+    setMouvementsMap(map);
+    saveMouvementsStockMap(map);
+  };
 
   const mouvements = mouvementsMap[selectedProduit.id] ?? [];
 
@@ -199,10 +219,10 @@ export default function CoutsCompletsPage() {
       quantite: form.quantite,
       prixUnitaire: form.type === "SORTIE" ? 0 : form.prixUnitaire,
     };
-    setMouvementsMap((prev) => ({
-      ...prev,
-      [selectedProduit.id]: [...(prev[selectedProduit.id] ?? []), newMvt].sort((a, b) => a.date.localeCompare(b.date)),
-    }));
+    persistMouvements({
+      ...mouvementsMap,
+      [selectedProduit.id]: [...(mouvementsMap[selectedProduit.id] ?? []), newMvt].sort((a, b) => a.date.localeCompare(b.date)),
+    });
     setForm(FORM_EMPTY);
     setShowModal(false);
   }
@@ -212,15 +232,43 @@ export default function CoutsCompletsPage() {
     setMethode(p.methodeStock);
   }
 
+  const listeProduits = produits.length > 0 ? produits : mockCoutsProduits;
+
+  if (loading && listeProduits.length === 0) {
+    return <CustomPageLoader message="Chargement des coûts complets..." />;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in-up">
-      <div>
-        <h1 className="text-2xl font-bold">Coûts Complets</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Méthode des sections homogènes — Coût d&apos;achat, production et revient (Axe 1)</p>
+      {(error || usingMockFallback) && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            {error ?? "Données de démonstration."}
+            {usingApiEcritures && " Coûts enrichis depuis les écritures validées."}
+          </span>
+        </div>
+      )}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Coûts Complets</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Méthode des sections homogènes — Coût d&apos;achat, production et revient (Axe 1)</p>
+        </div>
+        {periodes.length > 0 && (
+          <select
+            className="text-sm border border-border rounded-xl px-3 py-2 bg-card"
+            value={periodeId}
+            onChange={(e) => setPeriodeId(e.target.value)}
+          >
+            {periodes.map((p) => (
+              <option key={p.id} value={p.id}>{p.libelle}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div className="flex gap-3 flex-wrap">
-        {mockCoutsProduits.map((p) => (
+        {listeProduits.map((p) => (
           <button key={p.id} onClick={() => handleProduitSelect(p)}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${selectedProduit.id === p.id ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-muted-foreground hover:bg-secondary"}`}>
             <Package className="h-4 w-4" />{p.produitLibelle}<span className="text-[10px] font-mono opacity-70">{p.methodeStock}</span>

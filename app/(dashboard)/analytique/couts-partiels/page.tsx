@@ -1,36 +1,22 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
-import { mockCoutsProduits } from "@/lib/analytique/mock-data";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { formatCurrency } from "@/lib/utils";
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
     ReferenceLine,
 } from "recharts";
 import { ChartContainer } from "@/components/ui/chart-container";
-import { Activity, RefreshCw } from "lucide-react";
+import { Activity, RefreshCw, AlertCircle } from "lucide-react";
+import { useCoutsAnalytiquesApi } from "@/hooks/use-couts-analytiques-api";
+import type { ProduitDirectCosting } from "@/lib/analytique/couts-calculs";
+import { CustomPageLoader } from "@/components/ui/custom-page-loader";
 
-interface ProduitData {
-    id: string;
-    produit: string;
-    produitCode: string;
-    CA: number;
-    CV: number;
-    CV_spec: number;
-}
+interface ProduitData extends ProduitDirectCosting {}
 
-function initData(): ProduitData[] {
-    return mockCoutsProduits.map((p) => ({
-        id: p.id,
-        produit: p.produitLibelle,
-        produitCode: p.produitCode,
-        CA: Math.round(p.coutRevient * 1.35),
-        CV: Math.round(p.coutProduction * 0.85),
-        CV_spec: Math.round(p.coutProduction * 0.12),
-    }));
-}
+const TABS = ["Direct Costing", "Marge sur Coût Spécifique", "Seuil de Rentabilité"] as const;
+type TabType = typeof TABS[number];
 
-// ─── Cellule éditable inline ──────────────────────────────────────────────────
 function EditableCell({ value, onSave }: { value: number; onSave: (v: number) => void }) {
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(value);
@@ -65,16 +51,32 @@ function EditableCell({ value, onSave }: { value: number; onSave: (v: number) =>
     );
 }
 
-const TABS = ["Direct Costing", "Marge sur Coût Spécifique", "Seuil de Rentabilité"] as const;
-type TabType = typeof TABS[number];
-
 export default function CoutsPartielsPage() {
+    const {
+        periodes,
+        periodeId,
+        setPeriodeId,
+        produitsDirectCosting,
+        loading,
+        error,
+        usingApiEcritures,
+        usingMockFallback,
+    } = useCoutsAnalytiquesApi();
+
     const [tab, setTab] = useState<TabType>("Direct Costing");
-    const [data, setData] = useState<ProduitData[]>(initData);
+    const [data, setData] = useState<ProduitData[]>([]);
+
+    useEffect(() => {
+        setData(produitsDirectCosting);
+    }, [produitsDirectCosting]);
 
     const [simPrix, setSimPrix] = useState(50000);
     const [simCV, setSimCV] = useState(30000);
-    const [simCF, setSimCF] = useState(() => initData().reduce((s, p) => s + p.CV_spec, 0));
+    const [simCF, setSimCF] = useState(0);
+
+    useEffect(() => {
+        setSimCF(produitsDirectCosting.reduce((s, p) => s + p.CV_spec, 0));
+    }, [produitsDirectCosting]);
 
     // ─── Totaux ──────────────────────────────────────────────────────────────
     const caGlobal = useMemo(() => data.reduce((s, p) => s + p.CA, 0), [data]);
@@ -82,8 +84,8 @@ export default function CoutsPartielsPage() {
     const mcvGlobal = useMemo(() => data.reduce((s, p) => s + (p.CA - p.CV), 0), [data]);
     const cvSpecGlobal = useMemo(() => data.reduce((s, p) => s + p.CV_spec, 0), [data]);
     const CF_COMMUNES = useMemo(
-        () => Math.round(mockCoutsProduits.reduce((s, p) => s + p.coutAchat, 0) * 0.1),
-        []
+        () => Math.round(data.reduce((s, p) => s + p.CV, 0) * 0.1),
+        [data],
     );
     const resultatGlobal = useMemo(() => mcvGlobal - CF_COMMUNES - cvSpecGlobal, [mcvGlobal, CF_COMMUNES, cvSpecGlobal]);
     const tauxMcvGlobal = caGlobal > 0 ? mcvGlobal / caGlobal : 0;
@@ -97,9 +99,8 @@ export default function CoutsPartielsPage() {
     );
 
     function reinitialiser() {
-        const d = initData();
-        setData(d);
-        setSimCF(d.reduce((s, p) => s + p.CV_spec, 0));
+        setData(produitsDirectCosting);
+        setSimCF(produitsDirectCosting.reduce((s, p) => s + p.CV_spec, 0));
     }
 
     // Simulation seuil
@@ -112,17 +113,43 @@ export default function CoutsPartielsPage() {
         });
     }, [seuilRentabilite, simPrix, simCV, simCF]);
 
+    if (loading && data.length === 0) {
+        return <CustomPageLoader message="Chargement des coûts partiels..." />;
+    }
+
     return (
         <div className="space-y-6 animate-fade-in-up">
+            {(error || usingMockFallback) && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                        {error ?? "Données de démonstration."}
+                        {usingApiEcritures && " Coûts variables enrichis depuis les écritures validées."}
+                    </span>
+                </div>
+            )}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold">Coûts Partiels</h1>
                     <p className="text-sm text-muted-foreground mt-0.5">Direct costing, coût spécifique et seuil de rentabilité (Axe 2)</p>
                 </div>
-                <button onClick={reinitialiser}
-                    className="flex items-center gap-2 px-4 py-2 border border-border rounded-xl text-sm font-medium hover:bg-secondary">
-                    <RefreshCw className="h-4 w-4" /> Réinitialiser depuis données réelles
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                    {periodes.length > 0 && (
+                        <select
+                            className="text-sm border border-border rounded-xl px-3 py-2 bg-card"
+                            value={periodeId}
+                            onChange={(e) => setPeriodeId(e.target.value)}
+                        >
+                            {periodes.map((p) => (
+                                <option key={p.id} value={p.id}>{p.libelle}</option>
+                            ))}
+                        </select>
+                    )}
+                    <button onClick={reinitialiser}
+                        className="flex items-center gap-2 px-4 py-2 border border-border rounded-xl text-sm font-medium hover:bg-secondary">
+                        <RefreshCw className="h-4 w-4" /> Réinitialiser
+                    </button>
+                </div>
             </div>
 
             {/* KPIs */}
