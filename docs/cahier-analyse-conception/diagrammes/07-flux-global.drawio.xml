@@ -1,0 +1,46 @@
+<mxfile host="app.diagrams.net" modified="2026-07-08T00:00:00.000Z" agent="Yowyob-CAD" version="22.1.0">
+  <diagram id="flux-global" name="Flux global">
+    <mxGraphModel dx="1400" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="800">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="t" value="Parcours utilisateur global" style="text;html=1;fontSize=16;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="500" y="20" width="300" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="n1" value="Landing&#xa;marketing" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="n2" value="Connexion&#xa;LoginModal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="220" y="200" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="d1" value="2 espaces&#xa;actifs ?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="400" y="180" width="130" height="100" as="geometry"/>
+        </mxCell>
+        <mxCell id="n3" value="Choix espace&#xa;CG / CA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="580" y="100" width="130" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="n4" value="Dashboard CG" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="780" y="80" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="n5" value="Dashboard CA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="780" y="150" width="130" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="n6" value="Dashboard&#xa;implicite" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="580" y="280" width="130" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="n7" value="Opérations métier&#xa;écritures · budgets · états" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="180" width="180" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="e1" style="endArrow=block;html=1;" edge="1" parent="1" source="n1" target="n2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e2" style="endArrow=block;html=1;" edge="1" parent="1" source="n2" target="d1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e3" value="oui" style="endArrow=block;html=1;" edge="1" parent="1" source="d1" target="n3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e4" value="non" style="endArrow=block;html=1;" edge="1" parent="1" source="d1" target="n6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e5" style="endArrow=block;html=1;" edge="1" parent="1" source="n3" target="n4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e6" style="endArrow=block;html=1;" edge="1" parent="1" source="n3" target="n5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e7" style="endArrow=block;html=1;" edge="1" parent="1" source="n4" target="n7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e8" style="endArrow=block;html=1;" edge="1" parent="1" source="n5" target="n7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="e9" style="endArrow=block;html=1;" edge="1" parent="1" source="n6" target="n7"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
