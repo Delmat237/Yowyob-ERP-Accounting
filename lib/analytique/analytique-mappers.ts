@@ -9,6 +9,8 @@ import type { UniteOeuvreDto } from '@/src/lib2/models/UniteOeuvreDto';
 import type { ChargeVentileeDto } from '@/src/lib2/models/ChargeVentileeDto';
 import type { LigneConcordanceDto } from '@/src/lib2/models/LigneConcordanceDto';
 import type { PrixCessionInterneDto } from '@/src/lib2/models/PrixCessionInterneDto';
+import type { CoutProduitDto } from '@/src/lib2/models/CoutProduitDto';
+import type { FicheCoutStandardDto, LigneCoutStandardDto } from '@/src/lib2/models/FicheCoutStandardDto';
 import type {
   EcritureAnalytique,
   LigneEcritureAnalytique,
@@ -28,6 +30,11 @@ import type {
   TypeCentre,
   UniteOeuvre,
   PrixCessionInterne,
+  CoutProduit,
+  FicheCoutStandard,
+  LigneCoutStandard,
+  MethodeStock,
+  ComposanteCout,
 } from '@/lib/analytique/mock-data';
 import type {
   CleRepartitionUi,
@@ -467,5 +474,83 @@ export function mapPrixCessionUiToDto(data: PrixCessionInterne): PrixCessionInte
     dateDebut: data.dateDebut,
     dateFin: data.dateFin,
     hasImputations: data.hasImputations,
+  };
+}
+
+export function mapCoutProduitDtoToUi(dto: CoutProduitDto): CoutProduit {
+  return {
+    id: dto.id ?? '',
+    produitCode: dto.produitCode ?? '',
+    produitLibelle: dto.produitLibelle ?? '',
+    coutAchat: Number(dto.coutAchat ?? 0),
+    coutProduction: Number(dto.coutProduction ?? 0),
+    coutRevient: Number(dto.coutRevient ?? 0),
+    methodeStock: (dto.methodeStock ?? 'CUMP') as MethodeStock,
+    periodeId: dto.periodeId ?? '',
+  };
+}
+
+export function mapCoutProduitUiToDto(data: CoutProduit): CoutProduitDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    produitCode: data.produitCode,
+    produitLibelle: data.produitLibelle,
+    coutAchat: data.coutAchat,
+    coutProduction: data.coutProduction,
+    coutRevient: data.coutRevient,
+    methodeStock: data.methodeStock,
+    periodeId: isUuid(data.periodeId) ? data.periodeId : undefined,
+  };
+}
+
+export function mapLigneCoutStandardDtoToUi(dto: LigneCoutStandardDto): LigneCoutStandard {
+  return {
+    id: dto.id ?? '',
+    composante: (dto.composante ?? 'MATIERES') as ComposanteCout,
+    centreId: dto.centreId,
+    centreLibelle: dto.centreLibelle,
+    libelle: dto.libelle ?? '',
+    quantiteStandard: Number(dto.quantiteStandard ?? 0),
+    coutUnitaireStandard: Number(dto.coutUnitaireStandard ?? 0),
+    coutStandardTotal: Number(dto.coutStandardTotal ?? 0),
+    activiteNormale: dto.activiteNormale != null ? Number(dto.activiteNormale) : undefined,
+  };
+}
+
+export function mapLigneCoutStandardUiToDto(data: LigneCoutStandard): LigneCoutStandardDto {
+  const total = data.quantiteStandard * data.coutUnitaireStandard;
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    composante: data.composante,
+    centreId: isUuid(data.centreId) ? data.centreId : undefined,
+    libelle: data.libelle,
+    quantiteStandard: data.quantiteStandard,
+    coutUnitaireStandard: data.coutUnitaireStandard,
+    coutStandardTotal: data.coutStandardTotal || total,
+    activiteNormale: data.activiteNormale,
+  };
+}
+
+export function mapFicheCoutStandardDtoToUi(dto: FicheCoutStandardDto): FicheCoutStandard {
+  return {
+    id: dto.id ?? '',
+    produitCode: dto.produitCode ?? '',
+    produitLibelle: dto.produitLibelle ?? '',
+    periodeRefId: dto.periodeRefId ?? '',
+    planAnalytiqueId: dto.planAnalytiqueId ?? '',
+    periodeCommencee: dto.periodeCommencee ?? false,
+    lignes: (dto.lignes ?? []).map(mapLigneCoutStandardDtoToUi),
+  };
+}
+
+export function mapFicheCoutStandardUiToDto(data: FicheCoutStandard): FicheCoutStandardDto {
+  return {
+    id: data.id && isUuid(data.id) ? data.id : undefined,
+    produitCode: data.produitCode,
+    produitLibelle: data.produitLibelle,
+    periodeRefId: isUuid(data.periodeRefId) ? data.periodeRefId : undefined,
+    planAnalytiqueId: data.planAnalytiqueId,
+    periodeCommencee: data.periodeCommencee,
+    lignes: data.lignes.map(mapLigneCoutStandardUiToDto),
   };
 }

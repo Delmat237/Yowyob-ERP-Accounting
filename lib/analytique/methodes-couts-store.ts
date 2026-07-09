@@ -1,5 +1,6 @@
 import type { CoutProduit, FicheCoutStandard, RegleIncorporation, LigneConcordance, PrixCessionInterne } from '@/lib/analytique/mock-data';
 import {
+  mockCoutsProduits,
   mockFichesCoutStandard,
   mockLignesConcordance,
   mockPrixCessions,
@@ -23,6 +24,7 @@ const KEYS = {
   fiches: 'ksm.analytique.fiches-cout-standard',
   concordance: 'ksm.analytique.lignes-concordance',
   prixCessions: 'ksm.analytique.prix-cessions',
+  coutsProduits: 'ksm.analytique.couts-produits',
 } as const;
 
 function readJson<T>(key: string, fallback: T): T {
@@ -143,4 +145,15 @@ export function listPrixCessions(): PrixCessionInterne[] {
 
 export function savePrixCessions(cessions: PrixCessionInterne[]): void {
   writeJson(KEYS.prixCessions, cessions);
+}
+
+export function listCoutsProduits(): CoutProduit[] {
+  const existing = readJson<CoutProduit[]>(KEYS.coutsProduits, []);
+  if (existing.length > 0) return existing;
+  writeJson(KEYS.coutsProduits, mockCoutsProduits);
+  return mockCoutsProduits;
+}
+
+export function saveCoutsProduits(produits: CoutProduit[]): void {
+  writeJson(KEYS.coutsProduits, produits);
 }

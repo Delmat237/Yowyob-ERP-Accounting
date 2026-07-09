@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useCentresAnalyseApi } from '@/hooks/use-centres-analyse-api';
+import { useCoutsProduitsApi } from '@/hooks/use-couts-produits-api';
 import { useEcrituresAnalytiquesApi } from '@/hooks/use-ecritures-analytiques-api';
 import { usePeriodesAnalytiquesAlignees } from '@/hooks/use-periodes-analytiques-alignees';
 import {
@@ -36,10 +37,19 @@ export function useCoutsAnalytiquesApi() {
     setPeriodeId(enCours?.id ?? ouvert?.id ?? periodes[0]?.id ?? '');
   }, [periodes, periodeId]);
 
-  const produitsBase = useMemo(
-    () => mockCoutsProduits.filter((p) => !periodeId || p.periodeId === periodeId || mockCoutsProduits.every((x) => x.periodeId !== periodeId)),
-    [periodeId],
-  );
+  const {
+    produits: produitsApi,
+    loading: produitsLoading,
+    error: produitsError,
+    usingMockFallback: produitsMock,
+  } = useCoutsProduitsApi(periodeId || undefined);
+
+  const produitsBase = useMemo(() => {
+    if (produitsApi.length > 0) return produitsApi;
+    return mockCoutsProduits.filter(
+      (p) => !periodeId || p.periodeId === periodeId || mockCoutsProduits.every((x) => x.periodeId !== periodeId),
+    );
+  }, [produitsApi, periodeId]);
 
   const produitsEnrichis = useMemo(
     () => enrichCoutsProduits(produitsBase.length > 0 ? produitsBase : mockCoutsProduits, ecritures, periodeId),
@@ -65,8 +75,8 @@ export function useCoutsAnalytiquesApi() {
   const usingApiEcritures =
     !ecrituresMock && ecritures.some((e) => e.statut === 'VALIDEE' && e.exerciceAnalytiqueId === periodeId);
 
-  const loading = periodesLoading || centresLoading || ecrituresLoading;
-  const error = periodesError ?? centresError ?? ecrituresError;
+  const loading = periodesLoading || centresLoading || ecrituresLoading || produitsLoading;
+  const error = periodesError ?? centresError ?? ecrituresError ?? produitsError;
 
   return {
     periodes,
@@ -80,6 +90,7 @@ export function useCoutsAnalytiquesApi() {
     loading,
     error,
     usingApiEcritures,
-    usingMockFallback: periodesMock || ecrituresMock,
+    usingMockFallback: periodesMock || ecrituresMock || produitsMock,
+    usingMockProduits: produitsMock,
   };
 }

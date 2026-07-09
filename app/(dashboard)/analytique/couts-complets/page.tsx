@@ -131,6 +131,7 @@ export default function CoutsCompletsPage() {
     error,
     usingApiEcritures,
     usingMockFallback,
+    usingMockProduits,
   } = useCoutsAnalytiquesApi();
 
   const [tab, setTab] = useState<TabType>("Coût d'achat");
@@ -244,7 +245,10 @@ export default function CoutsCompletsPage() {
         <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            {error ?? "Données de démonstration."}
+            {error ??
+              (usingMockProduits
+                ? "Les coûts produits sont persistés localement en attendant l'API backend."
+                : "Certaines données proviennent du mode démonstration.")}
             {usingApiEcritures && " Coûts enrichis depuis les écritures validées."}
           </span>
         </div>

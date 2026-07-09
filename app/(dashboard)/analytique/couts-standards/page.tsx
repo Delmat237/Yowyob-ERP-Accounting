@@ -1,10 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import {
-    listFichesCoutStandard,
-    saveFichesCoutStandard,
-} from "@/lib/analytique/methodes-couts-store";
+import { useState, useEffect } from "react";
 import {
     mockPlansAnalytiques,
     FicheCoutStandard, LigneCoutStandard, ComposanteCout,
@@ -13,6 +9,7 @@ import {
     type PlanAnalytique,
 } from "@/lib/analytique/mock-data";
 import { useCentresAnalyseApi } from "@/hooks/use-centres-analyse-api";
+import { useCoutsStandardsApi } from "@/hooks/use-couts-standards-api";
 import { usePeriodesAnalytiquesAlignees } from "@/hooks/use-periodes-analytiques-alignees";
 import { formatCurrency } from "@/lib/utils";
 import {
@@ -245,7 +242,14 @@ function FicheModal({
 
 // ─── Page principale ──────────────────────────────────────────────────────────
 export default function CoutsStandardsPage() {
-    const [fiches, setFichesState] = useState<FicheCoutStandard[]>(() => listFichesCoutStandard());
+    const {
+        fiches,
+        loading: fichesLoading,
+        error: fichesError,
+        usingMockFallback: fichesMock,
+        saveFiche: persistFiche,
+        removeFiche,
+    } = useCoutsStandardsApi();
     const {
         centres,
         loading: centresLoading,
@@ -259,43 +263,49 @@ export default function CoutsStandardsPage() {
         usingMockFallback: periodesMock,
     } = usePeriodesAnalytiquesAlignees();
     const plans = mockPlansAnalytiques;
-    const loading = centresLoading || periodesLoading;
-    const error = centresError ?? periodesError;
-    const usingMockFallback = centresMock || periodesMock;
+    const loading = centresLoading || periodesLoading || fichesLoading;
+    const error = centresError ?? periodesError ?? fichesError;
+    const usingMockFallback = centresMock || periodesMock || fichesMock;
 
-    const setFiches = (updater: FicheCoutStandard[] | ((p: FicheCoutStandard[]) => FicheCoutStandard[])) => {
-        setFichesState((prev) => {
-            const next = typeof updater === "function" ? updater(prev) : updater;
-            saveFichesCoutStandard(next);
-            return next;
-        });
-    };
     const [ficheModal, setFicheModal] = useState<{ open: boolean; initial?: Partial<FicheCoutStandard> }>({ open: false });
     const [ligneModal, setLigneModal] = useState<{ open: boolean; ficheId: string; initial?: Partial<LigneCoutStandard> } | null>(null);
-    const [expanded, setExpanded] = useState<string | null>(fiches[0]?.id ?? null);
+    const [expanded, setExpanded] = useState<string | null>(null);
     const [deleteFicheId, setDeleteFicheId] = useState<string | null>(null);
     const [filterPeriode, setFilterPeriode] = useState<string>("all");
+
+    useEffect(() => {
+        if (fiches.length > 0 && !expanded) {
+            setExpanded(fiches[0]?.id ?? null);
+        }
+    }, [fiches, expanded]);
 
     const periodesDisponibles = Array.from(new Set(fiches.map((f) => f.periodeRefId)));
     const filtered = fiches.filter((f) => filterPeriode === "all" || f.periodeRefId === filterPeriode);
 
-    function saveFiche(data: FicheCoutStandard) {
-        setFiches((p) => p.find((f) => f.id === data.id) ? p.map((f) => f.id === data.id ? data : f) : [...p, data]);
+    async function saveFiche(data: FicheCoutStandard) {
+        await persistFiche(data);
     }
 
-    function saveLigne(ficheId: string, ligne: LigneCoutStandard) {
-        setFiches((p) => p.map((f) => {
-            if (f.id !== ficheId) return f;
-            const exists = f.lignes.find((l) => l.id === ligne.id);
-            return { ...f, lignes: exists ? f.lignes.map((l) => l.id === ligne.id ? ligne : l) : [...f.lignes, ligne] };
-        }));
+    async function saveLigne(ficheId: string, ligne: LigneCoutStandard) {
+        const fiche = fiches.find((f) => f.id === ficheId);
+        if (!fiche) return;
+        const exists = fiche.lignes.find((l) => l.id === ligne.id);
+        const updated: FicheCoutStandard = {
+            ...fiche,
+            lignes: exists
+                ? fiche.lignes.map((l) => (l.id === ligne.id ? ligne : l))
+                : [...fiche.lignes, ligne],
+        };
+        await persistFiche(updated);
     }
 
-    function deleteLigne(ficheId: string, ligneId: string) {
-        setFiches((p) => p.map((f) => f.id !== ficheId ? f : { ...f, lignes: f.lignes.filter((l) => l.id !== ligneId) }));
+    async function deleteLigne(ficheId: string, ligneId: string) {
+        const fiche = fiches.find((f) => f.id === ficheId);
+        if (!fiche) return;
+        await persistFiche({ ...fiche, lignes: fiche.lignes.filter((l) => l.id !== ligneId) });
     }
 
-    function dupliquerFiche(fiche: FicheCoutStandard) {
+    async function dupliquerFiche(fiche: FicheCoutStandard) {
         const clone: FicheCoutStandard = {
             ...fiche,
             id: `fcs-${Date.now()}`,
@@ -304,7 +314,7 @@ export default function CoutsStandardsPage() {
             periodeCommencee: false,
             lignes: fiche.lignes.map((l) => ({ ...l, id: `${l.id}-c` })),
         };
-        setFiches((p) => [...p, clone]);
+        await persistFiche(clone);
         setExpanded(clone.id);
     }
 
@@ -318,7 +328,10 @@ export default function CoutsStandardsPage() {
                 <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                     <span>
-                        {error ?? "Certaines données proviennent du mode démonstration."}
+                        {error ??
+                            (fichesMock
+                                ? "Les fiches sont persistées localement en attendant l'API backend."
+                                : "Certaines données proviennent du mode démonstration.")}
                         {" Les plans analytiques restent en mock en attendant l'API."}
                     </span>
                 </div>
@@ -346,7 +359,10 @@ export default function CoutsStandardsPage() {
                     onClose={() => setDeleteFicheId(null)}
                     confirmLabel="Archiver"
                     confirmVariant="muted"
-                    onConfirm={() => setFiches((p) => p.filter((f) => f.id !== deleteFicheId))}
+                    onConfirm={async () => {
+                        if (deleteFicheId) await removeFiche(deleteFicheId);
+                        setDeleteFicheId(null);
+                    }}
                 >
                     <p className="text-sm text-muted-foreground">
                         La suppression est impossible. La fiche sera archivée pour permettre le recalcul des écarts historiques.
