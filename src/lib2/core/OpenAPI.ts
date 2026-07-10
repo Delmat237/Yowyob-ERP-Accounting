@@ -42,14 +42,19 @@ export const OpenAPI: OpenAPIConfig = {
     //   - X-Tenant-Id: the platform customer (localStorage 'tenant_id', defaulting to the platform tenant)
     HEADERS: () => Promise.resolve(
         typeof window !== 'undefined'
-            ? {
-                'X-Organization-Id': localStorage.getItem('organization_id')
-                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID
-                    || '4e177ff2-89b8-4d24-926a-5763dfa1b19a',
-                'X-Tenant-Id': localStorage.getItem('tenant_id')
+            ? (() => {
+                const tenantId = localStorage.getItem('tenant_id')
                     || process.env.NEXT_PUBLIC_TENANT_ID
-                    || '11111111-1111-1111-1111-111111111111',
-              }
+                    || '11111111-1111-1111-1111-111111111111';
+                const organizationId = localStorage.getItem('organization_id')
+                    || process.env.NEXT_PUBLIC_ORGANIZATION_ID
+                    || '4e177ff2-89b8-4d24-926a-5763dfa1b19a';
+                return {
+                    'X-Tenant-ID': tenantId,
+                    'X-Tenant-Id': tenantId,
+                    'X-Organization-Id': organizationId,
+                };
+            })()
             : {}
     ),
     ENCODE_PATH: undefined,

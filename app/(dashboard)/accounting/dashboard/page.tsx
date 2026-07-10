@@ -67,7 +67,10 @@ import { toast } from 'sonner';
 import { formatDateForApi } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { networkStatus } from '@/lib/offline/network-status';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
 import { loadDashboardSnapshot, saveDashboardSnapshot } from '@/lib/offline/dashboard-cache';
+import type { JournalComptableDto } from '@/src/lib2/models/JournalComptableDto';
 import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 import {
   getPeriodeComptableCourante,
@@ -371,6 +374,22 @@ export default function AccountingDashboard() {
       const entriesRes = await AccountingEntriesService.getAll1();
       const allEntries = (entriesRes.data || []);
       setKpis(prev => ({ ...prev, totalEntries: allEntries.length }));
+
+      const entryCountByJournal = new Map<string, number>();
+      for (const e of allEntries) {
+        const journalId = e.journalComptableId;
+        if (journalId) {
+          entryCountByJournal.set(journalId, (entryCountByJournal.get(journalId) ?? 0) + 1);
+        }
+      }
+      const JOURNAL_COLORS = ['#6366f1', '#10b981', '#f43f5e', '#f59e0b', '#3b82f6', '#8b5cf6'];
+      setJournalActivity(journals.map((j, i) => ({
+        name: j.libelle || j.codeJournal,
+        code: j.codeJournal,
+        count: entryCountByJournal.get(j.id ?? '') ?? j.ecritureComptable?.length ?? 0,
+        color: JOURNAL_COLORS[i % JOURNAL_COLORS.length],
+      })));
+
       const recent = allEntries.slice(0, 10).map((e: any) => ({
         id: e.id,
         libelle: e.libelle || 'Opération',

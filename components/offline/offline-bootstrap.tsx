@@ -10,8 +10,7 @@ import { warmCurrentRouteForOffline } from "@/lib/offline/route-cache-warmup";
 import { getStoredToken, isTokenValid } from "@/lib/auth-session";
 
 function isAuthenticatedForPrefetch(): boolean {
-    const token = getStoredToken();
-    return isTokenValid(token) || Boolean(token);
+    return isTokenValid(getStoredToken());
 }
 
 /**

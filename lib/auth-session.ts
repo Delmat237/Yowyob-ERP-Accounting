@@ -1,5 +1,4 @@
-import { OpenAPI as CoreOpenAPI } from '@/src/lib';
-import { OpenAPI as AccountingOpenAPI } from '@/src/lib2';
+import { bindOpenApiClientsFromStorage } from '@/lib/openapi-auth';
 import { clearAccountingChoice } from '@/lib/accounting-choice';
 import { clearUiState } from '@/lib/clear-ui-state';
 import { useAccountingChoiceStore } from '@/hooks/use-accounting-choice-store';
@@ -53,6 +52,5 @@ export function clearSession(): void {
         useAccountingChoiceStore.getState().clear();
         clearUiState();
     }
-    CoreOpenAPI.TOKEN = undefined;
-    AccountingOpenAPI.TOKEN = undefined;
+    bindOpenApiClientsFromStorage();
 }

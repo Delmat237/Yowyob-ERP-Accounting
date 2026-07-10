@@ -21,6 +21,7 @@ import { useForm } from 'react-hook-form';
 import { OpenAPI } from '@/src/lib2/core/OpenAPI';
 import { LoginData } from '@/types/personnel';
 import { useAuth } from '@/hooks/use-auth';
+import { syncOpenApiTokenAfterLogin } from '@/lib/openapi-auth';
 import { clearAccountingChoice } from '@/lib/accounting-choice';
 import { clearUiState } from '@/lib/clear-ui-state';
 import { DEFAULT_ORG_DISPLAY_NAME, pickOrgDisplayName } from '@/lib/organization-display';
@@ -223,7 +224,7 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
             const response = await res.json() as AuthLoginResponse;
 
-            localStorage.setItem('auth_token', response.token);
+            syncOpenApiTokenAfterLogin(response.token);
             localStorage.setItem('user', JSON.stringify(response.user));
             // Tenant/organisation issus du CONTEXTE choisi (multi-tenant/multi-org),
             // avec repli sur l'env uniquement en dernier recours (déploiement mono-client).
@@ -233,7 +234,6 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 option.organizationId || response.user?.organizationId
                 || process.env.NEXT_PUBLIC_ORGANIZATION_ID || '');
             localStorage.setItem('organization_name', pickOrgDisplayName(option.label) ?? DEFAULT_ORG_DISPLAY_NAME);
-            OpenAPI.TOKEN = response.token;
             setUser(response.user);
 
             setPendingSelection(null);

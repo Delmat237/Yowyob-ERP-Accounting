@@ -9,6 +9,7 @@ import { CancelablePromise } from './CancelablePromise';
 import type { OnCancel } from './CancelablePromise';
 import type { OpenAPIConfig } from './OpenAPI';
 import { toast } from 'sonner';
+import { clearSession, getStoredToken, isTokenValid } from '@/lib/auth-session';
 
 export const isDefined = <T>(value: T | null | undefined): value is Exclude<T, null | undefined> => {
     return value !== undefined && value !== null;
@@ -261,20 +262,25 @@ export const getResponseBody = async (response: Response): Promise<any> => {
     return undefined;
 };
 
-/** Clés de session purgées à l'expiration (cf lib/auth-session.ts, dupliqué ici pour éviter un import circulaire dans lib2). */
-const SESSION_KEYS = ['auth_token', 'user', 'organization_id', 'tenant_id'];
+let sessionPurging = false;
 
 /**
  * Token expiré / session invalide côté serveur (401) : purge la session locale
  * et renvoie immédiatement vers la page de login (la landing `/`), au lieu de
  * laisser la page tourner indéfiniment sur un spinner.
+ *
+ * Ne purge pas si le JWT local est encore valide (401 transitoire, requête sans
+ * token en course, ou rafale parallèle après le premier 401).
  */
-const handleUnauthorized = (): void => {
+const handleUnauthorized = (_url: string): void => {
     if (typeof window === 'undefined') return;
-    SESSION_KEYS.forEach((k) => localStorage.removeItem(k));
-    // Fermer les modales Compose encore ouvertes en mémoire (store Zustand).
-    void import('@/lib/clear-ui-state').then(({ clearUiState }) => clearUiState());
-    // Évite une boucle de redirection si on est déjà sur la landing/login.
+    if (sessionPurging) return;
+
+    const token = getStoredToken();
+    if (token && isTokenValid(token)) return;
+
+    sessionPurging = true;
+    clearSession();
     if (window.location.pathname !== '/') {
         window.location.assign('/');
     }
@@ -308,7 +314,7 @@ export const catchErrorCodes = (options: ApiRequestOptions, result: ApiResult): 
     }
 
     if (result.status === 401) {
-        handleUnauthorized();
+        handleUnauthorized(result.url);
     }
 
     if (result.status === 403) {

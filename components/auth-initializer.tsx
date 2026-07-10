@@ -1,24 +1,25 @@
 "use client";
 
-import { useEffect } from 'react';
-import { OpenAPI as CoreOpenAPI } from '@/src/lib';
-import { OpenAPI as AccountingOpenAPI } from '@/src/lib2';
-import { useAuth } from '@/hooks/use-auth';
+import { useEffect } from "react";
+import { clearSession, getStoredToken, isTokenValid } from "@/lib/auth-session";
+import { bindOpenApiClientsFromStorage } from "@/lib/openapi-auth";
+import { useAuth } from "@/hooks/use-auth";
 
 export function AuthInitializer() {
-    const { initFromStorage } = useAuth();
+    const { initFromStorage, clear } = useAuth();
 
     useEffect(() => {
-        // Initialise le token OpenAPI (logique originale conservée)
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-            CoreOpenAPI.TOKEN = token;
-            AccountingOpenAPI.TOKEN = token;
+        bindOpenApiClientsFromStorage();
+
+        const token = getStoredToken();
+        if (token && !isTokenValid(token)) {
+            clearSession();
+            clear();
+            return;
         }
 
-        // Initialise le store de rôles/utilisateur depuis localStorage
         initFromStorage();
-    }, [initFromStorage]);
+    }, [initFromStorage, clear]);
 
     return null;
 }
