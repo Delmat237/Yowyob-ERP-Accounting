@@ -62,6 +62,25 @@ public class EcritureAnalytiqueController {
             .map(r -> ResponseEntity.ok(ApiResponseWrapper.success(r, "Écriture trouvée")));
     }
 
+    @PutMapping("/{id}")
+    @Operation(summary = "Mettre à jour une écriture analytique (brouillon uniquement)")
+    public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> update(
+            @PathVariable UUID id,
+            @Valid @RequestBody EcritureAnalytiqueDto dto,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        return service.update(id, dto)
+            .map(r -> ResponseEntity.ok(ApiResponseWrapper.success(r, "Écriture mise à jour")));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Supprimer une écriture analytique (brouillon uniquement)")
+    public Mono<ResponseEntity<ApiResponseWrapper<Object>>> delete(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        return service.delete(id)
+            .thenReturn(ResponseEntity.ok(ApiResponseWrapper.success(null, "Écriture supprimée")));
+    }
+
     @PostMapping("/{id}/valider")
     @Operation(summary = "Valider une écriture analytique (BROUILLON → VALIDEE)")
     public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> valider(

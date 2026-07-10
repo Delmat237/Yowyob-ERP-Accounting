@@ -7,6 +7,7 @@ import com.yowyob.erp.accounting.infrastructure.web.dto.EcritureAnalytiqueDto;
 import com.yowyob.erp.accounting.infrastructure.web.dto.LigneImputationDto;
 import com.yowyob.erp.config.organization.ReactiveOrganizationContext;
 import com.yowyob.erp.shared.application.service.IdempotencyService;
+import com.yowyob.erp.shared.domain.exception.ConflictException;
 import com.yowyob.erp.shared.domain.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -202,6 +203,62 @@ public class EcritureAnalytiqueService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
+    @Transactional
+    public Mono<EcritureAnalytiqueDto> update(UUID id, EcritureAnalytiqueDto dto) {
+        return ReactiveOrganizationContext.getOrganizationId()
+            .zipWith(ReactiveOrganizationContext.getCurrentUser().defaultIfEmpty("system"))
+            .flatMap(t -> {
+                UUID orgId = t.getT1();
+                String user = t.getT2();
+                return ecritureRepo.findById(id)
+                    .filter(e -> orgId.equals(e.getOrganizationId()))
+                    .switchIfEmpty(Mono.error(new ResourceNotFoundException("EcritureAnalytique", id.toString())))
+                    .flatMap(e -> {
+                        if ("VALIDEE".equals(e.getStatut())) {
+                            return Mono.error(new com.yowyob.erp.shared.domain.exception.BusinessException(
+                                    "Impossible de modifier une écriture analytique validée"));
+                        }
+                        // Conflit optimiste soft via updatedAt client
+                        if (dto.getUpdatedAt() != null && e.getUpdatedAt() != null
+                                && e.getUpdatedAt().isAfter(dto.getUpdatedAt())) {
+                            return Mono.error(new ConflictException(
+                                    "L'écriture a été modifiée sur le serveur (conflit offline)"));
+                        }
+                        e.setJournalId(dto.getJournalId());
+                        e.setPeriodeId(dto.getPeriodeId());
+                        e.setNumeroPiece(dto.getNumeroPiece());
+                        e.setLibelle(dto.getLibelle());
+                        e.setDateEffet(dto.getDateEffet());
+                        if (dto.getOrigine() != null) e.setOrigine(dto.getOrigine());
+                        e.setMontantTotal(dto.getMontantTotal());
+                        e.setNatureChargeId(dto.getNatureChargeId());
+                        e.setEcriturecgRef(dto.getEcriturecgRef());
+                        e.setUpdatedAt(LocalDateTime.now());
+                        e.setUpdatedBy(user);
+                        e.setNotNew();
+                        return ligneRepo.deleteByEcritureId(id)
+                            .then(ecritureRepo.save(e))
+                            .flatMap(saved -> saveLignes(saved.getId(), dto.getLignes())
+                                .then(enrichDto(saved)));
+                    });
+            });
+    }
+
+    @Transactional
+    public Mono<Void> delete(UUID id) {
+        return ReactiveOrganizationContext.getOrganizationId()
+            .flatMap(orgId -> ecritureRepo.findById(id)
+                .filter(e -> orgId.equals(e.getOrganizationId()))
+                .switchIfEmpty(Mono.error(new ResourceNotFoundException("EcritureAnalytique", id.toString())))
+                .flatMap(e -> {
+                    if ("VALIDEE".equals(e.getStatut())) {
+                        return Mono.error(new com.yowyob.erp.shared.domain.exception.BusinessException(
+                                "Impossible de supprimer une écriture analytique validée"));
+                    }
+                    return ligneRepo.deleteByEcritureId(id).then(ecritureRepo.delete(e));
+                }));
+    }
+
     private Mono<Void> saveLignes(UUID ecritureId, List<LigneImputationDto> lignes) {
         if (lignes == null || lignes.isEmpty()) return Mono.empty();
         return Flux.fromIterable(lignes)
@@ -244,6 +301,7 @@ public class EcritureAnalytiqueService {
                     .ecriturecgRef(e.getEcriturecgRef()).montantTotal(e.getMontantTotal())
                     .natureChargeId(e.getNatureChargeId()).validatedAt(e.getValidatedAt())
                     .validatedBy(e.getValidatedBy()).rejectReason(e.getRejectReason())
+                    .updatedAt(e.getUpdatedAt())
                     .lignes(ldtos).build());
             });
     }
