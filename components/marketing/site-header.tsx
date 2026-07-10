@@ -28,7 +28,7 @@ export function SiteHeader() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3">
-              <YowyobLogo size="md" showSubtitle subtitle="Solution Comptable" priority />
+              <YowyobLogo size="md" showSubtitle subtitle="ACCOUNTING" priority />
             </Link>
 
             {/* Desktop Navigation */}

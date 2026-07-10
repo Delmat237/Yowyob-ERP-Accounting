@@ -1,4 +1,4 @@
-import { CG_CACHE_KEYS, CA_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
 import { setCachedList, getCachedList } from "@/lib/offline/list-cache";
 import { syncRequest } from "@/lib/offline/sync-request";
 import { idbGet, idbPut } from "@/lib/offline/idb";

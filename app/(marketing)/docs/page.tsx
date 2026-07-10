@@ -6,8 +6,8 @@ import { PageHero } from '@/components/marketing/page-hero';
 
 export const metadata: Metadata = {
   title: 'Documentation | KSM',
-  description: 'Guides et références pour prendre en main la solution comptable KSM.',
-};
+  description: 'Guides et références pour prendre en main la solution comptable generale et analytique africaine KSM.',
+};  
 
 const sections = [
   {

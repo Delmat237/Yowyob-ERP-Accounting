@@ -389,7 +389,7 @@ export function LandingPage() {
             <th className="py-5 px-6 text-center">
               <div className="inline-flex flex-col items-center gap-1">
                 <YowyobLogo size="sm" imageClassName="mx-auto" />
-                <span className="text-xs text-gray-500">Notre solution</span>
+                <span className="text-xs text-gray-500">ACCOUNTING</span>
               </div>
             </th>
             <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
@@ -443,7 +443,7 @@ export function LandingPage() {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <YowyobLogo size="md" showSubtitle subtitle="Solution Comptable" priority />
+              <YowyobLogo size="md" showSubtitle subtitle="ACCOUNTING" priority />
             </div>
 
             {/* Desktop Navigation */}
@@ -522,11 +522,11 @@ export function LandingPage() {
             <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 tracking-tight">
               Maîtrisez votre
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-                {" "}Gestion Comptable
+                {" "}Gestion Comptable generale et analytique
               </span>
             </h1>
             <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              KSM vous offre une suite complète d&apos;outils pour gérer efficacement votre comptabilité,
+              KSM vous offre une suite complète d&apos;outils pour gérer efficacement votre comptabilité generale et analytique,
               vos flux financiers et vos rapports. Simplifiez votre gestion financière avec notre solution tout-en-un.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">

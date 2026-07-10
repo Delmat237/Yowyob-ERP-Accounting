@@ -7,7 +7,7 @@ import { PageHero } from '@/components/marketing/page-hero';
 
 export const metadata: Metadata = {
   title: "Centre d'aide | KSM",
-  description: 'Questions fréquentes et canaux de support de la solution comptable KSM.',
+  description: 'Questions fréquentes et canaux de support de la solution comptable generale et analytique africaine KSM.',
 };
 
 const faqs = [

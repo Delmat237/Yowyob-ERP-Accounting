@@ -7,7 +7,7 @@ import { PageHero } from '@/components/marketing/page-hero';
 
 export const metadata: Metadata = {
   title: 'Tarifs | KSM',
-  description: 'Des offres simples et transparentes pour la solution comptable KSM.',
+  description: 'Des offres simples et transparentes pour la solution comptable generale et analytique pour la zone OHADA KSM.',
 };
 
 const plans = [
@@ -15,7 +15,7 @@ const plans = [
     name: 'Starter',
     price: 'Gratuit',
     period: '',
-    description: 'Pour découvrir KSM et gérer une petite structure.',
+    description: 'Pour découvrir KSM et gérer une petite structure comptable generale et analytique.',
     features: [
       '1 organisation',
       'Plan comptable SYSCOHADA',
@@ -30,7 +30,7 @@ const plans = [
     name: 'Business',
     price: '25 000',
     period: 'FCFA / mois',
-    description: 'Pour les PME qui veulent automatiser leur comptabilité.',
+    description: 'Pour les PME qui veulent automatiser leur comptabilité generale et analytique.',
     features: [
       'Organisations illimitées',
       'OCR & comptabilisation auto',

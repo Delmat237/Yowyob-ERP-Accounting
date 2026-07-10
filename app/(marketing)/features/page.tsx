@@ -15,7 +15,7 @@ import { PageHero } from '@/components/marketing/page-hero';
 
 export const metadata: Metadata = {
   title: 'Fonctionnalités | KSM',
-  description: "Découvrez l'ensemble des fonctionnalités de la solution comptable KSM.",
+  description: "Découvrez l'ensemble des fonctionnalités de la solution comptable generale et analytique africaine KSM.",
 };
 
 const features = [

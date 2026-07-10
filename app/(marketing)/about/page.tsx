@@ -5,7 +5,7 @@ import { PageHero } from '@/components/marketing/page-hero';
 
 export const metadata: Metadata = {
   title: 'À propos | KSM',
-  description: "Découvrez la mission et les valeurs de KSM, la solution comptable africaine.",
+  description: "Découvrez la mission et les valeurs de KSM, la solution comptable generale et analytique africaine.",
 };
 
 const values = [

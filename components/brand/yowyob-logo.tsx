@@ -27,7 +27,7 @@ export function YowyobLogo({
   imageClassName,
   size = 'md',
   showSubtitle = false,
-  subtitle = 'Solution Comptable',
+  subtitle = 'ACCOUNTING',
   priority = false,
 }: YowyobLogoProps) {
   const displayHeight = LOGO_SIZES[size];

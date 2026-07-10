@@ -21,7 +21,7 @@ const releases = [
     date: '2 mai 2026',
     title: 'KSM dépasse les 500 entreprises utilisatrices',
     excerpt:
-      'La solution comptable continue sa croissance auprès des PME de la zone OHADA.',
+      'La solution comptable  generale et analytique continue sa croissance auprès des PME de la zone OHADA.',
   },
   {
     date: '10 mars 2026',

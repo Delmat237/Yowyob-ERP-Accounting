@@ -7,7 +7,7 @@ import { OfflineBootstrap } from "@/components/offline/offline-bootstrap";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Yowyob ERP — Solution Comptable",
+  title: "Yowyob ERP —Accounting & Analytical Solution",
   description: "Solution de gestion comptable générale et analytique",
   manifest: "/manifest.webmanifest",
   icons: {
