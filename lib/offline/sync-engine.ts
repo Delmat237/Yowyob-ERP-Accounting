@@ -11,6 +11,13 @@ import {
     pushCgPlanComptable,
     pushCgTaxe,
 } from "@/lib/offline/handlers/cg-list-sync";
+import {
+    pushCaCentre,
+    pushCaCharge,
+    pushCaCompte,
+    pushCaJournal,
+    pushCaPlanComptes,
+} from "@/lib/offline/handlers/ca-list-sync";
 import { networkStatus } from "@/lib/offline/network-status";
 import { listPendingOutbox, updateOutboxStatus } from "@/lib/offline/outbox";
 import { idempotencyHeaders } from "@/lib/offline/sync-request";
@@ -21,7 +28,6 @@ import {
     ENTITY_NOTIFICATIONS,
 } from "@/lib/offline/types";
 import { pushEcritureAnalytique } from "@/lib/offline/handlers/ecriture-analytique-sync";
-import { pushCaMockList } from "@/lib/offline/handlers/ca-mock-sync";
 
 type SyncHandler = (op: OutboxOperation) => Promise<void>;
 
@@ -66,11 +72,11 @@ const handlers: Record<string, SyncHandler> = {
     "cg.exercices": pushCgExercice,
     "cg.budgets": pushCgBudget,
     "cg.periodes": pushCgPeriode,
-    "ca.centres": pushCaMockList,
-    "ca.charges": pushCaMockList,
-    "ca.comptes": pushCaMockList,
-    "ca.plan_comptes": pushCaMockList,
-    "ca.journaux": pushCaMockList,
+    "ca.centres": pushCaCentre,
+    "ca.charges": pushCaCharge,
+    "ca.comptes": pushCaCompte,
+    "ca.plan_comptes": pushCaPlanComptes,
+    "ca.journaux": pushCaJournal,
 };
 
 let flushing = false;

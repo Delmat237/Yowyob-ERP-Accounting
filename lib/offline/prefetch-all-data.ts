@@ -14,6 +14,9 @@ import { AccountingBudgetsService } from "@/src/lib2/services/AccountingBudgetsS
 import { AccountingPeriodsService } from "@/src/lib2/services/AccountingPeriodsService";
 import { AccountingFiscalYearsService } from "@/src/lib2/services/AccountingFiscalYearsService";
 import { AccountingAnalyticsService } from "@/src/lib2/services/AccountingAnalyticsService";
+import { AccountingChargesAnalytiquesService } from "@/src/lib2/services/AccountingChargesAnalytiquesService";
+import { AccountingComptesAnalytiquesService } from "@/src/lib2/services/AccountingComptesAnalytiquesService";
+import { AccountingJournauxAnalytiquesService } from "@/src/lib2/services/AccountingJournauxAnalytiquesService";
 import { AccountingSettingService, type AccountingSettingDto } from "@/src/lib2/services/AccountingSettingService";
 import { EmployeesRolesService } from "@/src/lib/services/EmployeesRolesService";
 import { AgenciesService } from "@/src/lib/services/AgenciesService";
@@ -24,13 +27,6 @@ import { SystemAuditsService } from "@/src/lib/services/SystemAuditsService";
 import { AccountingSubscriptionService } from "@/src/lib2/services/AccountingSubscriptionService";
 import { getAnalytiqueConfig } from "@/lib/analytique/analytique-config-store";
 import { initEcrituresAnalytiquesStore } from "@/lib/analytique/ecritures-analytiques-store";
-import { listJournauxAnalytiques } from "@/lib/analytique/journaux-analytiques-store";
-import {
-    mockCentres,
-    mockCharges,
-    mockComptesAnalytiques,
-    mockPlansAnalytiques,
-} from "@/lib/analytique/mock-data";
 import type { Devise } from "@/types/accounting";
 import type { DeviseDto } from "@/src/lib2/models/DeviseDto";
 
@@ -226,14 +222,29 @@ export async function prefetchAllOfflineData(force = false): Promise<void> {
         }),
         fetchWithOfflineCache({
             cacheKey: CA_CACHE_KEYS.JOURNAUX,
-            fetcher: async () => ({ success: true, data: listJournauxAnalytiques() }),
+            fetcher: () => AccountingJournauxAnalytiquesService.getAllJournaux(),
             emptyValue: [],
         }),
-        // Mocks / stores locaux
-        seedIfMissing(CA_CACHE_KEYS.CENTRES, mockCentres),
-        seedIfMissing(CA_CACHE_KEYS.CHARGES, mockCharges),
-        seedIfMissing(CA_CACHE_KEYS.COMPTES, mockComptesAnalytiques),
-        seedIfMissing(CA_CACHE_KEYS.PLAN_COMPTES, mockPlansAnalytiques),
+        fetchWithOfflineCache({
+            cacheKey: CA_CACHE_KEYS.CENTRES,
+            fetcher: () => AccountingAnalyticsService.getAllAxes(),
+            emptyValue: [],
+        }),
+        fetchWithOfflineCache({
+            cacheKey: CA_CACHE_KEYS.CHARGES,
+            fetcher: () => AccountingChargesAnalytiquesService.getAllCharges(),
+            emptyValue: [],
+        }),
+        fetchWithOfflineCache({
+            cacheKey: CA_CACHE_KEYS.COMPTES,
+            fetcher: () => AccountingComptesAnalytiquesService.getAllComptes(),
+            emptyValue: [],
+        }),
+        fetchWithOfflineCache({
+            cacheKey: CA_CACHE_KEYS.PLAN_COMPTES,
+            fetcher: () => AccountingComptesAnalytiquesService.getAllComptes(),
+            emptyValue: [],
+        }),
         seedIfMissing(CA_CACHE_KEYS.CONFIG, getAnalytiqueConfig()),
         initEcrituresAnalytiquesStore(),
     ];

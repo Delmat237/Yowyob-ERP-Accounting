@@ -8,43 +8,45 @@ import {
   mapChargeAnalytiqueUiToDto,
 } from '@/lib/analytique/analytique-mappers';
 import type { ChargeAnalytique } from '@/lib/analytique/mock-data';
-import { mockCharges } from '@/lib/analytique/mock-data';
+import { CA_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { ensureLocalId } from '@/lib/offline/ensure-local-id';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
 import {
-  deleteChargeAnalytique,
-  listChargesAnalytiques,
-  saveChargeAnalytique,
-  saveChargesAnalytiques,
-} from '@/lib/analytique/charges-analytiques-store';
+  removeListItemWithOutbox,
+  upsertListItemWithOutbox,
+} from '@/lib/offline/list-outbox-mutations';
 import { AccountingChargesAnalytiquesService } from '@/src/lib2/services/AccountingChargesAnalytiquesService';
 
 export function useChargesAnalytiquesApi(periodeId?: string) {
   const [charges, setCharges] = useState<ChargeAnalytique[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [usingMockFallback, setUsingMockFallback] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setUsingMockFallback(false);
     try {
-      const params = periodeId ? { periodeId } : undefined;
-      const response = await AccountingChargesAnalytiquesService.getAllCharges(params);
-      const list = unwrapApiData(response, 'Impossible de charger les charges analytiques.').map(
-        mapChargeAnalytiqueDtoToUi,
-      );
-      setCharges(list);
-    } catch (err: unknown) {
-      const local = listChargesAnalytiques();
+      const result = await fetchWithOfflineCache({
+        cacheKey: CA_CACHE_KEYS.CHARGES,
+        fetcher: async () => {
+          const params = periodeId ? { periodeId } : undefined;
+          const response = await AccountingChargesAnalytiquesService.getAllCharges(params);
+          return unwrapApiData(response, 'Impossible de charger les charges analytiques.').map(
+            mapChargeAnalytiqueDtoToUi,
+          );
+        },
+        emptyValue: [] as ChargeAnalytique[],
+      });
       const filtered = periodeId
-        ? local.filter((c) => c.periodeId === periodeId || local.every((x) => x.periodeId !== periodeId))
-        : local;
-      setCharges(filtered.length > 0 ? filtered : mockCharges);
-      setUsingMockFallback(true);
+        ? result.data.filter((c) => !c.periodeId || c.periodeId === periodeId)
+        : result.data;
+      setCharges(filtered);
+      setUsingCache(result.fromCache);
+      if (result.fromCache) setError('Données hors ligne (cache local).');
+    } catch (err: unknown) {
       setError(
-        err instanceof Error
-          ? `${err.message} — affichage des données de démonstration.`
-          : 'API indisponible — affichage des données de démonstration.',
+        err instanceof Error ? err.message : 'Impossible de charger les charges analytiques.',
       );
     } finally {
       setLoading(false);
@@ -57,28 +59,20 @@ export function useChargesAnalytiquesApi(periodeId?: string) {
 
   const saveCharge = useCallback(
     async (data: Partial<ChargeAnalytique>) => {
-      if (usingMockFallback) {
-        const entry = {
-          ...data,
-          id: data.id ?? `ch-${Date.now()}`,
-          periodeId: data.periodeId ?? periodeId ?? 'cg-p3',
-        } as ChargeAnalytique;
-        const next = charges.find((c) => c.id === entry.id)
-          ? charges.map((c) => (c.id === entry.id ? { ...c, ...entry } : c))
-          : [...charges, entry];
-        saveChargesAnalytiques(next);
-        setCharges(next);
-        toast.success(charges.find((c) => c.id === entry.id) ? 'Charge mise à jour' : 'Charge créée');
-        return;
-      }
+      const isUpdate = Boolean(data.id);
+      const localId = ensureLocalId(data.id);
+      const item = {
+        ...data,
+        id: localId,
+        periodeId: data.periodeId ?? periodeId ?? '',
+      } as ChargeAnalytique;
 
-      const dto = mapChargeAnalytiqueUiToDto(data);
+      const dto = mapChargeAnalytiqueUiToDto({ ...data, id: isUpdate ? data.id : undefined });
       if (!dto.centreId || !dto.periodeId) {
         toast.error('Centre et période requis — vérifiez les données.');
         throw new Error('centreId et periodeId requis');
       }
 
-      const isUpdate = Boolean(dto.id);
       const payload = {
         ...dto,
         nature: dto.nature,
@@ -87,39 +81,51 @@ export function useChargesAnalytiquesApi(periodeId?: string) {
         centreId: dto.centreId!,
         periodeId: dto.periodeId!,
       };
-      const response = isUpdate
-        ? await AccountingChargesAnalytiquesService.updateCharge(dto.id!, payload)
-        : await AccountingChargesAnalytiquesService.createCharge(payload);
-      const saved = mapChargeAnalytiqueDtoToUi(
-        unwrapApiData(response, 'Impossible d\'enregistrer la charge analytique.'),
-      );
+
+      const { queued } = await upsertListItemWithOutbox({
+        cacheKey: CA_CACHE_KEYS.CHARGES,
+        entity: 'ca.charges',
+        action: isUpdate ? 'UPDATE' : 'CREATE',
+        item,
+        onlineMutator: () =>
+          isUpdate
+            ? AccountingChargesAnalytiquesService.updateCharge(dto.id!, payload)
+            : AccountingChargesAnalytiquesService.createCharge(payload),
+      });
+
       setCharges((prev) =>
-        isUpdate ? prev.map((c) => (c.id === saved.id ? saved : c)) : [...prev, saved],
+        isUpdate ? prev.map((c) => (c.id === item.id ? item : c)) : [...prev, item],
       );
-      toast.success(isUpdate ? 'Charge mise à jour' : 'Charge créée');
+      toast.success(
+        queued
+          ? isUpdate
+            ? 'Charge mise à jour (sync en attente)'
+            : 'Charge créée (sync en attente)'
+          : isUpdate
+            ? 'Charge mise à jour'
+            : 'Charge créée',
+      );
+      if (!queued) await load();
     },
-    [usingMockFallback, charges, periodeId],
+    [load, periodeId],
   );
 
-  const removeCharge = useCallback(
-    async (id: string) => {
-      if (usingMockFallback) {
-        deleteChargeAnalytique(id);
-        setCharges(listChargesAnalytiques());
-        return;
-      }
-      await AccountingChargesAnalytiquesService.deleteCharge(id);
-      setCharges((prev) => prev.filter((c) => c.id !== id));
-      toast.success('Charge supprimée');
-    },
-    [usingMockFallback],
-  );
+  const removeCharge = useCallback(async (id: string) => {
+    const { queued } = await removeListItemWithOutbox({
+      cacheKey: CA_CACHE_KEYS.CHARGES,
+      entity: 'ca.charges',
+      entityId: id,
+      onlineMutator: () => AccountingChargesAnalytiquesService.deleteCharge(id),
+    });
+    setCharges((prev) => prev.filter((c) => c.id !== id));
+    toast.success(queued ? 'Charge supprimée (sync en attente)' : 'Charge supprimée');
+  }, []);
 
   return {
     charges,
     loading,
     error,
-    usingMockFallback,
+    usingMockFallback: usingCache,
     reload: load,
     saveCharge,
     removeCharge,

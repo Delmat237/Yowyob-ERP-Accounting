@@ -1,35 +1,42 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { unwrapApiData } from '@/lib/analytique/analytique-api';
 import { mapJournalDtoToUi, mapJournalUiToDto } from '@/lib/analytique/analytique-mappers';
 import type { JournalAnalytiqueConfig } from '@/lib/analytique/journal-analytique';
+import { CA_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { ensureLocalId } from '@/lib/offline/ensure-local-id';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
 import { AccountingJournauxAnalytiquesService } from '@/src/lib2/services/AccountingJournauxAnalytiquesService';
 
 export function useJournauxAnalytiquesApi() {
   const [journaux, setJournaux] = useState<JournalAnalytiqueConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [usingMockFallback, setUsingMockFallback] = useState(false);
+  const [usingCache, setUsingCache] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    setUsingMockFallback(false);
     try {
-      const response = await AccountingJournauxAnalytiquesService.getAllJournaux();
-      const list = unwrapApiData(response, 'Impossible de charger les journaux analytiques.').map(
-        mapJournalDtoToUi,
-      );
-      setJournaux(list.sort((a, b) => a.code.localeCompare(b.code, 'fr')));
+      const result = await fetchWithOfflineCache({
+        cacheKey: CA_CACHE_KEYS.JOURNAUX,
+        fetcher: async () => {
+          const response = await AccountingJournauxAnalytiquesService.getAllJournaux();
+          return unwrapApiData(response, 'Impossible de charger les journaux analytiques.').map(
+            mapJournalDtoToUi,
+          );
+        },
+        emptyValue: [] as JournalAnalytiqueConfig[],
+      });
+      setJournaux([...result.data].sort((a, b) => a.code.localeCompare(b.code, 'fr')));
+      setUsingCache(result.fromCache);
+      if (result.fromCache) setError('Données hors ligne (cache local).');
     } catch (err: unknown) {
-      const { listJournauxAnalytiques } = await import('@/lib/analytique/journaux-analytiques-store');
-      setJournaux(listJournauxAnalytiques());
-      setUsingMockFallback(true);
       setError(
-        err instanceof Error
-          ? `${err.message} — affichage des données locales.`
-          : 'API indisponible — affichage des données locales.',
+        err instanceof Error ? err.message : 'Impossible de charger les journaux analytiques.',
       );
     } finally {
       setLoading(false);
@@ -42,23 +49,36 @@ export function useJournauxAnalytiquesApi() {
 
   const saveJournal = useCallback(
     async (data: JournalAnalytiqueConfig) => {
-      if (usingMockFallback) {
-        const { saveJournalAnalytique } = await import('@/lib/analytique/journaux-analytiques-store');
-        saveJournalAnalytique(data);
-        await load();
-        return;
-      }
+      const isUpdate = Boolean(data.id);
+      const item = { ...data, id: ensureLocalId(data.id || undefined) };
+      const dto = mapJournalUiToDto({ ...data, id: isUpdate ? data.id : '' });
 
-      const dto = mapJournalUiToDto(data);
-      const isUpdate = Boolean(dto.id);
-      if (isUpdate) {
-        await AccountingJournauxAnalytiquesService.updateJournal(dto.id!, dto);
-      } else {
-        await AccountingJournauxAnalytiquesService.createJournal(dto);
-      }
-      await load();
+      const { queued } = await upsertListItemWithOutbox({
+        cacheKey: CA_CACHE_KEYS.JOURNAUX,
+        entity: 'ca.journaux',
+        action: isUpdate ? 'UPDATE' : 'CREATE',
+        item,
+        onlineMutator: () =>
+          isUpdate
+            ? AccountingJournauxAnalytiquesService.updateJournal(dto.id!, dto)
+            : AccountingJournauxAnalytiquesService.createJournal(dto),
+      });
+
+      setJournaux((prev) =>
+        isUpdate ? prev.map((j) => (j.id === item.id ? item : j)) : [...prev, item],
+      );
+      toast.success(
+        queued
+          ? isUpdate
+            ? 'Journal mis à jour (sync en attente)'
+            : 'Journal créé (sync en attente)'
+          : isUpdate
+            ? 'Journal mis à jour'
+            : 'Journal créé',
+      );
+      if (!queued) await load();
     },
-    [load, usingMockFallback],
+    [load],
   );
 
   const createJournal = useCallback(
@@ -72,7 +92,7 @@ export function useJournauxAnalytiquesApi() {
     journaux,
     loading,
     error,
-    usingMockFallback,
+    usingMockFallback: usingCache,
     reload: load,
     saveJournal,
     createJournal,
