@@ -113,12 +113,31 @@ export async function flushOutbox(): Promise<{ synced: number; failed: number; p
                 synced += 1;
             } catch (err) {
                 const message = err instanceof Error ? err.message : "Erreur de synchronisation";
+                const isConflict =
+                    message.startsWith("CONFLICT:") ||
+                    message.includes("409") ||
+                    message.toLowerCase().includes("conflit");
                 const isApiUnavailable = message.includes("non disponible");
                 const isNetwork =
                     message.includes("connexion") ||
                     message.includes("Failed to fetch") ||
                     message.includes("serveur");
 
+                if (isConflict) {
+                    await updateOutboxStatus(op.id, "failed", {
+                        retries: op.retries + 1,
+                        lastError: message,
+                    });
+                    failed += 1;
+                    if (typeof window !== "undefined") {
+                        window.dispatchEvent(
+                            new CustomEvent("sync:conflict", {
+                                detail: { entity: op.entity, entityId: op.entityId, message },
+                            }),
+                        );
+                    }
+                    continue;
+                }
                 if (isApiUnavailable) {
                     await updateOutboxStatus(op.id, "pending", { lastError: message });
                     break;
