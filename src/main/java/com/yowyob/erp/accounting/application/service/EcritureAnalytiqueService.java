@@ -101,10 +101,15 @@ public class EcritureAnalytiqueService {
     }
 
     private Mono<Void> storeIdempotencyIfNeeded(UUID orgId, String key, UUID entityId) {
-        if (key == null) {
+        return storeIdempotencyIfNeeded(orgId, key, ENTITY_TYPE, entityId, 201);
+    }
+
+    private Mono<Void> storeIdempotencyIfNeeded(
+            UUID orgId, String key, String entityType, UUID entityId, int status) {
+        if (key == null || key.isBlank()) {
             return Mono.empty();
         }
-        return idempotencyService.store(orgId, key, ENTITY_TYPE, entityId, 201).then();
+        return idempotencyService.store(orgId, key.trim(), entityType, entityId, status).then();
     }
 
     public Flux<EcritureAnalytiqueDto> getAll(String statut, UUID periodeId) {
@@ -131,33 +136,70 @@ public class EcritureAnalytiqueService {
 
     @Transactional
     public Mono<EcritureAnalytiqueDto> valider(UUID id) {
+        return valider(id, null);
+    }
+
+    @Transactional
+    public Mono<EcritureAnalytiqueDto> valider(UUID id, String idempotencyKey) {
         return ReactiveOrganizationContext.getOrganizationId()
             .zipWith(ReactiveOrganizationContext.getCurrentUser().defaultIfEmpty("system"))
             .flatMap(t -> {
-                UUID orgId = t.getT1(); String user = t.getT2();
-                return ecritureRepo.findById(id)
-                    .filter(e -> orgId.equals(e.getOrganizationId()))
-                    .switchIfEmpty(Mono.error(new ResourceNotFoundException("EcritureAnalytique", id.toString())))
-                    .flatMap(e -> {
-                        e.setStatut("VALIDEE");
-                        e.setValidatedAt(LocalDateTime.now());
-                        e.setValidatedBy(user);
-                        e.setNotNew();
-                        return ecritureRepo.save(e).flatMap(this::enrichDto);
-                    });
+                UUID orgId = t.getT1();
+                String user = t.getT2();
+                String key = blankToNull(idempotencyKey);
+                return resolveExistingByIdempotency(orgId, key)
+                    .switchIfEmpty(Mono.defer(() -> ecritureRepo.findById(id)
+                        .filter(e -> orgId.equals(e.getOrganizationId()))
+                        .switchIfEmpty(Mono.error(new ResourceNotFoundException("EcritureAnalytique", id.toString())))
+                        .flatMap(e -> {
+                            if ("VALIDEE".equals(e.getStatut())) {
+                                return enrichDto(e);
+                            }
+                            e.setStatut("VALIDEE");
+                            e.setValidatedAt(LocalDateTime.now());
+                            e.setValidatedBy(user);
+                            e.setNotNew();
+                            return ecritureRepo.save(e)
+                                .flatMap(saved -> enrichDto(saved)
+                                    .flatMap(dto -> storeIdempotencyIfNeeded(
+                                            orgId, key, "ecriture_analytique_validate", saved.getId(), 200)
+                                        .thenReturn(dto)));
+                        })));
             });
     }
 
     @Transactional
     public Mono<EcritureAnalytiqueDto> rejeter(UUID id, String raison) {
+        return rejeter(id, raison, null);
+    }
+
+    @Transactional
+    public Mono<EcritureAnalytiqueDto> rejeter(UUID id, String raison, String idempotencyKey) {
         return ReactiveOrganizationContext.getOrganizationId()
-            .flatMap(orgId -> ecritureRepo.findById(id)
-                .filter(e -> orgId.equals(e.getOrganizationId()))
-                .switchIfEmpty(Mono.error(new ResourceNotFoundException("EcritureAnalytique", id.toString())))
-                .flatMap(e -> {
-                    e.setStatut("REJETEE"); e.setRejectReason(raison); e.setNotNew();
-                    return ecritureRepo.save(e).flatMap(this::enrichDto);
-                }));
+            .flatMap(orgId -> {
+                String key = blankToNull(idempotencyKey);
+                return resolveExistingByIdempotency(orgId, key)
+                    .switchIfEmpty(Mono.defer(() -> ecritureRepo.findById(id)
+                        .filter(e -> orgId.equals(e.getOrganizationId()))
+                        .switchIfEmpty(Mono.error(new ResourceNotFoundException("EcritureAnalytique", id.toString())))
+                        .flatMap(e -> {
+                            if ("REJETEE".equals(e.getStatut())) {
+                                return enrichDto(e);
+                            }
+                            e.setStatut("REJETEE");
+                            e.setRejectReason(raison);
+                            e.setNotNew();
+                            return ecritureRepo.save(e)
+                                .flatMap(saved -> enrichDto(saved)
+                                    .flatMap(dto -> storeIdempotencyIfNeeded(
+                                            orgId, key, "ecriture_analytique_reject", saved.getId(), 200)
+                                        .thenReturn(dto)));
+                        })));
+            });
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 
     private Mono<Void> saveLignes(UUID ecritureId, List<LigneImputationDto> lignes) {

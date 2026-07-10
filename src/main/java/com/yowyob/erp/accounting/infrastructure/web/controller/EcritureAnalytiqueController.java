@@ -64,8 +64,10 @@ public class EcritureAnalytiqueController {
 
     @PostMapping("/{id}/valider")
     @Operation(summary = "Valider une écriture analytique (BROUILLON → VALIDEE)")
-    public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> valider(@PathVariable UUID id) {
-        return service.valider(id)
+    public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> valider(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
+        return service.valider(id, idempotencyKey)
             .map(r -> ResponseEntity.ok(ApiResponseWrapper.success(r, "Écriture validée")));
     }
 
@@ -82,9 +84,10 @@ public class EcritureAnalytiqueController {
     @Operation(summary = "Rejeter une écriture analytique (BROUILLON → REJETEE)")
     public Mono<ResponseEntity<ApiResponseWrapper<EcritureAnalytiqueDto>>> rejeter(
             @PathVariable UUID id,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey) {
         String raison = body.getOrDefault("raison", "Rejet sans motif");
-        return service.rejeter(id, raison)
+        return service.rejeter(id, raison, idempotencyKey)
             .map(r -> ResponseEntity.ok(ApiResponseWrapper.success(r, "Écriture rejetée")));
     }
 }
