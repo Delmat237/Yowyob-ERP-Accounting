@@ -20,6 +20,7 @@ import {
 } from "@/lib/offline/handlers/ca-list-sync";
 import { networkStatus } from "@/lib/offline/network-status";
 import { listPendingOutbox, updateOutboxStatus } from "@/lib/offline/outbox";
+import { flushCgBatch } from "@/lib/offline/batch-push";
 import { idempotencyHeaders } from "@/lib/offline/sync-request";
 import type { OutboxOperation } from "@/lib/offline/types";
 import {
@@ -93,7 +94,15 @@ export async function flushOutbox(): Promise<{ synced: number; failed: number; p
 
     try {
         const queue = await listPendingOutbox();
-        for (const op of queue) {
+
+        // 1) Batch CG CREATE/UPDATE/DELETE quand possible
+        const batch = await flushCgBatch(queue);
+        synced += batch.synced;
+        failed += batch.failed;
+        if (batch.synced > 0) networkStatus.reportApiSuccess();
+
+        // 2) Flush unitaire pour le reste (écritures, CA, notifications, rates…)
+        for (const op of batch.remaining) {
             if (!networkStatus.isOnline()) break;
 
             const handler = handlers[op.entity];
@@ -113,10 +122,8 @@ export async function flushOutbox(): Promise<{ synced: number; failed: number; p
                 synced += 1;
             } catch (err) {
                 const message = err instanceof Error ? err.message : "Erreur de synchronisation";
-                const isConflict =
-                    message.startsWith("CONFLICT:") ||
-                    message.includes("409") ||
-                    message.toLowerCase().includes("conflit");
+                const { isSyncConflictMessage } = await import("@/lib/offline/conflict");
+                const isConflict = isSyncConflictMessage(message);
                 const isApiUnavailable = message.includes("non disponible");
                 const isNetwork =
                     message.includes("connexion") ||

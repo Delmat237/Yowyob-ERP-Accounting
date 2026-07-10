@@ -18,6 +18,7 @@ type SyncPullResponse = {
 const ENTITY_TO_CACHE: Record<string, string> = {
     "cg.journaux": CG_CACHE_KEYS.JOURNAUX,
     "cg.taxes": CG_CACHE_KEYS.TAXES,
+    "cg.devises": CG_CACHE_KEYS.DEVISES,
     "cg.operations": CG_CACHE_KEYS.OPERATIONS,
     "cg.plan_comptable": CG_CACHE_KEYS.PLAN_COMPTABLE,
     "cg.periodes": CG_CACHE_KEYS.PERIODES,
@@ -66,9 +67,6 @@ export async function pullSyncChanges(): Promise<{ updatedKeys: string[] }> {
         await setCachedList(cacheKey, Array.from(byId.values()));
         updatedKeys.push(cacheKey);
     }
-
-    // axes CA non inclus dans pull CG — garder la clé pour extension future
-    void CA_CACHE_KEYS;
 
     const serverTime = response.data?.serverTime ?? new Date().toISOString();
     await setLastPullAt(serverTime);

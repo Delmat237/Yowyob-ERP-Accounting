@@ -8,6 +8,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
+    "test:offline": "node --experimental-strip-types --test lib/offline/__tests__/*.test.ts",
     "json-server": "json-server --watch db.json --port 3001"
   },
   "dependencies": {
