@@ -48,10 +48,10 @@ export function AccountingChoiceIllustration({ className }: AccountingChoiceIllu
       {/* ── Comptabilité Générale (gauche) ── */}
       <g opacity="0.9">
         <rect x="90" y="150" width="420" height="500" rx="28" fill="url(#cg-panel)" stroke="#93C5FD" strokeWidth="2" />
-        <text x="130" y="210" fill="#0369A1" fontSize="22" fontWeight="700" fontFamily="system-ui, sans-serif">
+        <text x="130" y="210" fill="#0369A1" fontSize="22" fontWeight="700" fontFamily="inherit">
           Comptabilité Générale
         </text>
-        <text x="130" y="238" fill="#0284C7" fontSize="14" fontFamily="system-ui, sans-serif" opacity="0.8">
+        <text x="130" y="238" fill="#0284C7" fontSize="14" fontFamily="inherit" opacity="0.8">
           Plan comptable · Écritures · Journaux
         </text>
 
@@ -65,7 +65,7 @@ export function AccountingChoiceIllustration({ className }: AccountingChoiceIllu
 
         {/* Balance */}
         <rect x="340" y="300" width="130" height="180" rx="12" fill="#FFFFFF" opacity="0.75" stroke="#7DD3FC" strokeWidth="1.5" />
-        <text x="360" y="330" fill="#0369A1" fontSize="12" fontWeight="600" fontFamily="system-ui, sans-serif">Balance</text>
+        <text x="360" y="330" fill="#0369A1" fontSize="12" fontWeight="600" fontFamily="inherit">Balance</text>
         {[0, 1, 2, 3, 4].map((i) => (
           <g key={i}>
             <rect x="360" y={345 + i * 24} width="42" height="14" rx="3" fill="#E0F2FE" />
@@ -75,16 +75,16 @@ export function AccountingChoiceIllustration({ className }: AccountingChoiceIllu
 
         {/* Symbole = */}
         <circle cx="405" cy="520" r="26" fill="#60A5FA" opacity="0.8" />
-        <text x="405" y="528" textAnchor="middle" fill="white" fontSize="22" fontWeight="700" fontFamily="system-ui, sans-serif">=</text>
+        <text x="405" y="528" textAnchor="middle" fill="white" fontSize="22" fontWeight="700" fontFamily="inherit">=</text>
       </g>
 
       {/* ── Comptabilité Analytique (droite) ── */}
       <g opacity="0.9">
         <rect x="690" y="150" width="420" height="500" rx="28" fill="url(#ca-panel)" stroke="#818CF8" strokeWidth="2" />
-        <text x="730" y="210" fill="#4338CA" fontSize="22" fontWeight="700" fontFamily="system-ui, sans-serif">
+        <text x="730" y="210" fill="#4338CA" fontSize="22" fontWeight="700" fontFamily="inherit">
           Comptabilité Analytique
         </text>
-        <text x="730" y="238" fill="#4F46E5" fontSize="14" fontFamily="system-ui, sans-serif" opacity="0.8">
+        <text x="730" y="238" fill="#4F46E5" fontSize="14" fontFamily="inherit" opacity="0.8">
           Centres de coût · Budgets · Axes
         </text>
 
@@ -97,7 +97,7 @@ export function AccountingChoiceIllustration({ className }: AccountingChoiceIllu
 
         {/* Barres budget */}
         <rect x="930" y="300" width="140" height="180" rx="12" fill="#FFFFFF" opacity="0.75" stroke="#A5B4FC" strokeWidth="1.5" />
-        <text x="950" y="328" fill="#4338CA" fontSize="12" fontWeight="600" fontFamily="system-ui, sans-serif">Budget vs réalisé</text>
+        <text x="950" y="328" fill="#4338CA" fontSize="12" fontWeight="600" fontFamily="inherit">Budget vs réalisé</text>
         {[52, 78, 110, 68, 95].map((h, i) => (
           <g key={i}>
             <rect x={948 + i * 22} y={460 - h} width="14" height={h} rx="4" fill="#818CF8" opacity="0.85" />

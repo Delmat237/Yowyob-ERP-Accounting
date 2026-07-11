@@ -23,7 +23,7 @@ export default function LegalPage() {
           <p className="text-sm font-semibold uppercase tracking-wider">Légal</p>
         </div>
 
-        <h1 className="font-serif text-4xl font-bold text-gray-900 sm:text-5xl">Légal</h1>
+        <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl">Légal</h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-gray-600">
           Consultez les documents juridiques applicables à KSM — Kit Suite Manager, version bêta
           publiée.
@@ -41,7 +41,7 @@ export default function LegalPage() {
                 <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                   <Icon className="h-5 w-5" />
                 </div>
-                <h2 className="font-serif text-xl font-bold text-gray-900">{item.title}</h2>
+                <h2 className="text-xl font-bold text-gray-900">{item.title}</h2>
                 <p className="mt-2 flex-1 text-sm leading-relaxed text-gray-600">
                   {item.description}
                 </p>

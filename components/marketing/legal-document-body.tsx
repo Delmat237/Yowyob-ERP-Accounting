@@ -140,13 +140,13 @@ function LegalBlockSection({ block }: { block: LegalBlock }) {
     <section id={block.id} className="scroll-mt-20">
       {block.level === 'part' ? (
         <>
-          <h2 className="font-serif text-3xl font-bold text-gray-900">{block.title}</h2>
+          <h2 className="text-3xl font-bold text-gray-900">{block.title}</h2>
           <hr className="mt-4 border-gray-200" />
         </>
       ) : (
         <h3
           className={cn(
-            'font-serif text-xl font-bold text-gray-900',
+            'text-xl font-bold text-gray-900',
             block.level === 'annex' && 'text-lg',
           )}
         >
@@ -255,7 +255,7 @@ export function LegalDocumentBody({ slug, parsedDocument }: LegalDocumentBodyPro
           <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
             {documentMeta.eyebrow}
           </p>
-          <h1 className="mt-2 font-serif text-4xl font-bold tracking-tight text-gray-900">
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-gray-900">
             {documentMeta.title}
           </h1>
 
@@ -312,7 +312,7 @@ export function LegalDocumentBody({ slug, parsedDocument }: LegalDocumentBodyPro
         <div className="space-y-12">
           {parsedDocument.preamble.length > 0 && (
             <section id="preamble" className="scroll-mt-20 space-y-5">
-              <h2 className="font-serif text-3xl font-bold text-gray-900">Introduction</h2>
+              <h2 className="text-3xl font-bold text-gray-900">Introduction</h2>
               <hr className="border-gray-200" />
               <LegalDocumentLines lines={parsedDocument.preamble} />
             </section>
