@@ -1,5 +1,5 @@
 /** Doit rester aligné avec public/sw.js (CACHE_VERSION). */
-export const OFFLINE_CACHE_VERSION = "yowyob-erp-v16";
+export const OFFLINE_CACHE_VERSION = "yowyob-erp-v17";
 export const PAGES_CACHE = `${OFFLINE_CACHE_VERSION}-pages`;
 export const STATIC_CACHE = `${OFFLINE_CACHE_VERSION}-static`;
 export const RSC_CACHE = `${OFFLINE_CACHE_VERSION}-rsc`;
