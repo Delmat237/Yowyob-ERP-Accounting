@@ -36,6 +36,13 @@ export async function listPendingOutbox(): Promise<OutboxOperation[]> {
         .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
 
+export async function listConflictOutbox(): Promise<OutboxOperation[]> {
+    const all = await idbGetAll<OutboxOperation>("outbox");
+    return all
+        .filter((op) => op.status === "conflict")
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export async function countPendingOutbox(): Promise<number> {
     const pending = await listPendingOutbox();
     return pending.length;
@@ -55,6 +62,20 @@ export async function updateOutboxStatus(
         retries: patch?.retries ?? current.retries,
         lastError: patch?.lastError,
     });
+}
+
+/** Abandonne une mutation locale en conflit (garde la version serveur). */
+export async function discardOutboxOperation(id: string): Promise<void> {
+    await updateOutboxStatus(id, "done", { lastError: undefined });
+}
+
+/** Remet une mutation en conflit dans la file pour un nouvel essai. */
+export async function retryOutboxOperation(id: string): Promise<void> {
+    await updateOutboxStatus(id, "pending", { retries: 0, lastError: undefined });
+}
+
+export async function deleteOutboxOperation(id: string): Promise<void> {
+    await idbDelete("outbox", id);
 }
 
 export async function listOutboxByEntity(entity: string): Promise<OutboxOperation[]> {

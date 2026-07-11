@@ -42,3 +42,13 @@ describe("hasUpdatedAtConflict", () => {
         assert.equal(hasUpdatedAtConflict("2026-07-10T12:00:00Z", null), false);
     });
 });
+
+describe("ENTITY_TO_CACHE CA keys", () => {
+    it("inclut les clés CA dans le mapping pull (smoke via imports)", async () => {
+        const { CA_CACHE_KEYS } = await import("../cache-keys.ts");
+        assert.equal(CA_CACHE_KEYS.CENTRES, "ca.centres");
+        assert.equal(CA_CACHE_KEYS.CHARGES, "ca.charges");
+        assert.equal(CA_CACHE_KEYS.COMPTES, "ca.comptes");
+        assert.equal(CA_CACHE_KEYS.JOURNAUX, "ca.journaux");
+    });
+});

@@ -95,13 +95,13 @@ export async function flushOutbox(): Promise<{ synced: number; failed: number; p
     try {
         const queue = await listPendingOutbox();
 
-        // 1) Batch CG CREATE/UPDATE/DELETE quand possible
+        // 1) Batch CG/CA CREATE/UPDATE/DELETE quand possible
         const batch = await flushCgBatch(queue);
         synced += batch.synced;
         failed += batch.failed;
         if (batch.synced > 0) networkStatus.reportApiSuccess();
 
-        // 2) Flush unitaire pour le reste (écritures, CA, notifications, rates…)
+        // 2) Flush unitaire pour le reste (écritures CG, notifications, rates…)
         for (const op of batch.remaining) {
             if (!networkStatus.isOnline()) break;
 
@@ -131,7 +131,7 @@ export async function flushOutbox(): Promise<{ synced: number; failed: number; p
                     message.includes("serveur");
 
                 if (isConflict) {
-                    await updateOutboxStatus(op.id, "failed", {
+                    await updateOutboxStatus(op.id, "conflict", {
                         retries: op.retries + 1,
                         lastError: message,
                     });
@@ -139,7 +139,13 @@ export async function flushOutbox(): Promise<{ synced: number; failed: number; p
                     if (typeof window !== "undefined") {
                         window.dispatchEvent(
                             new CustomEvent("sync:conflict", {
-                                detail: { entity: op.entity, entityId: op.entityId, message },
+                                detail: {
+                                    outboxId: op.id,
+                                    entity: op.entity,
+                                    entityId: op.entityId,
+                                    action: op.action,
+                                    message,
+                                },
                             }),
                         );
                     }
