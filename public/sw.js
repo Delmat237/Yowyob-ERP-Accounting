@@ -8,7 +8,18 @@ const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const RSC_CACHE = `${CACHE_VERSION}-rsc`;
 
+/** Délai max avant fallback cache (fetch offline/DevTools reste pending 30–60s+ sans ça). */
+const NETWORK_TIMEOUT_MS = 4000;
+
 const MINIMAL_INSTALL_ROUTES = ["/", "/offline"];
+
+const ACCOUNTING_OFFLINE_FALLBACKS = [
+    "/accounting/dashboard",
+    "/accounting/chart-of-accounts",
+    "/accounting/journals",
+    "/accounting/entries",
+    "/accounting/reports",
+];
 
 function isApiRequest(url) {
     return (
@@ -153,6 +164,24 @@ function storeInBackground(cacheName, request, response) {
     caches.open(cacheName).then((cache) => cache.put(request, response.clone())).catch(() => {});
 }
 
+async function fetchWithTimeout(request, init = {}) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), NETWORK_TIMEOUT_MS);
+    try {
+        return await fetch(request, { ...init, signal: controller.signal });
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
+async function matchPagesCache(pagesCache, paths) {
+    for (const path of paths) {
+        const hit = (await pagesCache.match(path)) || (await pagesCache.match(new URL(path, self.location.origin).href));
+        if (hit) return hit;
+    }
+    return null;
+}
+
 async function handleStaticOffline(request) {
     const cached = await caches.match(request);
     if (cached) return cached;
@@ -183,8 +212,12 @@ async function handleRscOffline(request) {
 }
 
 async function handleRsc(request) {
+    if (!self.navigator.onLine) {
+        return handleRscOffline(request);
+    }
+
     try {
-        const response = await fetch(request);
+        const response = await fetchWithTimeout(request);
         if (response.ok) {
             const pathname = new URL(request.url).pathname;
             storeInBackground(RSC_CACHE, `rsc:${pathname}`, response);
@@ -235,10 +268,15 @@ async function offlineFallback(pagesCache, request, url) {
             ? "/accounting/reports"
             : "/accounting/dashboard";
 
+    const sectionHit = await matchPagesCache(pagesCache, [defaultDash]);
+    if (sectionHit) return sectionHit;
+
+    if (url.pathname.startsWith("/accounting/")) {
+        const accountingHit = await matchPagesCache(pagesCache, ACCOUNTING_OFFLINE_FALLBACKS);
+        if (accountingHit) return accountingHit;
+    }
+
     return (
-        (await pagesCache.match(defaultDash)) ||
-        (await pagesCache.match("/accounting/reports")) ||
-        (await pagesCache.match("/accounting/entries")) ||
         (await pagesCache.match("/offline")) ||
         offlineShellResponse()
     );
@@ -248,10 +286,14 @@ async function handleNavigate(request) {
     const url = new URL(request.url);
     const pagesCache = await caches.open(PAGES_CACHE);
 
-    // Network-first : en ligne on sert le réseau et on met en cache.
-    // Si le fetch échoue (vrai offline OU DevTools Offline), on sert le cache.
+    // navigator.onLine === false : évite un fetch inutile (complément au timeout).
+    if (!self.navigator.onLine) {
+        return offlineFallback(pagesCache, request, url);
+    }
+
+    // Network-first : timeout court pour ne pas bloquer la navigation Next.js (RSC en attente).
     try {
-        const response = await fetch(new Request(request, { credentials: "include" }));
+        const response = await fetchWithTimeout(new Request(request, { credentials: "include" }));
         if (response.ok) {
             storeInBackground(PAGES_CACHE, request, response);
             storeInBackground(PAGES_CACHE, new Request(url.pathname, request), response);
