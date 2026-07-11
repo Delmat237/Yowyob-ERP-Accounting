@@ -21,6 +21,7 @@ import { PeriodeComptableVisibleSelector } from '@/components/accounting/periode
 import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
 import { ANALYSE_CACHE_KEYS } from '@/lib/offline/cache-keys';
 import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
+import { formatDateTimeEndForApi, formatDateTimeStartForApi } from '@/lib/utils';
 
 interface SystemAudit {
   id: string;
@@ -53,7 +54,11 @@ export default function AuditJournalPage() {
         cacheKey: ANALYSE_CACHE_KEYS.audits(periodeId),
         fetcher: async () => {
           const response = periode && periode.dateDebut && periode.dateFin
-            ? await AccountingAuditService.getByPeriode(tenantId, periode.dateDebut, periode.dateFin)
+            ? await AccountingAuditService.getByPeriode(
+                tenantId,
+                formatDateTimeStartForApi(periode.dateDebut),
+                formatDateTimeEndForApi(periode.dateFin),
+              )
             : await AccountingAuditService.getAllByOrganization(tenantId, 100);
           const audits = response.data || [];
           return {
@@ -168,7 +173,7 @@ export default function AuditJournalPage() {
           <Card>
             <CardHeader className="bg-white border-b py-4">
               <CardTitle className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-                Historique des actions (Données de démonstration)
+                Historique des actions
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">

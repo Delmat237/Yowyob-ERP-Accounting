@@ -22,12 +22,11 @@ export type OpenAPIConfig = {
 // Ce client cible le KERNEL (services users/actors/organizations/agencies/...),
 // distinct du backend accounting (src/lib2 → NEXT_PUBLIC_API_URL). Les chemins
 // générés sont sans préfixe /api, on le porte donc dans la base URL du kernel.
-const KERNEL_BASE = process.env.NEXT_PUBLIC_KERNEL_URL ?? 'https://accounting.yowyob.com/accounting-api';
 
 export const OpenAPI: OpenAPIConfig = {
     BASE: typeof window !== 'undefined'
-        ? (window as any).__NEXT_PUBLIC_API_URL__ ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://accounting.yowyob.com/accounting-api'
-        : process.env.NEXT_PUBLIC_API_URL ?? 'https://accounting.yowyob.com/accounting-api',
+        ? ((window as any).__NEXT_PUBLIC_API_URL__ ?? process.env.NEXT_PUBLIC_API_URL ?? 'https://accounting.yowyob.com/accounting-api').replace(/\/+$/, '')
+        : (process.env.NEXT_PUBLIC_API_URL ?? 'https://accounting.yowyob.com/accounting-api').replace(/\/+$/, ''),
     VERSION: '1.0.0',
     WITH_CREDENTIALS: false,
     CREDENTIALS: 'include',

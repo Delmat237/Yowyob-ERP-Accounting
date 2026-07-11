@@ -36,6 +36,18 @@ export function formatDateForApi(date: any): string {
   return String(date);
 }
 
+/** Début de journée pour les paramètres API audit (ISO DATE_TIME). */
+export function formatDateTimeStartForApi(date: any): string {
+  const day = formatDateForApi(date);
+  return day ? `${day}T00:00:00` : "";
+}
+
+/** Fin de journée pour les paramètres API audit (ISO DATE_TIME). */
+export function formatDateTimeEndForApi(date: any): string {
+  const day = formatDateForApi(date);
+  return day ? `${day}T23:59:59` : "";
+}
+
 /** Affichage utilisateur JJ/MM/AAAA (gère aussi les tableaux [année, mois, jour] de l'API). */
 export function formatDateDisplay(date: any): string {
   const iso = formatDateForApi(date);

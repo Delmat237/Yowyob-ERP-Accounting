@@ -5,7 +5,7 @@ import {
 import { ANALYSE_CACHE_KEYS, CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
 import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
 import { getCachedList } from "@/lib/offline/list-cache";
-import { formatDateForApi } from "@/lib/utils";
+import { formatDateForApi, formatDateTimeEndForApi, formatDateTimeStartForApi } from "@/lib/utils";
 import type { PeriodeComptableDto } from "@/src/lib2/models/PeriodeComptableDto";
 import { AccountingAuditService } from "@/src/lib2/services/AccountingAuditService";
 import { AccountingFinancialReportsService } from "@/src/lib2/services/AccountingFinancialReportsService";
@@ -73,7 +73,11 @@ export async function prefetchAnalyseReportsForCurrentPeriode(): Promise<void> {
             cacheKey: ANALYSE_CACHE_KEYS.audits(periodeId),
             fetcher: async () => {
                 const response = dateDebut && dateFin
-                    ? await AccountingAuditService.getByPeriode(tenantId, dateDebut, dateFin)
+                    ? await AccountingAuditService.getByPeriode(
+                        tenantId,
+                        formatDateTimeStartForApi(dateDebut),
+                        formatDateTimeEndForApi(dateFin),
+                      )
                     : await AccountingAuditService.getAllByOrganization(tenantId, 100);
                 const audits = response.data || [];
                 return {
