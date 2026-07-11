@@ -21,7 +21,7 @@ import { PeriodeComptableVisibleSelector } from '@/components/accounting/periode
 import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
 import { ANALYSE_CACHE_KEYS } from '@/lib/offline/cache-keys';
 import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
-import { formatDateTimeEndForApi, formatDateTimeStartForApi } from '@/lib/utils';
+import { formatDateForApi } from '@/lib/utils';
 
 interface SystemAudit {
   id: string;
@@ -56,8 +56,8 @@ export default function AuditJournalPage() {
           const response = periode && periode.dateDebut && periode.dateFin
             ? await AccountingAuditService.getByPeriode(
                 tenantId,
-                formatDateTimeStartForApi(periode.dateDebut),
-                formatDateTimeEndForApi(periode.dateFin),
+                formatDateForApi(periode.dateDebut),
+                formatDateForApi(periode.dateFin),
               )
             : await AccountingAuditService.getAllByOrganization(tenantId, 100);
           const audits = response.data || [];

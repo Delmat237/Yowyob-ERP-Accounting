@@ -71,8 +71,9 @@ export function pickKernelOrgDisplayName(org?: KernelOrganizationFields | null):
 export async function fetchKernelOrgNameRaw(orgId: string): Promise<string | null> {
   if (typeof window === "undefined") return null;
 
-  const base =
-    process.env.NEXT_PUBLIC_API_URL ?? "https://accounting.yowyob.com/accounting-api";
+  const base = (
+    process.env.NEXT_PUBLIC_API_URL ?? "https://accounting.yowyob.com/accounting-api"
+  ).replace(/\/+$/, "");
   const token = localStorage.getItem("auth_token");
   const tenantId =
     localStorage.getItem("tenant_id") ||
