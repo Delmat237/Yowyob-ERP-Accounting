@@ -3,7 +3,7 @@
  * Service Worker — cache pages, RSC (navigation SPA) et assets /_next/ (prod).
  */
 
-const CACHE_VERSION = "yowyob-erp-v17";
+const CACHE_VERSION = "yowyob-erp-v18";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const RSC_CACHE = `${CACHE_VERSION}-rsc`;
@@ -13,8 +13,7 @@ const MINIMAL_INSTALL_ROUTES = ["/", "/offline"];
 function isApiRequest(url) {
     return (
         url.pathname.startsWith("/api/") ||
-        url.hostname.includes("accounting.yowyob.com") ||
-        (url.hostname.includes("yowyob.com") && url.pathname.includes("/accounting-api"))
+        url.pathname.startsWith("/accounting-api")
     );
 }
 
