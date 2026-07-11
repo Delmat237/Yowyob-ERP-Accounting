@@ -8,6 +8,9 @@ import {
 } from "@/lib/accounting/periode-utilisateur";
 import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
 import { CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
+import { getCachedList } from "@/lib/offline/list-cache";
+import { mergeListCacheWithOutbox } from "@/lib/offline/merge-list-cache";
+import { networkStatus } from "@/lib/offline/network-status";
 import type { PeriodeComptableDto } from "@/src/lib2/models/PeriodeComptableDto";
 import { AccountingPeriodsService } from "@/src/lib2/services/AccountingPeriodsService";
 import { useOnPeriodesChanged } from "@/hooks/use-on-periodes-changed";
@@ -19,7 +22,36 @@ export function usePeriodeComptableVisible() {
     const [usingCache, setUsingCache] = useState(false);
     const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
+    const tryLoadFromCache = useCallback(async (): Promise<boolean> => {
+        const cached = await getCachedList<PeriodeComptableDto[]>(CG_CACHE_KEYS.PERIODES);
+        if (!cached) return false;
+
+        let data = cached.data;
+        if (Array.isArray(data)) {
+            data = (await mergeListCacheWithOutbox(
+                CG_CACHE_KEYS.PERIODES,
+                data as { id?: string }[],
+            )) as PeriodeComptableDto[];
+        }
+
+        setAllPeriodes(data);
+        setPeriode(getPeriodeComptableCourante(data));
+        setUsingCache(true);
+        setCacheTimestamp(cached.cachedAt);
+        return true;
+    }, []);
+
     const load = useCallback(async (options?: AutoRefreshOptions) => {
+        const offline =
+            typeof navigator !== "undefined" &&
+            (!navigator.onLine || !networkStatus.isOnline());
+
+        if (offline) {
+            const hadCache = await tryLoadFromCache();
+            if (!options?.silent) setLoading(false);
+            if (hadCache) return;
+        }
+
         if (!options?.silent) setLoading(true);
         try {
             const result = await fetchWithOfflineCache({
@@ -34,7 +66,7 @@ export function usePeriodeComptableVisible() {
         } finally {
             if (!options?.silent) setLoading(false);
         }
-    }, []);
+    }, [tryLoadFromCache]);
 
     useEffect(() => {
         void load();

@@ -22,6 +22,28 @@ function isApiFailure(response: unknown): boolean {
     return false;
 }
 
+const FETCH_TIMEOUT_MS = 5000;
+
+function withFetchTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => reject(new Error("Fetch timeout")), ms);
+        promise.then(
+            (value) => {
+                window.clearTimeout(timer);
+                resolve(value);
+            },
+            (error) => {
+                window.clearTimeout(timer);
+                reject(error);
+            },
+        );
+    });
+}
+
+function isFetchTimeout(error: unknown): boolean {
+    return error instanceof Error && error.message === "Fetch timeout";
+}
+
 function extractData<T>(response: unknown): T | null {
     if (response != null && typeof response === "object" && "data" in response) {
         return ((response as ApiLike).data as T) ?? null;
@@ -62,7 +84,7 @@ export async function fetchWithOfflineCache<T>({
     }
 
     try {
-        const response = await fetcher();
+        const response = await withFetchTimeout(fetcher(), FETCH_TIMEOUT_MS);
         if (!isApiFailure(response)) {
             let data = extractData<T>(response) ?? emptyValue;
             if (Array.isArray(data)) {
@@ -81,7 +103,7 @@ export async function fetchWithOfflineCache<T>({
         }
         networkStatus.reportApiNetworkFailure();
     } catch (error) {
-        if (isNetworkError(error)) {
+        if (isNetworkError(error) || isFetchTimeout(error)) {
             networkStatus.reportApiNetworkFailure();
         } else {
             console.warn("[offline] Erreur fetcher", error);

@@ -70,11 +70,12 @@ async function warmRouteOnce(): Promise<void> {
 
     localStorage.setItem(LAST_ROUTE_KEY, pathname);
 
-    await Promise.all([
-        putInCache(PAGES_CACHE, href),
-        putInCache(PAGES_CACHE, pathname),
-        warmRscRoute(pathname),
-    ]);
+    const htmlCached = await isRouteCached(pathname);
+    const pageWarmTasks = htmlCached
+        ? []
+        : [putInCache(PAGES_CACHE, href), putInCache(PAGES_CACHE, pathname)];
+
+    await Promise.all([...pageWarmTasks, warmRscRoute(pathname)]);
 
     const staticCache = await caches.open(STATIC_CACHE);
     const assets = collectDomAssetUrls();
@@ -113,7 +114,7 @@ export function warmCurrentRouteForOffline(): void {
     }, 1500);
 }
 
-/** Vérifie si une route est disponible dans le cache navigateur. */
+/** Vérifie si le HTML d'une route est disponible dans le cache navigateur. */
 export async function isRouteCached(pathname: string): Promise<boolean> {
     if (!("caches" in window)) return false;
     const cache = await caches.open(PAGES_CACHE);
@@ -121,4 +122,14 @@ export async function isRouteCached(pathname: string): Promise<boolean> {
         (await cache.match(pathname)) ||
         (await cache.match(new URL(pathname, window.location.origin).href));
     return Boolean(hit);
+}
+
+/** Vérifie si une route est prête pour la navigation offline (HTML + payload RSC). */
+export async function isRouteOfflineReady(pathname: string): Promise<boolean> {
+    if (!(await isRouteCached(pathname))) return false;
+    if (!("caches" in window)) return false;
+
+    const rscCache = await caches.open(RSC_CACHE);
+    const rscHit = await rscCache.match(`rsc:${pathname}`);
+    return Boolean(rscHit);
 }

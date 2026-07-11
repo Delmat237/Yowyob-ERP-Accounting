@@ -27,7 +27,7 @@ interface BilanItem {
 export default function BalanceSheetPage() {
   const { nationalCurrency } = useNationalCurrency();
   const currencyCode = nationalCurrency?.code || 'XAF';
-  const { periode, periodeId, loading: isLoadingPeriods, refresh } = usePeriodeComptableVisible();
+  const { periode, periodeId, loading: isLoadingPeriods, refresh, usingCache: usingPeriodsCache } = usePeriodeComptableVisible();
   const [bilanSections, setBilanSections] = useState<{
     actifs: BilanItem[];
     passifs: BilanItem[];
@@ -122,7 +122,7 @@ export default function BalanceSheetPage() {
   const totalPassifs = bilanSections.passifs.reduce((sum, item) => sum + item.solde, 0);
   const totalCapitauxPropres = bilanSections.capitauxPropres.reduce((sum, item) => sum + item.solde, 0);
 
-  if (isLoadingPeriods) return <CustomPageLoader />;
+  if (isLoadingPeriods && !usingPeriodsCache) return <CustomPageLoader />;
 
   return (
     <div className="min-h-screen p-4 bg-gray-50">

@@ -3,7 +3,7 @@ import {
     PAGES_CACHE,
     STATIC_CACHE,
     RSC_CACHE,
-    isRouteCached,
+    isRouteOfflineReady,
 } from "@/lib/offline/route-cache-warmup";
 
 const PRECACHE_DELAY_MS = 400;
@@ -99,7 +99,7 @@ function sleep(ms: number): Promise<void> {
 async function filterUncachedRoutes(routes: readonly string[]): Promise<string[]> {
     const missing: string[] = [];
     for (const route of routes) {
-        if (!(await isRouteCached(route))) missing.push(route);
+        if (!(await isRouteOfflineReady(route))) missing.push(route);
     }
     return missing;
 }
