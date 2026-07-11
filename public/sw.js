@@ -3,7 +3,7 @@
  * Service Worker — cache pages, RSC (navigation SPA) et assets /_next/ (prod).
  */
 
-const CACHE_VERSION = "yowyob-erp-v16";
+const CACHE_VERSION = "yowyob-erp-v17";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGES_CACHE = `${CACHE_VERSION}-pages`;
 const RSC_CACHE = `${CACHE_VERSION}-rsc`;
@@ -98,23 +98,22 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(request.url);
     if (!isSameOrigin(url) || isApiRequest(url)) return;
 
-    // En ligne : aucune interception — Next.js gère RSC, assets et navigation.
-    // Intercepter en ligne servait parfois le HTML d'une autre route (fallback)
-    // ou des 503 RSC → « This page couldn't load ».
-    if (navigator.onLine) {
+    // Toujours intercepter les navigations (network-first + cache).
+    // Ne pas se fier à navigator.onLine : DevTools « Offline » laisse souvent
+    // navigator.onLine === true dans le SW → pas d'interception → page dinosaure Chrome.
+    if (request.mode === "navigate") {
+        event.respondWith(handleNavigate(request));
         return;
     }
 
     if (isRscRequest(request)) {
-        event.respondWith(handleRscOffline(request));
+        // Network-first aussi pour RSC (même raison que navigate).
+        event.respondWith(handleRsc(request));
         return;
     }
+
     if (isNextAsset(url.pathname)) {
-        event.respondWith(handleStaticOffline(request));
-        return;
-    }
-    if (request.mode === "navigate") {
-        event.respondWith(handleNavigate(request));
+        event.respondWith(handleStatic(request));
         return;
     }
 });
@@ -161,6 +160,18 @@ async function handleStaticOffline(request) {
     return new Response("Hors ligne", { status: 503, statusText: "Offline" });
 }
 
+async function handleStatic(request) {
+    try {
+        const response = await fetch(request);
+        if (response.ok) {
+            storeInBackground(STATIC_CACHE, request, response);
+        }
+        return response;
+    } catch {
+        return handleStaticOffline(request);
+    }
+}
+
 async function handleRscOffline(request) {
     const pathname = new URL(request.url).pathname;
     const rscCache = await caches.open(RSC_CACHE);
@@ -172,7 +183,7 @@ async function handleRscOffline(request) {
     return new Response("Hors ligne", { status: 503, statusText: "Offline" });
 }
 
-async function cacheOnlineRsc(request) {
+async function handleRsc(request) {
     try {
         const response = await fetch(request);
         if (response.ok) {
@@ -186,16 +197,12 @@ async function cacheOnlineRsc(request) {
     }
 }
 
+async function cacheOnlineRsc(request) {
+    return handleRsc(request);
+}
+
 async function cacheOnlineAsset(request) {
-    try {
-        const response = await fetch(request);
-        if (response.ok) {
-            storeInBackground(STATIC_CACHE, request, response);
-        }
-        return response;
-    } catch {
-        return handleStaticOffline(request);
-    }
+    return handleStatic(request);
 }
 
 async function offlineFallback(pagesCache, request, url) {
@@ -242,10 +249,8 @@ async function handleNavigate(request) {
     const url = new URL(request.url);
     const pagesCache = await caches.open(PAGES_CACHE);
 
-    if (!navigator.onLine) {
-        return offlineFallback(pagesCache, request, url);
-    }
-
+    // Network-first : en ligne on sert le réseau et on met en cache.
+    // Si le fetch échoue (vrai offline OU DevTools Offline), on sert le cache.
     try {
         const response = await fetch(new Request(request, { credentials: "include" }));
         if (response.ok) {
