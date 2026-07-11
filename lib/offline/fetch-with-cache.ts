@@ -1,5 +1,5 @@
 import { getCachedList, setCachedList } from "@/lib/offline/list-cache";
-import { isNetworkError, networkStatus } from "@/lib/offline/network-status";
+import { isClientOffline, isNetworkError, networkStatus } from "@/lib/offline/network-status";
 import { mergeListCacheWithOutbox } from "@/lib/offline/merge-list-cache";
 
 export type OfflineFetchResult<T> = {
@@ -51,6 +51,22 @@ function extractData<T>(response: unknown): T | null {
     return response as T;
 }
 
+/** Lit une liste depuis IndexedDB avec fusion outbox (sans appel réseau). */
+export async function readCachedList<T>(cacheKey: string, emptyValue: T): Promise<OfflineFetchResult<T>> {
+    const cached = await getCachedList<T>(cacheKey);
+    if (!cached) {
+        return { data: emptyValue, fromCache: isClientOffline() };
+    }
+    let data = cached.data;
+    if (Array.isArray(data)) {
+        data = (await mergeListCacheWithOutbox(
+            cacheKey,
+            data as { id?: string }[],
+        )) as T;
+    }
+    return { data, fromCache: true, cachedAt: cached.cachedAt };
+}
+
 /**
  * Online-first : appelle le backend si en ligne, met en cache en cas de succès.
  * Hors ligne ou échec réseau : retourne la dernière liste connue depuis IndexedDB.
@@ -64,22 +80,10 @@ export async function fetchWithOfflineCache<T>({
     fetcher: () => Promise<unknown>;
     emptyValue: T;
 }): Promise<OfflineFetchResult<T>> {
-    const tryCache = async (): Promise<OfflineFetchResult<T>> => {
-        const cached = await getCachedList<T>(cacheKey);
-        if (cached) {
-            let data = cached.data;
-            if (Array.isArray(data)) {
-                data = (await mergeListCacheWithOutbox(
-                    cacheKey,
-                    data as { id?: string }[],
-                )) as T;
-            }
-            return { data, fromCache: true, cachedAt: cached.cachedAt };
-        }
-        return { data: emptyValue, fromCache: networkStatus.getMode() === "offline" };
-    };
+    const tryCache = async (): Promise<OfflineFetchResult<T>> =>
+        readCachedList(cacheKey, emptyValue);
 
-    if (!networkStatus.isOnline()) {
+    if (isClientOffline()) {
         return tryCache();
     }
 

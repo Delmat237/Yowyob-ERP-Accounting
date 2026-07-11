@@ -9,6 +9,7 @@ import { Save, Trash2, Plus, ChevronsUpDown, FileText, Info, Check, Layers } fro
 import { EcritureComptableDto } from '@/src/lib2/models/EcritureComptableDto';
 import { DetailEcritureDto } from '@/src/lib2/models/DetailEcritureDto';
 import { PeriodeComptableDto } from '@/src/lib2/models/PeriodeComptableDto';
+import { JournalComptableDto } from '@/src/lib2/models/JournalComptableDto';
 import { CompteDto } from '@/src/lib2/models/CompteDto';
 import {
     Select,
@@ -34,6 +35,8 @@ import { cn } from '@/lib/utils';
 import { AccountingJournalManagementService } from '@/src/lib2/services/AccountingJournalManagementService';
 import { AccountingPeriodsService } from '@/src/lib2/services/AccountingPeriodsService';
 import { AccountingComptesService } from '@/src/lib2/services/AccountingComptesService';
+import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
 import { toast } from 'sonner';
 import { AccountAutocomplete } from './account-autocomplete';
 import { FileUpload } from '@/components/ui/file-upload';
@@ -156,23 +159,31 @@ export const EcritureComptableDetailView: React.FC<EcritureComptableDetailViewPr
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [journalsRes, periodsRes, accountsRes] = await Promise.all([
-                    AccountingJournalManagementService.getAllJournals(),
-                    AccountingPeriodsService.getAllPeriodeComptables(),
-                    AccountingComptesService.getAllComptes()
+                const [journalsResult, periodsResult, accountsResult] = await Promise.all([
+                    fetchWithOfflineCache({
+                        cacheKey: CG_CACHE_KEYS.JOURNAUX,
+                        fetcher: () => AccountingJournalManagementService.getAllJournals(),
+                        emptyValue: [] as JournalComptableDto[],
+                    }),
+                    fetchWithOfflineCache({
+                        cacheKey: CG_CACHE_KEYS.PERIODES,
+                        fetcher: () => AccountingPeriodsService.getAllPeriodeComptables(),
+                        emptyValue: [] as PeriodeComptableDto[],
+                    }),
+                    fetchWithOfflineCache({
+                        cacheKey: CG_CACHE_KEYS.COMPTES,
+                        fetcher: () => AccountingComptesService.getAllComptes(),
+                        emptyValue: [] as CompteDto[],
+                    }),
                 ]);
 
-                if (journalsRes.success && journalsRes.data) {
-                    setJournals(journalsRes.data.map((j) => ({ id: j.id!, libelle: j.libelle })));
-                }
-
-                if (periodsRes.success && periodsRes.data) {
-                    setPeriodes(periodsRes.data.filter(p => !p.cloturee));
-                }
-
-                if (accountsRes.success && accountsRes.data) {
-                    setAccounts(accountsRes.data);
-                }
+                setJournals(
+                    journalsResult.data
+                        .filter((j) => j.id)
+                        .map((j) => ({ id: j.id!, libelle: j.libelle ?? j.id! })),
+                );
+                setPeriodes(periodsResult.data.filter((p) => !p.cloturee));
+                setAccounts(accountsResult.data);
             } catch (error) {
                 console.error("Failed to fetch dependencies:", error);
             } finally {

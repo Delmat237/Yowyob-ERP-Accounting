@@ -14,8 +14,9 @@ import { AlertCircle, Edit, Lock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCompose } from '@/hooks/use-compose-store';
-import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { fetchWithOfflineCache, readCachedList } from '@/lib/offline/fetch-with-cache';
 import { CG_CACHE_KEYS } from '@/lib/offline/cache-keys';
+import { isClientOffline } from '@/lib/offline/network-status';
 import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 import { ensureLocalId } from '@/lib/offline/ensure-local-id';
 import { upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
@@ -57,6 +58,18 @@ export default function PeriodsPage() {
     );
 
     const fetchPeriodes = useCallback(async (options?: AutoRefreshOptions) => {
+        if (isClientOffline()) {
+            const cached = await readCachedList<PeriodeComptableDto[]>(CG_CACHE_KEYS.PERIODES, []);
+            if (cached.cachedAt) {
+                setPeriodes(cached.data);
+                setUsingCache(true);
+                setCacheTimestamp(cached.cachedAt);
+                setError(null);
+                if (!options?.silent) setIsLoading(false);
+                return;
+            }
+        }
+
         if (!options?.silent) setIsLoading(true);
         setError(null);
         try {

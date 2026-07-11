@@ -1,34 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAutoRefresh, type AutoRefreshOptions } from "@/hooks/use-auto-refresh";
-import {
-    getPeriodeComptableCourante,
-    getPeriodesVisiblesUtilisateur,
-} from "@/lib/accounting/periode-utilisateur";
 import { fetchWithOfflineCache, readCachedList } from "@/lib/offline/fetch-with-cache";
 import { CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
 import { isClientOffline } from "@/lib/offline/network-status";
-import type { PeriodeComptableDto } from "@/src/lib2/models/PeriodeComptableDto";
-import { AccountingPeriodsService } from "@/src/lib2/services/AccountingPeriodsService";
-import { useOnPeriodesChanged } from "@/hooks/use-on-periodes-changed";
+import type { JournalComptableDto } from "@/src/lib2/models/JournalComptableDto";
+import { AccountingJournalManagementService } from "@/src/lib2/services/AccountingJournalManagementService";
 
-export function usePeriodeComptableVisible() {
-    const [allPeriodes, setAllPeriodes] = useState<PeriodeComptableDto[]>([]);
-    const [periode, setPeriode] = useState<PeriodeComptableDto | null>(null);
+export function useJournauxComptables() {
+    const [journaux, setJournaux] = useState<JournalComptableDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [usingCache, setUsingCache] = useState(false);
     const [cacheTimestamp, setCacheTimestamp] = useState<string | undefined>();
 
     const tryLoadFromCache = useCallback(async (): Promise<boolean> => {
-        const result = await readCachedList<PeriodeComptableDto[]>(
-            CG_CACHE_KEYS.PERIODES,
+        const result = await readCachedList<JournalComptableDto[]>(
+            CG_CACHE_KEYS.JOURNAUX,
             [],
         );
         if (!result.cachedAt) return false;
 
-        setAllPeriodes(result.data);
-        setPeriode(getPeriodeComptableCourante(result.data));
+        setJournaux(result.data);
         setUsingCache(true);
         setCacheTimestamp(result.cachedAt);
         return true;
@@ -44,12 +37,11 @@ export function usePeriodeComptableVisible() {
         if (!options?.silent) setLoading(true);
         try {
             const result = await fetchWithOfflineCache({
-                cacheKey: CG_CACHE_KEYS.PERIODES,
-                fetcher: () => AccountingPeriodsService.getAllPeriodeComptables(),
-                emptyValue: [] as PeriodeComptableDto[],
+                cacheKey: CG_CACHE_KEYS.JOURNAUX,
+                fetcher: () => AccountingJournalManagementService.getAllJournals(),
+                emptyValue: [] as JournalComptableDto[],
             });
-            setAllPeriodes(result.data);
-            setPeriode(getPeriodeComptableCourante(result.data));
+            setJournaux(result.data);
             setUsingCache(result.fromCache);
             setCacheTimestamp(result.cachedAt);
         } finally {
@@ -63,21 +55,8 @@ export function usePeriodeComptableVisible() {
 
     useAutoRefresh(load, [load]);
 
-    useOnPeriodesChanged((event) => {
-        setAllPeriodes(event.periodes);
-        setPeriode(event.nextPeriode);
-    });
-
-    const periodesVisibles = useMemo(
-        () => getPeriodesVisiblesUtilisateur(allPeriodes),
-        [allPeriodes],
-    );
-
     return {
-        periode,
-        periodeId: periode?.id ?? null,
-        periodesVisibles,
-        allPeriodes,
+        journaux,
         loading,
         usingCache,
         cacheTimestamp,

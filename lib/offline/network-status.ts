@@ -64,6 +64,14 @@ class NetworkStatusManager {
 
 export const networkStatus = new NetworkStatusManager();
 
+/** Hors ligne navigateur ou mode réseau applicatif offline. */
+export function isClientOffline(): boolean {
+    return (
+        typeof navigator !== "undefined" &&
+        (!navigator.onLine || !networkStatus.isOnline())
+    );
+}
+
 export function isNetworkError(error: unknown): boolean {
     if (error instanceof TypeError) return true;
     const status = (error as { status?: number })?.status;

@@ -5,9 +5,10 @@ import { toast } from 'sonner';
 import { unwrapApiData } from '@/lib/analytique/analytique-api';
 import { mapJournalDtoToUi, mapJournalUiToDto } from '@/lib/analytique/analytique-mappers';
 import type { JournalAnalytiqueConfig } from '@/lib/analytique/journal-analytique';
+import { fetchWithOfflineCache, readCachedList } from '@/lib/offline/fetch-with-cache';
 import { CA_CACHE_KEYS } from '@/lib/offline/cache-keys';
 import { ensureLocalId } from '@/lib/offline/ensure-local-id';
-import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
+import { isClientOffline } from '@/lib/offline/network-status';
 import { upsertListItemWithOutbox } from '@/lib/offline/list-outbox-mutations';
 import { AccountingJournauxAnalytiquesService } from '@/src/lib2/services/AccountingJournauxAnalytiquesService';
 
@@ -18,6 +19,20 @@ export function useJournauxAnalytiquesApi() {
   const [usingCache, setUsingCache] = useState(false);
 
   const load = useCallback(async () => {
+    if (isClientOffline()) {
+      const cached = await readCachedList<JournalAnalytiqueConfig[]>(
+        CA_CACHE_KEYS.JOURNAUX,
+        [],
+      );
+      if (cached.cachedAt) {
+        setJournaux([...cached.data].sort((a, b) => a.code.localeCompare(b.code, 'fr')));
+        setUsingCache(true);
+        setError('Données hors ligne (cache local).');
+        setLoading(false);
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     try {

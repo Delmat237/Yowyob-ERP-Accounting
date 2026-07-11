@@ -24,7 +24,7 @@ import {
 } from "@/lib/analytique/analytique-mappers";
 import { fetchWithOfflineCache } from "@/lib/offline/fetch-with-cache";
 import { CG_CACHE_KEYS } from "@/lib/offline/cache-keys";
-import { networkStatus } from "@/lib/offline/network-status";
+import { isClientOffline } from "@/lib/offline/network-status";
 import { getPeriodeComptableCourante } from "@/lib/accounting/periode-utilisateur";
 import { useOnPeriodesChanged } from "@/hooks/use-on-periodes-changed";
 
@@ -130,7 +130,7 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
           fetcher: () => AccountingFiscalYearsService.getAllExercices(),
           emptyValue: [] as ExerciceComptableDto[],
         }),
-        networkStatus.isOnline()
+        !isClientOffline()
           ? AccountingPeriodesAnalytiquesService.getAllPeriodes().catch(() => ({ data: [] }))
           : Promise.resolve({ data: [] }),
       ]);
@@ -142,7 +142,7 @@ export function usePeriodesAnalytiquesAlignees(): UsePeriodesAnalytiquesAlignees
         a.code.localeCompare(b.code, undefined, { numeric: true }),
       );
 
-      if (periodesList.length === 0 && !networkStatus.isOnline()) {
+      if (periodesList.length === 0 && isClientOffline()) {
         throw new Error("Aucune période en cache.");
       }
       if (periodesList.length === 0) {
