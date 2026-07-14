@@ -1,21 +1,15 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import { LegalDocumentBody } from '@/components/marketing/legal-document-body';
-import { legalDocuments, type LegalDocumentSlug } from '@/lib/legal-documents';
+import { type LegalDocumentSlug } from '@/lib/legal-documents';
 import { parseLegalDocument } from '@/lib/legal-document-parser';
+import { getLegalDocumentContent } from '@/lib/legal-document-source';
 
 interface LegalDocumentViewProps {
   slug: LegalDocumentSlug;
 }
 
-async function readLegalText(fileName: string) {
-  const filePath = path.join(process.cwd(), 'public', 'legal', fileName);
-  return fs.readFile(filePath, 'utf8');
-}
-
 export async function LegalDocumentView({ slug }: LegalDocumentViewProps) {
-  const documentMeta = legalDocuments[slug];
-  const text = await readLegalText(documentMeta.textFile);
+  // Source de vérité = kernel (via le backend accounting, avec cache) ; repli sur la copie locale.
+  const text = await getLegalDocumentContent(slug);
   const parsedDocument = parseLegalDocument(text);
 
   return (
