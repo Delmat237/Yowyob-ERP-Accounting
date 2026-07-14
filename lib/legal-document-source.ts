@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { legalDocuments, type LegalDocumentSlug } from '@/lib/legal-documents';
+import { pickRemoteLegalContent } from '@/lib/legal-content';
 
 /**
  * Source des documents légaux.
@@ -27,9 +28,7 @@ async function fetchRemoteContent(slug: LegalDocumentSlug): Promise<string | nul
       next: { revalidate: REVALIDATE_SECONDS },
     });
     if (!response.ok) return null;
-    const body = await response.json();
-    const content = body?.data?.content;
-    return typeof content === 'string' && content.trim().length > 0 ? content : null;
+    return pickRemoteLegalContent(await response.json());
   } catch {
     // Backend/kernel injoignable → repli local.
     return null;
