@@ -21,18 +21,39 @@ interface AuthState {
 }
 
 /**
+ * Rôles « super-utilisateur » : propriétaire / administrateur d'organisation /
+ * administrateur transverse. Alignés sur le backend (OWNER = ADMIN, cf.
+ * {@code AccountingAuthorities}) : ils obtiennent l'accès comptable intégral
+ * sans qu'on leur assigne un rôle comptable dédié.
+ */
+const SUPER_ROLES = ['ADMIN', 'OWNER', 'ORGANIZATION_ADMIN'];
+
+/** Normalise une autorité : retire le préfixe `ROLE_` et le suffixe de scope `#TENANT`/`#ORGANIZATION:...`. */
+function normalizeRole(role: string): string {
+    return role.replace(/^ROLE_/, '').split('#')[0].trim().toUpperCase();
+}
+
+/**
  * Extrait le rôle comptable depuis le tableau de rôles du backend.
- * Le backend renvoie un tableau `roles` (string[]). On cherche en priorité
- * le rôle le plus élevé : RESPONSABLE_COMPTABLE > COMPTABLE > AIDE_COMPTABLE.
+ * Le backend renvoie un tableau `roles` (string[]) mêlant noms de rôle nus,
+ * formes préfixées `ROLE_...` et scopées `...#ORGANIZATION:<id>`. On normalise
+ * avant comparaison. Priorité : super-utilisateur (OWNER/ADMIN) puis
+ * RESPONSABLE_COMPTABLE > COMPTABLE > AIDE_COMPTABLE.
  *
- * Si aucun rôle comptable n'est trouvé, renvoie null.
+ * Un OWNER/ADMIN est mappé sur RESPONSABLE_COMPTABLE (accès intégral) pour que
+ * `hasPermission`, la garde de route et les menus l'autorisent partout.
+ *
+ * Si aucun rôle exploitable n'est trouvé, renvoie null.
  */
 function extractAccountingRole(roles?: string[]): AccountingRole | null {
     if (!roles || roles.length === 0) return null;
 
-    if (roles.includes('RESPONSABLE_COMPTABLE')) return 'RESPONSABLE_COMPTABLE';
-    if (roles.includes('COMPTABLE')) return 'COMPTABLE';
-    if (roles.includes('AIDE_COMPTABLE')) return 'AIDE_COMPTABLE';
+    const normalized = roles.map(normalizeRole);
+
+    if (normalized.some((r) => SUPER_ROLES.includes(r))) return 'RESPONSABLE_COMPTABLE';
+    if (normalized.includes('RESPONSABLE_COMPTABLE')) return 'RESPONSABLE_COMPTABLE';
+    if (normalized.includes('COMPTABLE')) return 'COMPTABLE';
+    if (normalized.includes('AIDE_COMPTABLE')) return 'AIDE_COMPTABLE';
 
     return null;
 }
