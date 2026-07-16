@@ -22,6 +22,7 @@ import { fetchWithOfflineCache } from '@/lib/offline/fetch-with-cache';
 import { ANALYSE_CACHE_KEYS } from '@/lib/offline/cache-keys';
 import { OfflineCacheBanner } from '@/components/offline/offline-cache-banner';
 import { formatDateForApi } from '@/lib/utils';
+import { exportRowsToExcel, exportRowsToPdf, type ExportColumn } from '@/lib/export/table-export';
 
 interface SystemAudit {
   id: string;
@@ -99,12 +100,35 @@ export default function AuditJournalPage() {
     }
   }, [periodeId, periode, fetchAuditsData]);
 
+  const auditColumns: ExportColumn<SystemAudit>[] = [
+    { header: 'Date & Heure', value: (l) => (l.date ? new Date(l.date).toLocaleString('fr-FR') : '-') },
+    { header: 'Utilisateur', value: (l) => l.user || 'Système' },
+    { header: 'Action', value: (l) => l.action || 'INCONNU' },
+    { header: "Détails de l'opération", value: (l) => l.details || l.description || '' },
+    { header: 'Adresse IP', value: (l) => l.adresseIp || 'N/A' },
+  ];
+
+  const exportSubtitle = () =>
+    periode?.dateDebut && periode?.dateFin
+      ? `Période du ${formatDateForApi(periode.dateDebut)} au ${formatDateForApi(periode.dateFin)}`
+      : "Journal d'audit";
+
   const handleGeneratePDF = () => {
-    toast.info("L'export PDF sera disponible prochainement");
+    if (filteredAudits.length === 0) {
+      toast.info('Aucune donnée à exporter');
+      return;
+    }
+    const ok = exportRowsToPdf("Journal d'Audit", exportSubtitle(), auditColumns, filteredAudits);
+    if (!ok) toast.error("Autorisez les fenêtres pop-up pour l'export PDF");
   };
 
   const handleGenerateXLSX = () => {
-    toast.info("L'export XLSX sera disponible prochainement");
+    if (filteredAudits.length === 0) {
+      toast.info('Aucune donnée à exporter');
+      return;
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+    exportRowsToExcel(`journal-audit-${stamp}`, `Journal d'Audit — ${exportSubtitle()}`, auditColumns, filteredAudits);
   };
 
   const filteredAudits = auditLogs.filter(log =>
@@ -199,7 +223,7 @@ export default function AuditJournalPage() {
                           {log.date ? new Date(log.date).toLocaleString('fr-FR') : '-'}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 uppercase tracking-tighter">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 tracking-tight">
                             {log.user}
                           </span>
                         </td>
