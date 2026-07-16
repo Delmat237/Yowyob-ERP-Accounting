@@ -28,6 +28,11 @@ export interface PlatformService {
      * Ex. "/images/yowyob-logo.png". Repli sur la tuile colorée si absent.
      */
     iconUrl?: string;
+    /**
+     * Superpose une pastille colorée (couleur + initiales) sur l'icône image, pour
+     * distinguer les plateformes qui partagent un même logo (accounting/billing/tp).
+     */
+    badge?: boolean;
 }
 
 // Statut des sous-domaines vérifié en ligne le 2026-07-16 :
@@ -40,13 +45,13 @@ export interface PlatformService {
 // sous-domaine correspondant sera déployé.
 export const PLATFORM_SERVICES: PlatformService[] = [
     // ─── Finance & gestion ───
-    { id: "accounting", name: "Accounting", initials: "AC", description: "Comptabilité générale et analytique (plan OHADA).", color: "#7C3AED", iconShape: "card", url: "https://accounting.yowyob.com", iconUrl: "/images/yowyob-logo.png" },
-    { id: "billing", name: "Billing", initials: "BL", description: "Facturation et gestion des factures.", color: "#22C55E", iconShape: "box", url: "https://billing.yowyob.com" },
+    { id: "accounting", name: "Accounting", initials: "AC", description: "Comptabilité générale et analytique (plan OHADA).", color: "#7C3AED", iconShape: "card", url: "https://accounting.yowyob.com", iconUrl: "/images/yowyob-logo.png", badge: true },
+    { id: "billing", name: "Billing", initials: "BL", description: "Facturation et gestion des factures.", color: "#22C55E", iconShape: "box", url: "https://billing.yowyob.com", iconUrl: "/images/yowyob-logo.png", badge: true },
     { id: "sales", name: "Sales", initials: "SL", description: "Ventes et commandes clients.", color: "#16A34A", iconShape: "taxi", url: "https://sales.yowyob.com" },
     { id: "cashier", name: "Cashier", initials: "CS", description: "Caisse et encaissements.", color: "#DC2626", iconShape: "card", url: "https://cashier.yowyob.com" },
     { id: "treasury", name: "Treasury", initials: "TR", description: "Trésorerie et rapprochements bancaires.", color: "#0369A1", iconShape: "card", url: "https://treasury.yowyob.com" },
-    { id: "banking", name: "Banking", initials: "BK", description: "Services bancaires.", color: "#0891B2", iconShape: "card", url: "https://banking.yowyob.com" },
-    { id: "payroll", name: "Payroll", initials: "PR", description: "Paie et bulletins de salaire.", color: "#16A34A", iconShape: "card", url: "https://payroll.yowyob.com" },
+    { id: "banking", name: "Banking", initials: "BK", description: "Services bancaires.", color: "#0891B2", iconShape: "card", url: "https://banking.yowyob.com", iconUrl: "/images/ksm-banking.png" },
+    { id: "payroll", name: "Payroll", initials: "PR", description: "Paie et bulletins de salaire.", color: "#16A34A", iconShape: "card", url: "https://payroll.yowyob.com", iconUrl: "/images/ksm-payroll.png" },
 
     // ─── Opérations ───
     { id: "hrm", name: "HRM", initials: "HR", description: "Ressources humaines.", color: "#DB2777", iconShape: "graduation", url: "https://hrm.yowyob.com", iconUrl: "/images/ksm-hrm.png" },
@@ -54,7 +59,7 @@ export const PLATFORM_SERVICES: PlatformService[] = [
     { id: "product", name: "Product", initials: "PD", description: "Catalogue produits.", color: "#EA580C", iconShape: "box", url: "https://product.yowyob.com" },
     { id: "resource", name: "Resource", initials: "RS", description: "Matériels et équipements.", color: "#0D9488", iconShape: "truck", url: "https://resource.yowyob.com" },
     { id: "spare", name: "Spare", initials: "SP", description: "Pièces détachées.", color: "#B45309", iconShape: "truck", url: "https://spare.yowyob.com" },
-    { id: "tp", name: "Third Party", initials: "TP", description: "Tiers : clients et fournisseurs.", color: "#3B82F6", iconShape: "book", url: "https://thirdparty.yowyob.com" },
+    { id: "tp", name: "Third Party", initials: "TP", description: "Tiers : clients et fournisseurs.", color: "#3B82F6", iconShape: "book", url: "https://thirdparty.yowyob.com", iconUrl: "/images/yowyob-logo.png", badge: true },
     { id: "organization", name: "Organization", initials: "OR", description: "Organisations et agences.", color: "#2563EB", iconShape: "star", url: "https://organization.yowyob.com" },
     { id: "actor", name: "Actor", initials: "AT", description: "Acteurs et intervenants.", color: "#6366F1", iconShape: "star", url: "https://actor.yowyob.com" },
 
@@ -66,7 +71,7 @@ export const PLATFORM_SERVICES: PlatformService[] = [
     { id: "notification", name: "Notification", initials: "NT", description: "Notifications et alertes.", color: "#F59E0B", iconShape: "flag", url: "https://notification.yowyob.com" },
     { id: "file", name: "File", initials: "FL", description: "Fichiers et documents.", color: "#475569", iconShape: "book", url: "https://file.yowyob.com" },
     { id: "blockchain", name: "Blockchain", initials: "BC", description: "Traçabilité blockchain.", color: "#8B5CF6", iconShape: "box", url: "https://blockchain.yowyob.com" },
-    { id: "common", name: "Common", initials: "CM", description: "Services communs partagés.", color: "#94A3B8", iconShape: "box", url: "https://common.yowyob.com" },
+
 
     // ─── Créatif ───
     { id: "yowpainter", name: "Yow Painter", initials: "YP", description: "Marketplace artistes et designers.", color: "#D946EF", iconShape: "brush", url: "https://yowpainter.yowyob.com" },

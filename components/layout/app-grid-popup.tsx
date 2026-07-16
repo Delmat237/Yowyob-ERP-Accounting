@@ -30,24 +30,43 @@ function ServiceLogo({ service, size = 38 }: { service: PlatformService; size?: 
     const iconSize = size * 0.38;
 
     // Vraie icône (image) si fournie : tuile blanche + logo contenu.
+    // `badge` superpose une pastille colorée aux initiales pour distinguer les
+    // plateformes qui partagent un même logo (accounting / billing / tp).
     if (service.iconUrl) {
         return (
-            <div style={{
-                width: size, height: size, borderRadius: size * 0.28,
-                background: "#fff",
-                border: "1px solid #e2e8f0",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0, overflow: "hidden",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src={service.iconUrl}
-                    alt={service.name}
-                    width={Math.round(size * 0.72)}
-                    height={Math.round(size * 0.72)}
-                    style={{ objectFit: "contain", width: size * 0.72, height: size * 0.72 }}
-                />
+            <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+                <div style={{
+                    width: size, height: size, borderRadius: size * 0.28,
+                    background: "#fff",
+                    border: "1px solid #e2e8f0",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    overflow: "hidden",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={service.iconUrl}
+                        alt={service.name}
+                        width={Math.round(size * 0.72)}
+                        height={Math.round(size * 0.72)}
+                        style={{ objectFit: "contain", width: size * 0.72, height: size * 0.72 }}
+                    />
+                </div>
+                {service.badge && (
+                    <span style={{
+                        position: "absolute", right: -3, bottom: -3,
+                        minWidth: size * 0.44, height: size * 0.44,
+                        padding: "0 3px",
+                        borderRadius: 999,
+                        background: service.color,
+                        color: "#fff",
+                        fontSize: size * 0.24, fontWeight: 800, letterSpacing: "-0.03em",
+                        lineHeight: 1,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        border: "2px solid #fff",
+                        fontFamily: "'Roboto', sans-serif",
+                    }}>{service.initials}</span>
+                )}
             </div>
         );
     }
