@@ -63,17 +63,20 @@ export default function AuditJournalPage() {
           const audits = response.data || [];
           return {
             success: true,
-            data: audits.map((a) => ({
-              id: a.id || '',
-              user: a.utilisateur || 'Système',
-              action: a.action || 'INCONNU',
-              date: a.dateAction || a.createdAt || '',
-              description: a.details || 'Aucune description',
-              details: a.details || '',
-              adresseIp: a.adresseIp || 'N/A',
-              donneesAvant: a.donneesAvant,
-              donneesApres: a.donneesApres,
-            })),
+            data: audits
+              .map((a) => ({
+                id: a.id || '',
+                user: a.utilisateur || 'Système',
+                action: a.action || 'INCONNU',
+                date: a.dateAction || a.createdAt || '',
+                description: a.details || 'Aucune description',
+                details: a.details || '',
+                adresseIp: a.adresseIp || 'N/A',
+                donneesAvant: a.donneesAvant,
+                donneesApres: a.donneesApres,
+              }))
+              // Tri du plus recent au plus ancien.
+              .sort((a, b) => (new Date(b.date).getTime() || 0) - (new Date(a.date).getTime() || 0)),
           };
         },
         emptyValue: [] as SystemAudit[],
