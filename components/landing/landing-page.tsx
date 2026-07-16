@@ -18,6 +18,7 @@ import {
   Minus
 } from 'lucide-react';
 import { LoginModal } from './login-modal';
+import { AppGridPopup } from '@/components/layout/app-grid-popup';
 import { SiteFooter } from '@/components/marketing/site-footer';
 import { useRedirectIfAuthenticated } from '@/hooks/use-auth-redirect';
 import { CustomPageLoader } from '@/components/ui/custom-page-loader';
@@ -390,10 +391,18 @@ export function LandingPage() {
               <div className="inline-flex flex-col items-center gap-1">
                 <YowyobLogo size="sm" imageClassName="mx-auto" />
                 <span className="text-xs text-gray-500">ACCOUNTING</span>
+                <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-wide">
+                  Système ERP
+                </span>
               </div>
             </th>
-            <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
-              Odoo
+            <th className="py-5 px-6 text-center">
+              <div className="inline-flex flex-col items-center gap-1">
+                <span className="text-base font-semibold text-gray-700">Odoo</span>
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+                  Plateforme ERP
+                </span>
+              </div>
             </th>
             {options?.highlightClassic !== false && (
               <th className="py-5 px-6 text-center text-base font-semibold text-gray-700">
@@ -469,6 +478,8 @@ export function LandingPage() {
               >
                 Se connecter
               </Button>
+              {/* Lanceur de plateformes KSM (« gaufre ») — dernier élément, visible même déconnecté */}
+              <AppGridPopup />
             </div>
 
             {/* Mobile menu button */}
@@ -526,8 +537,10 @@ export function LandingPage() {
               </span>
             </h1>
             <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              KSM vous offre une suite complète d&apos;outils pour gérer efficacement votre comptabilité generale et analytique,
-              vos flux financiers et vos rapports. Simplifiez votre gestion financière avec notre solution tout-en-un.
+              KSM est un <span className="font-semibold text-gray-800">système ERP</span> constitué de plusieurs
+              plateformes, parmi lesquelles <span className="font-semibold text-blue-600">Accounting</span>, qui vous
+              permet de gérer votre comptabilité générale et analytique, vos flux financiers et vos rapports —
+              dans une solution intégrée, prête à l&apos;emploi.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Button
@@ -638,6 +651,11 @@ export function LandingPage() {
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Plan comptable, écritures, états financiers, multi-agence et modularité —
               une comptabilité générale pensée pour la réglementation OHADA.
+            </p>
+            <p className="mt-4 text-base text-gray-500 max-w-2xl mx-auto">
+              Là où Odoo est une <span className="font-semibold text-gray-700">plateforme ERP</span> à
+              configurer et assembler, KSM est un <span className="font-semibold text-blue-600">système ERP</span> intégré,
+              prêt à l&apos;emploi et conforme dès le départ.
             </p>
           </div>
 

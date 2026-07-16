@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { LoginModal } from '@/components/landing/login-modal';
 import { YowyobLogo } from '@/components/brand/yowyob-logo';
+import { AppGridPopup } from '@/components/layout/app-grid-popup';
 
 // Liens de navigation principaux. Les ancres pointent vers la page d'accueil
 // (préfixe "/#...") afin de fonctionner depuis n'importe quelle page marketing.
@@ -48,6 +49,8 @@ export function SiteHeader() {
               >
                 Se connecter
               </Button>
+              {/* Lanceur de plateformes KSM (« gaufre ») — dernier élément, visible même déconnecté */}
+              <AppGridPopup />
             </div>
 
             {/* Mobile menu button */}

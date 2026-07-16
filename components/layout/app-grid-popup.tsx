@@ -29,6 +29,29 @@ function ServiceLogo({ service, size = 38 }: { service: PlatformService; size?: 
     const fontSize = size * 0.28;
     const iconSize = size * 0.38;
 
+    // Vraie icône (image) si fournie : tuile blanche + logo contenu.
+    if (service.iconUrl) {
+        return (
+            <div style={{
+                width: size, height: size, borderRadius: size * 0.28,
+                background: "#fff",
+                border: "1px solid #e2e8f0",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0, overflow: "hidden",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                    src={service.iconUrl}
+                    alt={service.name}
+                    width={Math.round(size * 0.72)}
+                    height={Math.round(size * 0.72)}
+                    style={{ objectFit: "contain", width: size * 0.72, height: size * 0.72 }}
+                />
+            </div>
+        );
+    }
+
     return (
         <div style={{
             width: size, height: size, borderRadius: size * 0.28,
@@ -62,7 +85,7 @@ function ServiceLogo({ service, size = 38 }: { service: PlatformService; size?: 
 
 export function AppGridPopup() {
     const [open, setOpen] = useState(false);
-    const [tooltip, setTooltip] = useState<string | null>(null);
+    const [hovered, setHovered] = useState<string | null>(null);
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -75,8 +98,15 @@ export function AppGridPopup() {
 
     return (
         <div ref={ref} style={{ position: "relative", zIndex: 1000 }}>
-            {/* keyframes locales (ouverture du popup) */}
-            <style>{`@keyframes ksmAppGridScaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}`}</style>
+            {/* keyframes + scrollbar fine du popup */}
+            <style>{`
+                @keyframes ksmAppGridScaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
+                .ksm-appgrid-scroll{scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;}
+                .ksm-appgrid-scroll::-webkit-scrollbar{width:8px;}
+                .ksm-appgrid-scroll::-webkit-scrollbar-track{background:transparent;margin:8px 0;}
+                .ksm-appgrid-scroll::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px;border:2px solid transparent;background-clip:content-box;}
+                .ksm-appgrid-scroll::-webkit-scrollbar-thumb:hover{background:#94a3b8;background-clip:content-box;}
+            `}</style>
 
             {/* ── bouton 9 points ── */}
             <button
@@ -105,71 +135,71 @@ export function AppGridPopup() {
                 ))}
             </button>
 
-            {/* ── popup ── */}
+            {/* ── popup façon Google (grille claire, libellés visibles) ── */}
             {open && (
-                <div style={{
+                <div className="ksm-appgrid-scroll" style={{
                     position: "absolute",
-                    top: "calc(100% + 8px)",
+                    top: "calc(100% + 10px)",
                     right: 0,
-                    width: 262,
-                    maxHeight: 480,
+                    width: 336,
+                    maxHeight: 512,
                     overflowY: "auto",
-                    background: "rgba(255,255,255,0.98)",
+                    background: "#ffffff",
                     border: "1px solid #e2e8f0",
-                    borderRadius: 16,
-                    boxShadow: "0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06)",
-                    padding: "16px 12px 12px",
+                    borderRadius: 20,
+                    boxShadow: "0 16px 48px rgba(0,0,0,0.16), 0 4px 16px rgba(0,0,0,0.08)",
+                    padding: "18px 8px 14px 12px",
                     zIndex: 1001,
                     animation: "ksmAppGridScaleIn 0.18s ease forwards",
                     transformOrigin: "top right",
                 }}>
                     <div style={{
+                        padding: "0 12px 12px",
+                        color: "#202124",
+                        fontSize: 15, fontWeight: 500,
+                        fontFamily: "'Roboto', sans-serif",
+                    }}>
+                        Plateformes KSM
+                    </div>
+                    <div style={{
                         display: "grid",
                         gridTemplateColumns: "repeat(3, 1fr)",
-                        gap: 4,
+                        gap: 2,
                     }}>
-                        {PLATFORM_SERVICES.map((service, index) => (
+                        {PLATFORM_SERVICES.map((service) => (
                             <a
                                 key={service.id}
                                 href={service.url ?? "#"}
                                 target={service.url ? "_blank" : undefined}
                                 rel={service.url ? "noopener noreferrer" : undefined}
                                 onClick={(e) => { if (!service.url) e.preventDefault(); }}
-                                onMouseEnter={() => setTooltip(service.id)}
-                                onMouseLeave={() => setTooltip(null)}
+                                onMouseEnter={() => setHovered(service.id)}
+                                onMouseLeave={() => setHovered(null)}
+                                title={service.description ?? service.name}
                                 style={{
                                     display: "flex", flexDirection: "column",
-                                    alignItems: "center", justifyContent: "center",
-                                    padding: "10px 4px",
-                                    borderRadius: 10,
+                                    alignItems: "center",
+                                    gap: 8,
+                                    padding: "14px 6px",
+                                    borderRadius: 12,
                                     textDecoration: "none",
-                                    transition: "background 0.15s, transform 0.15s",
+                                    transition: "background 0.15s",
                                     cursor: "pointer",
-                                    position: "relative",
-                                    background: tooltip === service.id ? "#f1f5f9" : "transparent",
-                                    transform: tooltip === service.id ? "translateY(-2px)" : "translateY(0)",
+                                    background: hovered === service.id ? "#f1f5f9" : "transparent",
                                 }}
                             >
-                                <ServiceLogo service={service} size={38} />
-                                {tooltip === service.id && (
-                                    <div style={{
-                                        position: "absolute",
-                                        ...(index < 3
-                                            ? { top: "calc(100% + 6px)", bottom: "auto" }
-                                            : { bottom: "calc(100% + 6px)", top: "auto" }),
-                                        left: "50%", transform: "translateX(-50%)",
-                                        background: "#202124",
-                                        color: "#fff",
-                                        fontSize: 10, fontWeight: 600,
-                                        padding: "4px 8px",
-                                        borderRadius: 6,
-                                        whiteSpace: "nowrap",
-                                        pointerEvents: "none",
-                                        zIndex: 1100,
-                                    }}>
-                                        {service.name}
-                                    </div>
-                                )}
+                                <ServiceLogo service={service} size={44} />
+                                <span style={{
+                                    color: "#3c4043",
+                                    fontSize: 12, fontWeight: 400,
+                                    lineHeight: 1.2, textAlign: "center",
+                                    fontFamily: "'Roboto', sans-serif",
+                                    maxWidth: 88,
+                                    overflow: "hidden", textOverflow: "ellipsis",
+                                    display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                                }}>
+                                    {service.name}
+                                </span>
                             </a>
                         ))}
                     </div>

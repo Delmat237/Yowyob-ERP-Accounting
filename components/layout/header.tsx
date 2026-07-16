@@ -255,14 +255,14 @@ export function Header() {
           </DropdownMenu>
         </div>
 
-        {/* Lanceur de plateformes YowYob (« gaufre ») */}
-        <div className="hidden md:flex">
-          <AppGridPopup />
-        </div>
-
         <OfflineStatusIndicator />
         <NotificationBell />
         <UserNav />
+
+        {/* Lanceur de plateformes KSM (« gaufre ») — dernier élément du header */}
+        <div className="hidden md:flex">
+          <AppGridPopup />
+        </div>
       </div>
     </header>
   );

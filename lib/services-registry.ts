@@ -23,6 +23,11 @@ export interface PlatformService {
     iconShape: PlatformIconShape;
     /** URL de la plateforme (ouverte dans un nouvel onglet), suivant la nomenclature. */
     url?: string;
+    /**
+     * Chemin d'une vraie icône (image) à afficher à la place de la tuile à initiales.
+     * Ex. "/images/yowyob-logo.png". Repli sur la tuile colorée si absent.
+     */
+    iconUrl?: string;
 }
 
 // Statut des sous-domaines vérifié en ligne le 2026-07-16 :
@@ -35,7 +40,7 @@ export interface PlatformService {
 // sous-domaine correspondant sera déployé.
 export const PLATFORM_SERVICES: PlatformService[] = [
     // ─── Finance & gestion ───
-    { id: "accounting", name: "Accounting", initials: "AC", description: "Comptabilité générale et analytique (plan OHADA).", color: "#7C3AED", iconShape: "card", url: "https://accounting.yowyob.com" },
+    { id: "accounting", name: "Accounting", initials: "AC", description: "Comptabilité générale et analytique (plan OHADA).", color: "#7C3AED", iconShape: "card", url: "https://accounting.yowyob.com", iconUrl: "/images/yowyob-logo.png" },
     { id: "billing", name: "Billing", initials: "BL", description: "Facturation et gestion des factures.", color: "#22C55E", iconShape: "box", url: "https://billing.yowyob.com" },
     { id: "sales", name: "Sales", initials: "SL", description: "Ventes et commandes clients.", color: "#16A34A", iconShape: "taxi", url: "https://sales.yowyob.com" },
     { id: "cashier", name: "Cashier", initials: "CS", description: "Caisse et encaissements.", color: "#DC2626", iconShape: "card", url: "https://cashier.yowyob.com" },
@@ -44,7 +49,7 @@ export const PLATFORM_SERVICES: PlatformService[] = [
     { id: "payroll", name: "Payroll", initials: "PR", description: "Paie et bulletins de salaire.", color: "#16A34A", iconShape: "card", url: "https://payroll.yowyob.com" },
 
     // ─── Opérations ───
-    { id: "hrm", name: "HRM", initials: "HR", description: "Ressources humaines.", color: "#DB2777", iconShape: "graduation", url: "https://hrm.yowyob.com" },
+    { id: "hrm", name: "HRM", initials: "HR", description: "Ressources humaines.", color: "#DB2777", iconShape: "graduation", url: "https://hrm.yowyob.com", iconUrl: "/images/ksm-hrm.png" },
     { id: "inventory", name: "Inventory", initials: "IV", description: "Stock et inventaire.", color: "#D97706", iconShape: "truck", url: "https://inventory.yowyob.com" },
     { id: "product", name: "Product", initials: "PD", description: "Catalogue produits.", color: "#EA580C", iconShape: "box", url: "https://product.yowyob.com" },
     { id: "resource", name: "Resource", initials: "RS", description: "Matériels et équipements.", color: "#0D9488", iconShape: "truck", url: "https://resource.yowyob.com" },
