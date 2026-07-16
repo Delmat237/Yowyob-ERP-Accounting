@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Download, Search, RefreshCw } from 'lucide-react';
 import { AccountingFinancialReportsService } from '@/src/lib2/services/AccountingFinancialReportsService';
+import { downloadReportPdfBlob } from '@/src/lib2/helpers/downloadReportPdf';
 import { toast } from 'sonner';
 import { formatDateForApi } from '@/lib/utils';
 import { useNationalCurrency } from '@/hooks/use-national-currency';
@@ -82,17 +83,12 @@ export default function ProfitAndLossPage() {
     try {
       toast.info("Génération du PDF...");
 
-      // Construct the PDF export URL
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8081';
-      const pdfUrl = `${baseUrl}/api/accounting/rapport/compte-resultat/export/pdf?date_debut=${formatDateForApi(periode.dateDebut)}&date_fin=${formatDateForApi(periode.dateFin)}`;
-
-      // Fetch the PDF as a blob
-      const response = await fetch(pdfUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
+      // Export via le client accounting authentifie (base URL + token + headers org/tenant)
+      const blob = await downloadReportPdfBlob(
+        '/api/accounting/rapport/compte-resultat/export/pdf',
+        formatDateForApi(periode.dateDebut),
+        formatDateForApi(periode.dateFin),
+      );
       const blobUrl = window.URL.createObjectURL(blob);
       window.open(blobUrl, '_blank');
 
