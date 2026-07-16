@@ -17,6 +17,7 @@ import Link from "next/link";
 import { NotificationBell } from "../notifications/notification-bell";
 import { useAuth } from "@/hooks/use-auth";
 import { AccountingWorkspaceSwitch } from "./accounting-workspace-switch";
+import { AppGridPopup } from "./app-grid-popup";
 import { AccountingOrganizationsService } from "@/src/lib2/services/AccountingOrganizationsService";
 import {
   DEFAULT_ORG_DISPLAY_NAME,
@@ -252,6 +253,11 @@ export function Header() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </div>
+
+        {/* Lanceur de plateformes YowYob (« gaufre ») */}
+        <div className="hidden md:flex">
+          <AppGridPopup />
         </div>
 
         <OfflineStatusIndicator />
